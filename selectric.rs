@@ -73,21 +73,21 @@ fn find_end_of_match(string: &str, rest_of_query: &str, first_index: uint) -> Op
 
 #[test]
 fn find_end_of_match_test() {
-  assert!(find_end_of_match("a", "a", 0) == None);
-  assert!(find_end_of_match("ba", "a", 1) == None);
-  assert!(find_end_of_match("aaa", "aa", 0) == Some(2));
-  assert!(find_end_of_match("aaa", "b", 0) == None);
-  assert!(find_end_of_match("this is a long match", "this is a match", 0) == None);
-  assert!(find_end_of_match("this is a long match", "his is a match", 0) == Some(19));
+  assert_eq!(find_end_of_match("a", "a", 0), None);
+  assert_eq!(find_end_of_match("ba", "a", 1), None);
+  assert_eq!(find_end_of_match("aaa", "aa", 0), Some(2));
+  assert_eq!(find_end_of_match("aaa", "b", 0), None);
+  assert_eq!(find_end_of_match("this is a long match", "this is a match", 0), None);
+  assert_eq!(find_end_of_match("this is a long match", "his is a match", 0), Some(19));
 }
 
 #[test]
 fn basic_scoring() {
-  assert!(score("", "a") == 0.0);
-  assert!(score("a", "") == 1.0);
-  assert!(score("short", "longer") == 0.0);
-  assert!(score("a", "b") == 0.0);
-  assert!(score("ab", "ac") == 0.0);
+  assert_eq!(score("", "a"), 0.0);
+  assert_eq!(score("a", ""), 1.0);
+  assert_eq!(score("short", "longer"), 0.0);
+  assert_eq!(score("a", "b"), 0.0);
+  assert_eq!(score("ab", "ac"), 0.0);
 
   assert!(score("a", "a") > 0.0);
   assert!(score("ab", "a") > 0.0);
@@ -95,20 +95,20 @@ fn basic_scoring() {
   assert!(score("bab", "a") > 0.0);
   assert!(score("babababab", "aaaa") > 0.0);
 
-  assert!(score("a", "a") == 1_f64 / "a".len() as f64);
-  assert!(score("ab", "ab") == 0.5);
-  assert!(score("a long string", "a long string") == 1_f64 / "a long string".len() as f64);
-  assert!(score("spec/search_spec.rb", "sear") == 1_f64 / "spec/search_spec.rb".len() as f64);
+  assert_eq!(score("a", "a"), 1_f64 / "a".len() as f64);
+  assert_eq!(score("ab", "ab"), 0.5);
+  assert_eq!(score("a long string", "a long string"), 1_f64 / "a long string".len() as f64);
+  assert_eq!(score("spec/search_spec.rb", "sear"), 1_f64 / "spec/search_spec.rb".len() as f64);
 }
 
 #[test]
 fn character_matching() {
   assert!(score("/! symbols $^", "/!$^") > 0.0);
 
-  assert!(score("a", "A") == 1.0);
-  assert!(score("A", "a") == 1.0);
+  assert_eq!(score("a", "A"), 1.0);
+  assert_eq!(score("A", "a"), 1.0);
 
-  assert!(score("a", "aa") == 0.0);
+  assert_eq!(score("a", "aa"), 0.0);
 }
 
 #[test]
@@ -124,6 +124,6 @@ fn match_equality() {
 
   assert!(score("long 12 long", "12") > score("1 long 2", "12"));
 
-  assert!(score("121padding2", "12") == 1.0 / "121padding2".len() as f64);
-  assert!(score("1padding212", "12") == 1.0 / "1padding212".len() as f64);
+  assert_eq!(score("121padding2", "12"), 1.0 / "121padding2".len() as f64);
+  assert_eq!(score("1padding212", "12"), 1.0 / "1padding212".len() as f64);
 }
