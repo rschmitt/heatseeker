@@ -4,8 +4,8 @@ clean:
 	$(RM) selectric
 
 build: clean
-	rustc -A dead_code -o selectric selectric.rs
+	rustc -o selectric selectric.rs
 
 test:
-	rustc -A dead_code --test selectric.rs
+	rustc -A dead_code -A unstable --test selectric.rs
 	./selectric

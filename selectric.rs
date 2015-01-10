@@ -44,7 +44,7 @@ fn parse_args(args: &Vec<String>) -> Option<Args> {
     Ok(m) => m,
     Err(f) => {
       println!("{}", f);
-      print_usage(args[0].as_slice(), opts);
+      print_usage(args[0].as_slice(), &opts);
       return None;
     }
   };
@@ -56,7 +56,7 @@ fn parse_args(args: &Vec<String>) -> Option<Args> {
 
   let help = matches.opt_present("help");
   if help {
-    print_usage(args[0].as_slice(), opts);
+    print_usage(args[0].as_slice(), &opts);
   }
 
   Some(Args { initial_search: initial_search, help: help })
@@ -89,8 +89,8 @@ fn score(choice: &str, query: &str) -> f64 {
     return 0.0;
   }
 
-  let query = query.to_ascii_lower();
-  let choice = choice.to_ascii_lower();
+  let query = query.to_ascii_lowercase();
+  let choice = choice.to_ascii_lowercase();
 
   match compute_match_length(choice.as_slice(), query.as_slice()) {
     None => return 0.0,
@@ -101,12 +101,12 @@ fn score(choice: &str, query: &str) -> f64 {
   }
 }
 
-fn compute_match_length(string: &str, chars: &str) -> Option<uint> {
+fn compute_match_length(string: &str, chars: &str) -> Option<usize> {
   let first_char = chars.char_at(0);
   let rest = chars.slice(1, chars.len());
   let indices = find_char_in_string(string, first_char);
 
-  let mut current_min: Option<uint> = None;
+  let mut current_min: Option<usize> = None;
   for i in indices.iter() {
     let last_index = find_end_of_match(string, rest, *i);
     if last_index.is_some() {
@@ -122,7 +122,7 @@ fn compute_match_length(string: &str, chars: &str) -> Option<uint> {
   return current_min;
 }
 
-fn find_char_in_string(string: &str, char: char) -> Vec<uint> {
+fn find_char_in_string(string: &str, char: char) -> Vec<usize> {
   let mut indices = Vec::new();
   let mut i = 0;
   for c in string.chars() {
@@ -134,7 +134,7 @@ fn find_char_in_string(string: &str, char: char) -> Vec<uint> {
   return indices;
 }
 
-fn find_end_of_match(string: &str, rest_of_query: &str, first_index: uint) -> Option<uint> {
+fn find_end_of_match(string: &str, rest_of_query: &str, first_index: usize) -> Option<usize> {
   let mut last_index = first_index + 1;
   for c in rest_of_query.chars() {
     let current_substring = string.slice_chars(last_index, string.len());
