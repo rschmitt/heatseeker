@@ -1,7 +1,7 @@
 extern crate getopts;
 
 use std::ascii::AsciiExt;
-use std::cmp::min as min;
+use std::cmp::min;
 use std::os;
 use std::io;
 
@@ -106,7 +106,7 @@ fn compute_match_length(string: &str, chars: &str) -> Option<usize> {
   let rest = chars.slice(1, chars.len());
   let indices = find_char_in_string(string, first_char);
 
-  let mut current_min: Option<usize> = None;
+  let mut current_min = None;
   for i in indices.iter() {
     let last_index = find_end_of_match(string, rest, *i);
     if last_index.is_some() {
