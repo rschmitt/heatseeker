@@ -1,7 +1,7 @@
 extern crate getopts;
 
 use std::ascii::AsciiExt;
-use std::cmp::min;
+use std::cmp::{Ordering, min};
 use std::os;
 use std::io;
 
@@ -25,6 +25,11 @@ fn main() {
   println!("");
   println!("Choices:");
   for choice in choices.iter() {
+    println!("{}", choice);
+  }
+  println!("");
+  println!("Filtered choices:");
+  for choice in compute_matches(&choices, args.initial_search.as_slice()).iter() {
     println!("{}", choice);
   }
 }
@@ -79,6 +84,32 @@ fn read_choices() -> Vec<String> {
   }
 
   lines
+}
+
+fn compute_matches<'a>(choices: &'a Vec<String>, query: &str) -> Vec<&'a String> {
+  struct ScoredChoice<'a> {
+    score: f64,
+    choice: &'a String,
+  };
+  let mut ret = Vec::new();
+  for choice in choices.iter() {
+    let score = score(choice.as_slice(), query);
+    if (score > 0_f64) {
+      ret.push(ScoredChoice{ score: score, choice: choice });
+    }
+  }
+  ret.sort_by(|x, y| approx_cmp(&y.score, &x.score));
+  ret.iter().map(|s| s.choice).collect()
+}
+
+fn approx_cmp<T: PartialEq + PartialOrd>(x: &T, y: &T) -> Ordering {
+  if (x > y) {
+    Ordering::Greater
+  } else if (x == y) {
+    Ordering::Equal
+  } else {
+    Ordering::Less
+  }
 }
 
 fn score(choice: &str, query: &str) -> f64 {
