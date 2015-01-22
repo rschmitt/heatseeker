@@ -1,9 +1,11 @@
 extern crate getopts;
+extern crate libc;
 
 use std::os;
 use std::io;
 
 mod matching;
+mod screen;
 
 fn main() {
   let input_args = os::args();
@@ -22,6 +24,8 @@ fn main() {
 
   let choices = read_choices();
 
+  let mut terminal = screen::Terminal::open_terminal();
+
   println!("");
   println!("Choices:");
   for choice in choices.iter() {
@@ -32,6 +36,8 @@ fn main() {
   for choice in matching::compute_matches(&choices, args.initial_search.as_slice()).iter() {
     println!("{}", choice);
   }
+  let (col, row) = terminal.winsize().unwrap();
+  terminal.writeln(format!("{}x{} terminal", col, row).as_slice());
 }
 
 struct Args {
