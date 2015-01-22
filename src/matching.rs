@@ -13,18 +13,8 @@ pub fn compute_matches<'a>(choices: &'a Vec<String>, query: &str) -> Vec<&'a Str
       ret.push(ScoredChoice{ score: score, choice: choice });
     }
   }
-  ret.sort_by(|x, y| approx_cmp(&y.score, &x.score));
+  ret.sort_by(|x, y| y.score.partial_cmp(&x.score).unwrap());
   ret.iter().map(|s| s.choice).collect()
-}
-
-fn approx_cmp<T: PartialEq + PartialOrd>(x: &T, y: &T) -> Ordering {
-  if (x > y) {
-    Ordering::Greater
-  } else if (x == y) {
-    Ordering::Equal
-  } else {
-    Ordering::Less
-  }
 }
 
 fn score(choice: &str, query: &str) -> f64 {
