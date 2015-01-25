@@ -71,11 +71,11 @@ impl Terminal {
   }
 
   pub fn write(&mut self, s: &[u8]) {
-    self.output.write(s.as_slice());
+    self.output.write(s.as_slice()).unwrap();
   }
 
   pub fn writeln(&mut self, s: &str) {
-    self.output.write_line(s);
+    self.output.write_line(s).unwrap();
   }
 
   pub fn winsize(&self) -> Option<(u16, u16)> {
