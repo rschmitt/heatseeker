@@ -1,5 +1,5 @@
 use std::ascii::AsciiExt;
-use std::cmp::{min, Ordering};
+use std::cmp::min;
 
 pub fn compute_matches<'a>(choices: &'a Vec<String>, query: &str) -> Vec<&'a String> {
   struct ScoredChoice<'a> {
@@ -9,7 +9,7 @@ pub fn compute_matches<'a>(choices: &'a Vec<String>, query: &str) -> Vec<&'a Str
   let mut ret = Vec::new();
   for choice in choices.iter() {
     let score = score(choice.as_slice(), query);
-    if (score > 0_f64) {
+    if score > 0_f64 {
       ret.push(ScoredChoice{ score: score, choice: choice });
     }
   }

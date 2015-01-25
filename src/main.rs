@@ -1,3 +1,5 @@
+#![allow(unstable, dead_code)]
+
 extern crate getopts;
 extern crate libc;
 

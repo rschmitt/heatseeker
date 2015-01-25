@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::io::{File, Open, Read, Write};
 use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
