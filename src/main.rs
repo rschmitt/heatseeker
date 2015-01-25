@@ -3,7 +3,9 @@ extern crate libc;
 
 use std::os;
 use std::io;
+use std::cmp::min;
 
+mod ansi;
 mod matching;
 mod screen;
 
@@ -20,24 +22,46 @@ fn main() {
 
   if args.help { return; }
 
-  println!("Initial search: \"{}\"", args.initial_search);
+  let mut screen = screen::Screen::open_screen();
 
   let choices = read_choices();
+  let visible_choices = min(20, screen.height - 1);
 
-  let mut terminal = screen::Terminal::open_terminal();
+  let mut search: String = args.initial_search.clone();
+  let start_line = screen.height - visible_choices - 1;
+  loop {
+    blank_screen(&mut screen, start_line);
+    screen.move_cursor(start_line, 0);
+    let choices = matching::compute_matches(&choices, search.as_slice());
+    let mut i = 0;
+    for choice in choices.iter() {
+      screen.tty.writeln(choice.as_slice());
+      if i >= visible_choices {
+        break;
+      }
+      i += 1;
+    }
+    let x = screen.tty.getchar();
 
-  println!("");
-  println!("Choices:");
-  for choice in choices.iter() {
-    println!("{}", choice);
+    if x == '\r' as u8 {
+      println!("{}", choices[0]);
+      break;
+    }
+    search.push(x as char);
   }
-  println!("");
-  println!("Filtered choices:");
-  for choice in matching::compute_matches(&choices, args.initial_search.as_slice()).iter() {
-    println!("{}", choice);
+}
+
+fn blank_screen(screen: &mut screen::Screen, start_line: u16) {
+  screen.move_cursor(start_line, 0);
+  let mut i = 0;
+  while i < screen.height {
+    let mut j = 0;
+    while j < screen.width {
+      screen.tty.write(" ".as_bytes());
+      j += 1;
+    }
+    i += 1;
   }
-  let (col, row) = terminal.winsize().unwrap();
-  terminal.writeln(format!("{}x{} terminal", col, row).as_slice());
 }
 
 struct Args {

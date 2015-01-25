@@ -1,6 +1,39 @@
-use std::io::{File, Open, Read, Write, IoResult};
-use libc::{c_ushort, c_int, c_ulong, STDOUT_FILENO};
+use std::io::{File, Open, Read, Write};
+use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
+use std::io::process::{Command, InheritFd};
+use ansi;
+
+pub struct Screen {
+  pub tty: Terminal,
+  original_stty_state: Vec<u8>,
+  pub height: u16,
+  pub width: u16,
+}
+
+impl Screen {
+  pub fn open_screen() -> Screen {
+    let mut tty = Terminal::open_terminal();
+    let current_stty_state = tty.stty(&["-g"]);
+    tty.initialize();
+    let (cols, rows) = tty.winsize().unwrap();
+    Screen { tty: tty, original_stty_state: current_stty_state, height: rows, width: cols }
+  }
+
+  pub fn restore_tty(&mut self) {
+    self.tty.stty(&[String::from_utf8(self.original_stty_state.clone()).unwrap().as_slice()]);
+  }
+
+  pub fn move_cursor(&mut self, line: u16, column: u16) {
+    self.tty.write(ansi::setpos(line, column).as_slice());
+  }
+}
+
+impl Drop for Screen {
+  fn drop(&mut self) {
+    self.restore_tty();
+  }
+}
 
 pub struct Terminal {
   input: File,
@@ -13,6 +46,30 @@ impl Terminal {
     let input_file = File::open_mode(&term_path, Open, Read).unwrap();
     let output_file = File::open_mode(&term_path, Open, Write).unwrap();
     Terminal { input: input_file, output: output_file }
+  }
+
+  fn initialize(&mut self) {
+    self.stty(&["raw", "-echo", "cbreak"]);
+  }
+
+  fn stty(&mut self, args: &[&str]) -> Vec<u8> {
+    let term_input = File::open_mode(&Path::new("/dev/tty"), Open, Read).unwrap();
+    let fd = term_input.as_raw_fd();
+    let mut process = match Command::new("stty").args(args).stdin(InheritFd(fd)).spawn() {
+      Ok(p) => p,
+      Err(e) => panic!("Command failed: {}", e),
+    };
+
+    process.stdout.as_mut().unwrap().read_to_end().unwrap()
+  }
+
+  pub fn getchar(&mut self) -> u8 {
+    let byte = self.input.read_byte().unwrap();
+    byte
+  }
+
+  pub fn write(&mut self, s: &[u8]) {
+    self.output.write(s.as_slice());
   }
 
   pub fn writeln(&mut self, s: &str) {
