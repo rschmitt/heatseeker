@@ -39,7 +39,7 @@ fn score(choice: &str, query: &str) -> f64 {
 
 fn compute_match_length(string: &str, chars: &str) -> Option<usize> {
   let first_char = chars.char_at(0);
-  let rest = chars.slice(1, chars.len());
+  let rest = &chars[1..chars.len()];
   let indices = find_char_in_string(string, first_char);
 
   let mut current_min = None;
