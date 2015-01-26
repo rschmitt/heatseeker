@@ -39,10 +39,10 @@ fn main() {
 
   let start_line = screen.height - visible_choices - 1;
   loop {
+    let matches = matching::compute_matches(&choices, search.as_slice());
     screen.hide_cursor();
     screen.blank_screen(start_line);
     screen.move_cursor(start_line, 0);
-    let matches = matching::compute_matches(&choices, search.as_slice());
     let mut i = 1;
     screen.write(format!("> {} ({} choices)\n", search.as_slice(), choices.len()).as_slice());
     for choice in matches.iter() {
