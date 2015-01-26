@@ -24,10 +24,11 @@ fn main() {
 
   if args.help { return; }
 
+  let choices = read_choices();
+
   let mut screen = Screen::open_screen();
   let mut index = 0;
 
-  let choices = read_choices();
   let visible_choices = min(20, screen.height - 1);
 
   let mut search = args.initial_search.clone();
