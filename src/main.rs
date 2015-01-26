@@ -27,6 +27,7 @@ fn main() {
   if args.help { return; }
 
   let mut screen = Screen::open_screen();
+  let mut index = 0;
 
   let choices = read_choices();
   let visible_choices = min(20, screen.height - 1);
@@ -52,8 +53,10 @@ fn main() {
       Control('h') => { search.pop(); }
       Control('u') => { search.clear(); }
       Control('c') => { return; }
+      Control('n') => { index += 1; }
+      Control('p') => { index -= 1; }
       Enter => {
-        println!("{}", choices[0]);
+        println!("{}", choices[index]);
         break;
       }
       _ => panic!("Unexpected input"),
