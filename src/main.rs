@@ -37,12 +37,18 @@ fn main() {
   loop {
     blank_screen(&mut screen, start_line);
     screen.move_cursor(start_line, 0);
-    let choices = matching::compute_matches(&choices, search.as_slice());
+    let matches = matching::compute_matches(&choices, search.as_slice());
     let mut i = 1;
     screen.tty.writeln(format!("> {} ({} choices)", search.as_slice(), choices.len()).as_slice());
-    for choice in choices.iter() {
-      screen.tty.writeln(choice.as_slice());
-      if i >= visible_choices {
+    for choice in matches.iter() {
+      if i == index + 1 {
+        screen.tty.write(ansi::inverse().as_slice());
+        screen.tty.writeln(choice.as_slice());
+        screen.tty.write(ansi::reset().as_slice());
+      } else {
+        screen.tty.writeln(choice.as_slice());
+      }
+      if i >= visible_choices as usize {
         break;
       }
       i += 1;
@@ -57,7 +63,7 @@ fn main() {
       Control('n') => { index += 1; }
       Control('p') => { index -= 1; }
       Enter => {
-        println!("{}", choices[index]);
+        println!("{}", matches[index]);
         break;
       }
       _ => panic!("Unexpected input"),
