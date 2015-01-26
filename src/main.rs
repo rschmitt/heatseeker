@@ -61,8 +61,8 @@ fn main() {
       Control('h') => { search.pop(); }
       Control('u') => { search.clear(); }
       Control('c') => { return; }
-      Control('n') => { index += 1; }
-      Control('p') => { index -= 1; }
+      Control('n') => { index = min(index + 1, matches.len() - 1); }
+      Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
       Enter => {
         screen.move_cursor(start_line + visible_choices, 0);
         screen.write("\n");
