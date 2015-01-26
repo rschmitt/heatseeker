@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use self::Key::*;
 use std::io::{File, Open, Read, Write};
 use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
@@ -42,6 +43,13 @@ pub struct Terminal {
   output: File,
 }
 
+pub enum Key {
+  Char(char),
+  Control(char),
+  Enter,
+  Backspace,
+}
+
 impl Terminal {
   pub fn open_terminal() -> Terminal {
     let term_path = Path::new("/dev/tty");
@@ -65,9 +73,17 @@ impl Terminal {
     process.stdout.as_mut().unwrap().read_to_end().unwrap()
   }
 
-  pub fn getchar(&mut self) -> u8 {
+  pub fn getchar(&mut self) -> Key {
     let byte = self.input.read_byte().unwrap();
-    byte
+    if byte == '\r' as u8 {
+      Enter
+    } else if byte == 127 {
+      Backspace
+    } else if byte & 96 == 0 {
+      Control((byte + 96u8) as char)
+    } else {
+      Char(byte as char)
+    }
   }
 
   pub fn write(&mut self, s: &[u8]) {

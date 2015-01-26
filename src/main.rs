@@ -3,13 +3,15 @@
 extern crate getopts;
 extern crate libc;
 
-use std::os;
-use std::io;
-use std::cmp::min;
-
 mod ansi;
 mod matching;
 mod screen;
+
+use std::os;
+use std::io;
+use std::cmp::min;
+use screen::Screen;
+use screen::Key::*;
 
 fn main() {
   let input_args = os::args();
@@ -24,7 +26,7 @@ fn main() {
 
   if args.help { return; }
 
-  let mut screen = screen::Screen::open_screen();
+  let mut screen = Screen::open_screen();
 
   let choices = read_choices();
   let visible_choices = min(20, screen.height - 1);
@@ -43,13 +45,19 @@ fn main() {
       }
       i += 1;
     }
-    let x = screen.tty.getchar();
 
-    if x == '\r' as u8 {
-      println!("{}", choices[0]);
-      break;
+    match screen.tty.getchar() {
+      Char(x) => search.push(x),
+      Backspace => { search.pop(); }
+      Control('h') => { search.pop(); }
+      Control('u') => { search.clear(); }
+      Control('c') => { return; }
+      Enter => {
+        println!("{}", choices[0]);
+        break;
+      }
+      _ => panic!("Unexpected input"),
     }
-    search.push(x as char);
   }
 }
 
