@@ -25,13 +25,18 @@ fn main() {
   if args.help { return; }
 
   let choices = read_choices();
+  let mut search = args.initial_search.clone();
+  if args.use_first {
+    let matches = matching::compute_matches(&choices, search.as_slice());
+    println!("{}", matches[0]);
+    return;
+  }
 
   let mut screen = Screen::open_screen();
   let mut index = 0;
 
   let visible_choices = min(20, screen.height - 1);
 
-  let mut search = args.initial_search.clone();
   let start_line = screen.height - visible_choices - 1;
   loop {
     screen.hide_cursor();

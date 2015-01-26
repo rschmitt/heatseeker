@@ -5,6 +5,7 @@ use std::os;
 struct Args {
   pub initial_search: String,
   pub help: bool,
+  pub use_first: bool,
 }
 
 pub fn parse_args() -> Option<Args> {
@@ -12,6 +13,7 @@ pub fn parse_args() -> Option<Args> {
   let opts = [
     getopts::optflag("h", "help", "Show this message"),
     getopts::optopt("s", "search", "Specify an initial search string", "SEARCH"),
+    getopts::optflag("f", "first", "Automatically select the first match"),
   ];
 
   let matches = match getopts::getopts(args.tail(), &opts) {
@@ -33,7 +35,11 @@ pub fn parse_args() -> Option<Args> {
     print_usage(args[0].as_slice(), &opts);
   }
 
-  Some(Args { initial_search: initial_search, help: help })
+  Some(Args {
+    initial_search: initial_search,
+    help: help,
+    use_first: matches.opt_present("first"),
+  })
 }
 
 fn print_usage(program: &str, opts: &[getopts::OptGroup]) {
