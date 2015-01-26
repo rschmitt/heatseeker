@@ -58,12 +58,15 @@ fn main() {
     screen.show_cursor();
 
     match screen.tty.getchar() {
-      Char(x) => search.push(x),
+      Char(x) => {
+        search.push(x);
+        index = 0;
+      }
       Backspace => { search.pop(); }
       Control('h') => { search.pop(); }
       Control('u') => { search.clear(); }
       Control('c') => { return; }
-      Control('n') => { index = min(index + 1, matches.len() - 1); }
+      Control('n') => { index = min(index + 1, min(visible_choices as usize - 1, matches.len() - 1)); }
       Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
       Enter => {
         screen.move_cursor(start_line + visible_choices, 0);
