@@ -1,8 +1,8 @@
 #![allow(unstable, dead_code)]
 
-extern crate getopts;
 extern crate libc;
 
+mod args;
 mod ansi;
 mod matching;
 mod screen;
@@ -14,9 +14,7 @@ use screen::Screen;
 use screen::Key::*;
 
 fn main() {
-  let input_args = os::args();
-
-  let args = match parse_args(&input_args) {
+  let args = match args::parse_args() {
     Some(args) => args,
     None => {
       os::set_exit_status(1);
@@ -85,44 +83,6 @@ fn blank_screen(screen: &mut screen::Screen, start_line: u16) {
     }
     i += 1;
   }
-}
-
-struct Args {
-  initial_search: String,
-  help: bool,
-}
-
-fn parse_args(args: &Vec<String>) -> Option<Args> {
-  let opts = [
-    getopts::optflag("h", "help", "Show this message"),
-    getopts::optopt("s", "search", "Specify an initial search string", "SEARCH"),
-  ];
-
-  let matches = match getopts::getopts(args.tail(), &opts) {
-    Ok(m) => m,
-    Err(f) => {
-      println!("{}", f);
-      print_usage(args[0].as_slice(), &opts);
-      return None;
-    }
-  };
-
-  let initial_search = match matches.opt_str("search") {
-    Some(x) => x.clone(),
-    None => String::from_str(""),
-  };
-
-  let help = matches.opt_present("help");
-  if help {
-    print_usage(args[0].as_slice(), &opts);
-  }
-
-  Some(Args { initial_search: initial_search, help: help })
-}
-
-fn print_usage(program: &str, opts: &[getopts::OptGroup]) {
-    let brief = format!("Usage: {} [options]", program);
-    print!("{}", getopts::usage(brief.as_slice(), opts));
 }
 
 fn read_choices() -> Vec<String> {
