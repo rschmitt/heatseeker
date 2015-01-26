@@ -38,7 +38,8 @@ fn main() {
     blank_screen(&mut screen, start_line);
     screen.move_cursor(start_line, 0);
     let choices = matching::compute_matches(&choices, search.as_slice());
-    let mut i = 0;
+    let mut i = 1;
+    screen.tty.writeln(format!("> {} ({} choices)", search.as_slice(), choices.len()).as_slice());
     for choice in choices.iter() {
       screen.tty.writeln(choice.as_slice());
       if i >= visible_choices {
