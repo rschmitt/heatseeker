@@ -30,6 +30,19 @@ impl Screen {
   pub fn move_cursor(&mut self, line: u16, column: u16) {
     self.tty.write(ansi::setpos(line, column).as_slice());
   }
+
+  pub fn blank_screen(&mut self, start_line: u16) {
+    self.move_cursor(start_line, 0);
+    let mut i = 0;
+    while i < self.height {
+      let mut j = 0;
+      while j < self.width {
+        self.tty.write(" ".as_bytes());
+        j += 1;
+      }
+      i += 1;
+    }
+  }
 }
 
 impl Drop for Screen {

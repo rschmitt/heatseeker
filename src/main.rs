@@ -30,10 +30,10 @@ fn main() {
   let choices = read_choices();
   let visible_choices = min(20, screen.height - 1);
 
-  let mut search: String = args.initial_search.clone();
+  let mut search = args.initial_search.clone();
   let start_line = screen.height - visible_choices - 1;
   loop {
-    blank_screen(&mut screen, start_line);
+    screen.blank_screen(start_line);
     screen.move_cursor(start_line, 0);
     let matches = matching::compute_matches(&choices, search.as_slice());
     let mut i = 1;
@@ -69,19 +69,6 @@ fn main() {
       }
       _ => panic!("Unexpected input"),
     }
-  }
-}
-
-fn blank_screen(screen: &mut screen::Screen, start_line: u16) {
-  screen.move_cursor(start_line, 0);
-  let mut i = 0;
-  while i < screen.height {
-    let mut j = 0;
-    while j < screen.width {
-      screen.tty.write(" ".as_bytes());
-      j += 1;
-    }
-    i += 1;
   }
 }
 
