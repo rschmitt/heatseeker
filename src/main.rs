@@ -88,12 +88,19 @@ fn read_choices() -> Vec<String> {
   let mut stdin = io::stdio::stdin();
   let mut lines = Vec::new();
 
-  loop {
-    match stdin.read_line() {
-      Ok(x) => lines.push(String::from_str(x.as_slice().trim())),
-      Err(_) => break,
-    }
+  while let Ok(mut s) = stdin.read_line() {
+    trim(&mut s);
+    lines.push(s);
   }
 
   lines
+}
+
+fn trim(s: &mut String) {
+  while let Some(x) = s.pop() {
+    if x != '\n' {
+      s.push(x);
+      return;
+    }
+  }
 }
