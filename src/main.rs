@@ -34,6 +34,7 @@ fn main() {
   let mut search = args.initial_search.clone();
   let start_line = screen.height - visible_choices - 1;
   loop {
+    screen.hide_cursor();
     screen.blank_screen(start_line);
     screen.move_cursor(start_line, 0);
     let matches = matching::compute_matches(&choices, search.as_slice());
@@ -54,6 +55,7 @@ fn main() {
     }
 
     screen.move_cursor(start_line, 2 + search.len() as u16);
+    screen.show_cursor();
 
     match screen.tty.getchar() {
       Char(x) => search.push(x),

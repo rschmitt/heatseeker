@@ -5,6 +5,7 @@ use std::io::{File, Open, Read, Write};
 use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
 use std::io::process::{Command, InheritFd};
+use std::iter::repeat;
 use ansi;
 
 pub struct Screen {
@@ -33,15 +34,18 @@ impl Screen {
 
   pub fn blank_screen(&mut self, start_line: u16) {
     self.move_cursor(start_line, 0);
-    let mut i = 0;
-    while i < self.height {
-      let mut j = 0;
-      while j < self.width {
-        self.tty.write(" ".as_bytes());
-        j += 1;
-      }
-      i += 1;
+    let blank_line = repeat(' ').take(self.width as usize).collect::<String>();
+    for _ in range(0, self.height) {
+      self.tty.write(blank_line.as_bytes());
     }
+  }
+
+  pub fn show_cursor(&mut self) {
+    self.tty.write(ansi::show_cursor().as_slice());
+  }
+
+  pub fn hide_cursor(&mut self) {
+    self.tty.write(ansi::hide_cursor().as_slice());
   }
 
   pub fn write(&mut self, s: &str) {
