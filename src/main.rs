@@ -54,6 +54,8 @@ fn main() {
       i += 1;
     }
 
+    screen.move_cursor(start_line, 2 + search.len() as u16);
+
     match screen.tty.getchar() {
       Char(x) => search.push(x),
       Backspace => { search.pop(); }
@@ -63,6 +65,7 @@ fn main() {
       Control('n') => { index += 1; }
       Control('p') => { index -= 1; }
       Enter => {
+        screen.move_cursor(start_line + visible_choices, 0);
         println!("{}", matches[index]);
         break;
       }
