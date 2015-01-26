@@ -44,13 +44,13 @@ impl Screen {
     }
   }
 
-  pub fn writeln(&mut self, s: &str) {
-    self.tty.writeln(s);
+  pub fn write(&mut self, s: &str) {
+    self.tty.write(s.as_bytes());
   }
 
-  pub fn writeln_inverted(&mut self, s: &str) {
+  pub fn write_inverted(&mut self, s: &str) {
     self.tty.write(ansi::inverse().as_slice());
-    self.tty.writeln(s);
+    self.tty.write(s.as_bytes());
     self.tty.write(ansi::reset().as_slice());
   }
 }

@@ -37,15 +37,17 @@ fn main() {
     screen.move_cursor(start_line, 0);
     let matches = matching::compute_matches(&choices, search.as_slice());
     let mut i = 1;
-    screen.writeln(format!("> {} ({} choices)", search.as_slice(), choices.len()).as_slice());
+    screen.write(format!("> {} ({} choices)\n", search.as_slice(), choices.len()).as_slice());
     for choice in matches.iter() {
       if i == index + 1 {
-        screen.writeln_inverted(choice.as_slice());
+        screen.write_inverted(choice.as_slice());
       } else {
-        screen.writeln(choice.as_slice());
+        screen.write(choice.as_slice());
       }
       if i >= visible_choices as usize {
         break;
+      } else {
+        screen.write("\n");
       }
       i += 1;
     }
@@ -62,6 +64,7 @@ fn main() {
       Control('p') => { index -= 1; }
       Enter => {
         screen.move_cursor(start_line + visible_choices, 0);
+        screen.write("\n");
         println!("{}", matches[index]);
         break;
       }
