@@ -37,14 +37,12 @@ fn main() {
     screen.move_cursor(start_line, 0);
     let matches = matching::compute_matches(&choices, search.as_slice());
     let mut i = 1;
-    screen.tty.writeln(format!("> {} ({} choices)", search.as_slice(), choices.len()).as_slice());
+    screen.writeln(format!("> {} ({} choices)", search.as_slice(), choices.len()).as_slice());
     for choice in matches.iter() {
       if i == index + 1 {
-        screen.tty.write(ansi::inverse().as_slice());
-        screen.tty.writeln(choice.as_slice());
-        screen.tty.write(ansi::reset().as_slice());
+        screen.writeln_inverted(choice.as_slice());
       } else {
-        screen.tty.writeln(choice.as_slice());
+        screen.writeln(choice.as_slice());
       }
       if i >= visible_choices as usize {
         break;

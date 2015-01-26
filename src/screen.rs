@@ -43,6 +43,16 @@ impl Screen {
       i += 1;
     }
   }
+
+  pub fn writeln(&mut self, s: &str) {
+    self.tty.writeln(s);
+  }
+
+  pub fn writeln_inverted(&mut self, s: &str) {
+    self.tty.write(ansi::inverse().as_slice());
+    self.tty.writeln(s);
+    self.tty.write(ansi::reset().as_slice());
+  }
 }
 
 impl Drop for Screen {
