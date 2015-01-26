@@ -8,6 +8,10 @@ use std::io::process::{Command, InheritFd};
 use std::iter::repeat;
 use ansi;
 
+use std::thread::Thread;
+use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc;
+
 pub struct Screen {
   pub tty: Terminal,
   original_stty_state: Vec<u8>,
@@ -65,8 +69,8 @@ impl Drop for Screen {
   }
 }
 
-pub struct Terminal {
-  input: File,
+struct Terminal {
+  input: Receiver<u8>,
   output: File,
 }
 
@@ -80,9 +84,18 @@ pub enum Key {
 impl Terminal {
   pub fn open_terminal() -> Terminal {
     let term_path = Path::new("/dev/tty");
-    let input_file = File::open_mode(&term_path, Open, Read).unwrap();
+    let mut input_file = File::open_mode(&term_path, Open, Read).unwrap();
     let output_file = File::open_mode(&term_path, Open, Write).unwrap();
-    Terminal { input: input_file, output: output_file }
+    let (tx, rx): (Sender<u8>, Receiver<u8>) = mpsc::channel();
+    Thread::spawn(move || {
+      loop {
+        tx.send(input_file.read_byte().unwrap()).unwrap();
+      }
+    });
+    Terminal {
+      input: rx,
+      output: output_file
+    }
   }
 
   fn initialize(&mut self) {
@@ -100,8 +113,25 @@ impl Terminal {
     process.stdout.as_mut().unwrap().read_to_end().unwrap()
   }
 
+  // Return all buffered keystrokes, or the next key if buffer is empty.
+  pub fn get_buffered_keys(&mut self) -> Vec<Key> {
+    let mut ret = Vec::new();
+    while let Ok(byte) = self.input.try_recv() {
+      ret.push(Terminal::translate_byte(byte));
+    }
+    if ret.is_empty() {
+      let byte = self.input.recv().unwrap();
+      ret.push(Terminal::translate_byte(byte));
+    }
+    ret
+  }
+
   pub fn getchar(&mut self) -> Key {
-    let byte = self.input.read_byte().unwrap();
+    let byte = self.input.recv().unwrap();
+    Terminal::translate_byte(byte)
+  }
+
+  fn translate_byte(byte: u8) -> Key {
     if byte == '\r' as u8 {
       Enter
     } else if byte == 127 {

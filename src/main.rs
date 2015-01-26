@@ -39,7 +39,7 @@ fn main() {
 
   let start_line = screen.height - visible_choices - 1;
   loop {
-    let matches = matching::compute_matches(&choices, search.as_slice());
+    let mut matches = matching::compute_matches(&choices, search.as_slice());
     screen.hide_cursor();
     screen.blank_screen(start_line);
     screen.move_cursor(start_line, 0);
@@ -62,24 +62,32 @@ fn main() {
     screen.move_cursor(start_line, 2 + search.len() as u16);
     screen.show_cursor();
 
-    match screen.tty.getchar() {
-      Char(x) => {
-        search.push(x);
-        index = 0;
+    let chars = screen.tty.get_buffered_keys();
+    let mut matches_stale = false;
+    for char in chars.iter() {
+      match *char {
+        Char(x) => {
+          search.push(x);
+          index = 0;
+          matches_stale = true;
+        }
+        Backspace => { search.pop(); matches_stale = true; }
+        Control('h') => { search.pop(); matches_stale = true; }
+        Control('u') => { search.clear(); matches_stale = true; }
+        Control('c') => { return; }
+        Control('n') => { index = min(index + 1, min(visible_choices as usize - 1, matches.len() - 1)); }
+        Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
+        Enter => {
+          screen.move_cursor(start_line + visible_choices, 0);
+          screen.write("\n");
+          if matches_stale {
+            matches = matching::compute_matches(&choices, search.as_slice());
+          }
+          println!("{}", matches[index]);
+          return;
+        }
+        _ => panic!("Unexpected input"),
       }
-      Backspace => { search.pop(); }
-      Control('h') => { search.pop(); }
-      Control('u') => { search.clear(); }
-      Control('c') => { return; }
-      Control('n') => { index = min(index + 1, min(visible_choices as usize - 1, matches.len() - 1)); }
-      Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
-      Enter => {
-        screen.move_cursor(start_line + visible_choices, 0);
-        screen.write("\n");
-        println!("{}", matches[index]);
-        break;
-      }
-      _ => panic!("Unexpected input"),
     }
   }
 }
