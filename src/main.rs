@@ -37,32 +37,32 @@ fn main() {
 
 fn event_loop(choices: Vec<String>, initial_search: &str) {
   let mut screen = Screen::open_screen();
-  let mut index = 0;
 
   let mut search = Search {
     choices: &choices,
     query: initial_search.to_string(),
     matches: Vec::new(),
     stale: true,
+    index: 0,
   };
   loop {
     search.recompute_matches();
-    draw_screen(&mut screen, &search.matches, search.query.as_slice(), search.choices.len(), index);
+    draw_screen(&mut screen, &search.matches, search.query.as_slice(), search.choices.len(), search.index);
 
     let chars = screen.get_buffered_keys();
     for char in chars.iter() {
       match *char {
-        Char(x) => { index = 0; search.append(x); }
-        Backspace => { search.backspace(); }
-        Control('h') => { search.backspace(); }
-        Control('u') => { search.clear_query(); }
-        Control('c') => { return; }
-        Control('n') => { index = min(index + 1, min(screen.visible_choices as usize - 1, search.matches.len() - 1)); }
-        Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
+        Char(x) => search.append(x),
+        Backspace => search.backspace(),
+        Control('h') => search.backspace(),
+        Control('u') => search.clear_query(),
+        Control('c') => return,
+        Control('n') => search.down(screen.visible_choices),
+        Control('p') => search.up(),
         Enter => {
           screen.move_cursor_to_bottom();
           search.recompute_matches();
-          println!("{}", search.matches[index]);
+          println!("{}", search.matches[search.index]);
           return;
         }
         _ => panic!("Unexpected input"),
@@ -76,12 +76,23 @@ struct Search<'a> {
   query: String,
   matches: Vec<&'a String>,
   stale: bool,
+  index: usize,
 }
 
 impl<'a> Search<'a> {
+  fn up(&mut self) {
+    self.index = if self.index == 0 { 0 } else { self.index - 1 };
+  }
+
+  fn down(&mut self, visible_choices: u16) {
+    let limit = min(visible_choices as usize - 1, self.matches.len() - 1);
+    self.index = min(self.index + 1, limit);
+  }
+
   fn backspace(&mut self) {
     self.query.pop();
     self.stale = true;
+    self.index = 0;
   }
 
   fn append(&mut self, c: char) {
