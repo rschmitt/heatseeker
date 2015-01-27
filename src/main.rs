@@ -25,19 +25,22 @@ fn main() {
   if args.help { return; }
 
   let choices = read_choices();
-  let mut search = args.initial_search.clone();
+  let initial_search = args.initial_search.clone();
   if args.use_first {
-    let matches = matching::compute_matches(&choices, search.as_slice());
+    let matches = matching::compute_matches(&choices, initial_search.as_slice());
     println!("{}", matches[0]);
     return;
+  } else {
+    event_loop(choices, initial_search.as_slice());
   }
+}
 
+fn event_loop(choices: Vec<String>, initial_search: &str) {
+  let mut search = String::from_str(initial_search);
   let mut screen = Screen::open_screen();
   let mut index = 0;
 
-  let visible_choices = min(20, screen.height - 1);
-
-  let start_line = screen.height - visible_choices - 1;
+  let start_line = screen.height - screen.visible_choices - 1;
   let mut matches_stale = true;
   let mut matches = matching::compute_matches(&choices, search.as_slice());
   loop {
@@ -49,7 +52,8 @@ fn main() {
     screen.blank_screen(start_line);
     screen.move_cursor(start_line, 0);
     screen.write(format!("> {} ({} choices)\n", search.as_slice(), choices.len()).as_slice());
-    print_matches(&mut screen, &matches, index, visible_choices);
+
+    print_matches(&mut screen, &matches, index);
 
     screen.move_cursor(start_line, 2 + search.len() as u16);
     screen.show_cursor();
@@ -66,10 +70,11 @@ fn main() {
         Control('h') => { search.pop(); matches_stale = true; }
         Control('u') => { search.clear(); matches_stale = true; }
         Control('c') => { return; }
-        Control('n') => { index = min(index + 1, min(visible_choices as usize - 1, matches.len() - 1)); }
+        Control('n') => { index = min(index + 1, min(screen.visible_choices as usize - 1, matches.len() - 1)); }
         Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
         Enter => {
-          screen.move_cursor(start_line + visible_choices, 0);
+          let end_line = start_line + screen.visible_choices;
+          screen.move_cursor(end_line, 0);
           screen.write("\n");
           if matches_stale {
             matches = matching::compute_matches(&choices, search.as_slice());
@@ -83,7 +88,7 @@ fn main() {
   }
 }
 
-fn print_matches(screen: &mut Screen, matches: &Vec<&String>, index: usize, visible_choices: u16) {
+fn print_matches(screen: &mut Screen, matches: &Vec<&String>, index: usize) {
   let mut i = 1;
   for choice in matches.iter() {
     if i == index + 1 {
@@ -91,7 +96,7 @@ fn print_matches(screen: &mut Screen, matches: &Vec<&String>, index: usize, visi
     } else {
       screen.write(choice.as_slice());
     }
-    if i >= visible_choices as usize {
+    if i >= screen.visible_choices as usize {
       return;
     } else {
       screen.write("\n");

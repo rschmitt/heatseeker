@@ -6,6 +6,7 @@ use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
 use std::io::process::{Command, InheritFd};
 use std::iter::repeat;
+use std::cmp::min;
 use ansi;
 
 use std::thread::Thread;
@@ -17,6 +18,7 @@ pub struct Screen {
   original_stty_state: Vec<u8>,
   pub height: u16,
   pub width: u16,
+  pub visible_choices: u16,
 }
 
 impl Screen {
@@ -25,7 +27,13 @@ impl Screen {
     let current_stty_state = tty.stty(&["-g"]);
     tty.initialize();
     let (cols, rows) = tty.winsize().unwrap();
-    Screen { tty: tty, original_stty_state: current_stty_state, height: rows, width: cols }
+    Screen {
+        tty: tty,
+        original_stty_state: current_stty_state,
+        height: rows,
+        width: cols,
+        visible_choices: min(20, rows - 1),
+    }
   }
 
   pub fn restore_tty(&mut self) {
