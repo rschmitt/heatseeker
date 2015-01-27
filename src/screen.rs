@@ -10,7 +10,7 @@ use std::cmp::min;
 use ansi;
 
 use std::thread::Thread;
-use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::Receiver;
 use std::sync::mpsc;
 
 pub struct Screen {
@@ -119,7 +119,7 @@ impl Terminal {
     let term_path = Path::new("/dev/tty");
     let mut input_file = File::open_mode(&term_path, Open, Read).unwrap();
     let output_file = File::open_mode(&term_path, Open, Write).unwrap();
-    let (tx, rx): (Sender<u8>, Receiver<u8>) = mpsc::channel();
+    let (tx, rx) = mpsc::channel();
     Thread::spawn(move || {
       loop {
         tx.send(input_file.read_byte().unwrap()).unwrap();
