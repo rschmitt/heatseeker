@@ -47,7 +47,7 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
   };
   loop {
     search.recompute_matches();
-    draw_screen(&mut screen, &search.matches, search.query.as_slice(), search.choices.len(), search.index);
+    draw_screen(&mut screen, &search);
 
     let chars = screen.get_buffered_keys();
     for char in chars.iter() {
@@ -113,15 +113,15 @@ impl<'a> Search<'a> {
   }
 }
 
-fn draw_screen(screen: &mut Screen, matches: &Vec<&String>, search: &str, choices: usize, index: usize) {
+fn draw_screen(screen: &mut Screen, search: &Search) {
   screen.hide_cursor();
   screen.blank_screen();
-  screen.write(format!("> {} ({} choices)\n", search, choices).as_slice());
+  screen.write(format!("> {} ({} choices)\n", search.query, search.matches.len()).as_slice());
 
-  print_matches(screen, matches, index);
+  print_matches(screen, &search.matches, search.index);
 
   let start = screen.start_line;
-  screen.move_cursor(start, 2 + search.len() as u16);
+  screen.move_cursor(start, 2 + search.query.len() as u16);
   screen.show_cursor();
 }
 
