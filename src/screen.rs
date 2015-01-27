@@ -31,12 +31,12 @@ impl Screen {
     let visible_choices = min(20, rows - 1);
     let start_line = rows - visible_choices - 1;
     Screen {
-        tty: tty,
-        original_stty_state: current_stty_state,
-        height: rows,
-        width: cols,
-        visible_choices: visible_choices,
-        start_line: start_line,
+      tty: tty,
+      original_stty_state: current_stty_state,
+      height: rows,
+      width: cols,
+      visible_choices: visible_choices,
+      start_line: start_line,
     }
   }
 
