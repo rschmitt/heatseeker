@@ -40,7 +40,7 @@ impl Screen {
     }
   }
 
-  pub fn restore_tty(&mut self) {
+  fn restore_tty(&mut self) {
     self.tty.stty(&[String::from_utf8(self.original_stty_state.clone()).unwrap().as_slice()]);
   }
 
