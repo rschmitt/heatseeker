@@ -11,6 +11,7 @@ use std::os;
 use std::io;
 use std::cmp::min;
 use screen::Screen;
+use screen::Key;
 use screen::Key::*;
 use self::SearchState::*;
 
@@ -48,26 +49,30 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
       _ => break,
     }
 
-    let chars = screen.get_buffered_keys();
-    for char in chars.iter() {
-      match *char {
-        Char(x) => search.append(x),
-        Backspace => search.backspace(),
-        Control('h') => search.backspace(),
-        Control('w') => search.delete_word(),
-        Control('u') => search.clear_query(),
-        Control('c') => search.cancel(),
-        Control('g') => search.cancel(),
-        Control('n') => search.down(screen.visible_choices),
-        Control('p') => search.up(),
-        Enter => search.done(),
-        _ => {}
-      }
+    let keys = screen.get_buffered_keys();
+    for key in keys.iter() {
+      handle_key(&mut search, key, screen.visible_choices);
     }
   }
 
   screen.move_cursor_to_bottom();
   println!("{}", search.get_selection());
+}
+
+fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
+  match *key {
+    Char(x) => search.append(x),
+    Backspace => search.backspace(),
+    Control('h') => search.backspace(),
+    Control('w') => search.delete_word(),
+    Control('u') => search.clear_query(),
+    Control('c') => search.cancel(),
+    Control('g') => search.cancel(),
+    Control('n') => search.down(visible_choices),
+    Control('p') => search.up(),
+    Enter => search.done(),
+    _ => {}
+  }
 }
 
 struct Search<'a> {
