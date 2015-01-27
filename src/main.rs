@@ -126,6 +126,7 @@ impl<'a> Search<'a> {
   fn append(&mut self, c: char) {
     self.query.push(c);
     self.stale = true;
+    self.index = 0;
   }
 
   fn clear_query(&mut self) {
