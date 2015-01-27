@@ -36,46 +36,54 @@ fn main() {
 }
 
 fn event_loop(choices: Vec<String>, initial_search: &str) {
-  let mut search = String::from_str(initial_search);
   let mut screen = Screen::open_screen();
   let mut index = 0;
 
-  let mut matches_stale = true;
-  let mut matches = matching::compute_matches(&choices, search.as_slice());
+  let mut search = Search {
+    query: initial_search.to_string(),
+    matches: Vec::new(),
+    stale: true,
+  };
   loop {
-    if matches_stale {
-      matches = matching::compute_matches(&choices, search.as_slice());
-      matches_stale = false;
+    if search.stale {
+      search.matches = matching::compute_matches(&choices, search.query.as_slice());
+      search.stale = false;
     }
 
-    draw_screen(&mut screen, &matches, search.as_slice(), choices.len(), index);
+    draw_screen(&mut screen, &search.matches, search.query.as_slice(), choices.len(), index);
 
     let chars = screen.get_buffered_keys();
     for char in chars.iter() {
       match *char {
         Char(x) => {
-          search.push(x);
+          search.query.push(x);
           index = 0;
-          matches_stale = true;
+          search.stale = true;
         }
-        Backspace => { search.pop(); matches_stale = true; }
-        Control('h') => { search.pop(); matches_stale = true; }
-        Control('u') => { search.clear(); matches_stale = true; }
+        Backspace => { search.query.pop(); search.stale = true; }
+        Control('h') => { search.query.pop(); search.stale = true; }
+        Control('u') => { search.query.clear(); search.stale = true; }
         Control('c') => { return; }
-        Control('n') => { index = min(index + 1, min(screen.visible_choices as usize - 1, matches.len() - 1)); }
+        Control('n') => { index = min(index + 1, min(screen.visible_choices as usize - 1, search.matches.len() - 1)); }
         Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
         Enter => {
           screen.move_cursor_to_bottom();
-          if matches_stale {
-            matches = matching::compute_matches(&choices, search.as_slice());
+          if search.stale {
+            search.matches = matching::compute_matches(&choices, search.query.as_slice());
           }
-          println!("{}", matches[index]);
+          println!("{}", search.matches[index]);
           return;
         }
         _ => panic!("Unexpected input"),
       }
     }
   }
+}
+
+struct Search<'a> {
+  query: String,
+  matches: Vec<&'a String>,
+  stale: bool,
 }
 
 fn draw_screen(screen: &mut Screen, matches: &Vec<&String>, search: &str, choices: usize, index: usize) {
