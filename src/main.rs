@@ -54,6 +54,7 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
         Char(x) => search.append(x),
         Backspace => search.backspace(),
         Control('h') => search.backspace(),
+        Control('w') => search.delete_word(),
         Control('u') => search.clear_query(),
         Control('c') => search.cancel(),
         Control('g') => search.cancel(),
@@ -110,6 +111,11 @@ impl<'a> Search<'a> {
     self.query.pop();
     self.stale = true;
     self.index = 0;
+  }
+
+  fn delete_word(&mut self) {
+    self.stale = true;
+    delete_last_word(&mut self.query);
   }
 
   fn append(&mut self, c: char) {
@@ -195,4 +201,48 @@ fn trim(s: &mut String) {
       return;
     }
   }
+}
+
+fn delete_last_word(s: &mut String) {
+  let mut deleted_something = false;
+  while let Some(x) = s.pop() {
+    if x == ' ' {
+      if deleted_something {
+        s.push(x);
+        return;
+      }
+    } else {
+      deleted_something = true;
+    }
+  }
+}
+
+#[test]
+fn trim_test() {
+  fn should_become(before: &str, after: &str) {
+    let mut x = before.to_string();
+    trim(&mut x);
+    assert_eq!(after.to_string(), x);
+  }
+  should_become("", "");
+  should_become("\n", "");
+  should_become("\n\n", "");
+  should_become("asdf", "asdf");
+  should_become("asdf\n", "asdf");
+  should_become("asdf\nasdf\n", "asdf\nasdf");
+}
+
+#[test]
+fn delete_word_test() {
+  fn should_become(before: &str, after: &str) {
+    let mut x = before.to_string();
+    delete_last_word(&mut x);
+    assert_eq!(after.to_string(), x);
+  }
+  should_become("", "");
+  should_become("a", "");
+  should_become("asdf", "");
+  should_become("asdf asdf asdf", "asdf asdf ");
+  should_become("asdf asdf asdf ", "asdf asdf ");
+  should_become("asdf asdf asdf  ", "asdf asdf ");
 }
