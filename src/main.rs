@@ -52,11 +52,7 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
     let chars = screen.get_buffered_keys();
     for char in chars.iter() {
       match *char {
-        Char(x) => {
-          search.query.push(x);
-          index = 0;
-          search.stale = true;
-        }
+        Char(x) => { index = 0; search.append(x); }
         Backspace => { search.backspace(); }
         Control('h') => { search.backspace(); }
         Control('u') => { search.clear_query(); }
@@ -85,6 +81,11 @@ struct Search<'a> {
 impl<'a> Search<'a> {
   fn backspace(&mut self) {
     self.query.pop();
+    self.stale = true;
+  }
+
+  fn append(&mut self, c: char) {
+    self.query.push(c);
     self.stale = true;
   }
 
