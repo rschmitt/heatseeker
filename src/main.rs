@@ -38,8 +38,13 @@ fn main() {
   let visible_choices = min(20, screen.height - 1);
 
   let start_line = screen.height - visible_choices - 1;
+  let mut matches_stale = true;
+  let mut matches = matching::compute_matches(&choices, search.as_slice());
   loop {
-    let mut matches = matching::compute_matches(&choices, search.as_slice());
+    if matches_stale {
+      matches = matching::compute_matches(&choices, search.as_slice());
+      matches_stale = false;
+    }
     screen.hide_cursor();
     screen.blank_screen(start_line);
     screen.move_cursor(start_line, 0);
@@ -63,7 +68,6 @@ fn main() {
     screen.show_cursor();
 
     let chars = screen.tty.get_buffered_keys();
-    let mut matches_stale = false;
     for char in chars.iter() {
       match *char {
         Char(x) => {
