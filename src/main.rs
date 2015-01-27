@@ -12,6 +12,7 @@ use std::io;
 use std::cmp::min;
 use screen::Screen;
 use screen::Key::*;
+use self::SearchState::*;
 
 fn main() {
   let args = match args::parse_args() {
@@ -41,7 +42,11 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
 
   loop {
     search.recompute_matches();
-    draw_screen(&mut screen, &search);
+
+    match search.state {
+      InProgress => draw_screen(&mut screen, &search),
+      _ => break,
+    }
 
     let chars = screen.get_buffered_keys();
     for char in chars.iter() {
@@ -50,18 +55,18 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
         Backspace => search.backspace(),
         Control('h') => search.backspace(),
         Control('u') => search.clear_query(),
-        Control('c') => return,
+        Control('c') => search.cancel(),
+        Control('g') => search.cancel(),
         Control('n') => search.down(screen.visible_choices),
         Control('p') => search.up(),
-        Enter => {
-          screen.move_cursor_to_bottom();
-          println!("{}", search.get_selection());
-          return;
-        }
-        _ => panic!("Unexpected input"),
+        Enter => search.done(),
+        _ => {}
       }
     }
   }
+
+  screen.move_cursor_to_bottom();
+  println!("{}", search.get_selection());
 }
 
 struct Search<'a> {
@@ -70,6 +75,14 @@ struct Search<'a> {
   matches: Vec<&'a String>,
   stale: bool,
   index: usize,
+  state: SearchState,
+}
+
+#[derive(PartialEq, Eq)]
+enum SearchState {
+  InProgress,
+  Done,
+  Canceled,
 }
 
 impl<'a> Search<'a> {
@@ -80,6 +93,7 @@ impl<'a> Search<'a> {
       matches: Vec::new(),
       stale: true,
       index: 0,
+      state: InProgress,
     }
   }
 
@@ -115,9 +129,21 @@ impl<'a> Search<'a> {
     }
   }
 
-  fn get_selection(&mut self) -> &String {
-    self.recompute_matches();
-    self.matches[self.index]
+  fn get_selection(&mut self) -> &str {
+    if self.state == Canceled {
+      ""
+    } else {
+      self.recompute_matches();
+      self.matches[self.index].as_slice()
+    }
+  }
+
+  fn cancel(&mut self) {
+    self.state = Canceled
+  }
+
+  fn done(&mut self) {
+    self.state = Done
   }
 }
 
