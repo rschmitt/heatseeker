@@ -60,9 +60,9 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
           index = 0;
           search.stale = true;
         }
-        Backspace => { search.query.pop(); search.stale = true; }
-        Control('h') => { search.query.pop(); search.stale = true; }
-        Control('u') => { search.query.clear(); search.stale = true; }
+        Backspace => { search.backspace(); }
+        Control('h') => { search.backspace(); }
+        Control('u') => { search.clear_query(); }
         Control('c') => { return; }
         Control('n') => { index = min(index + 1, min(screen.visible_choices as usize - 1, search.matches.len() - 1)); }
         Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
@@ -84,6 +84,18 @@ struct Search<'a> {
   query: String,
   matches: Vec<&'a String>,
   stale: bool,
+}
+
+impl<'a> Search<'a> {
+  fn backspace(&mut self) {
+    self.query.pop();
+    self.stale = true;
+  }
+
+  fn clear_query(&mut self) {
+    self.query.clear();
+    self.stale = true;
+  }
 }
 
 fn draw_screen(screen: &mut Screen, matches: &Vec<&String>, search: &str, choices: usize, index: usize) {
