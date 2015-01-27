@@ -61,8 +61,7 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
         Control('p') => search.up(),
         Enter => {
           screen.move_cursor_to_bottom();
-          search.recompute_matches();
-          println!("{}", search.matches[search.index]);
+          println!("{}", search.get_selection());
           return;
         }
         _ => panic!("Unexpected input"),
@@ -110,6 +109,11 @@ impl<'a> Search<'a> {
       self.matches = matching::compute_matches(self.choices, self.query.as_slice());
       self.stale = false;
     }
+  }
+
+  fn get_selection(&mut self) -> &String {
+    self.recompute_matches();
+    self.matches[self.index]
   }
 }
 
