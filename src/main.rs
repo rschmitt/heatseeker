@@ -40,17 +40,14 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
   let mut index = 0;
 
   let mut search = Search {
+    choices: &choices,
     query: initial_search.to_string(),
     matches: Vec::new(),
     stale: true,
   };
   loop {
-    if search.stale {
-      search.matches = matching::compute_matches(&choices, search.query.as_slice());
-      search.stale = false;
-    }
-
-    draw_screen(&mut screen, &search.matches, search.query.as_slice(), choices.len(), index);
+    search.recompute_matches();
+    draw_screen(&mut screen, &search.matches, search.query.as_slice(), search.choices.len(), index);
 
     let chars = screen.get_buffered_keys();
     for char in chars.iter() {
@@ -68,9 +65,7 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
         Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
         Enter => {
           screen.move_cursor_to_bottom();
-          if search.stale {
-            search.matches = matching::compute_matches(&choices, search.query.as_slice());
-          }
+          search.recompute_matches();
           println!("{}", search.matches[index]);
           return;
         }
@@ -81,6 +76,7 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
 }
 
 struct Search<'a> {
+  choices: &'a Vec<String>,
   query: String,
   matches: Vec<&'a String>,
   stale: bool,
@@ -95,6 +91,13 @@ impl<'a> Search<'a> {
   fn clear_query(&mut self) {
     self.query.clear();
     self.stale = true;
+  }
+
+  fn recompute_matches(&mut self) {
+    if self.stale {
+      self.matches = matching::compute_matches(self.choices, self.query.as_slice());
+      self.stale = false;
+    }
   }
 }
 
