@@ -48,21 +48,8 @@ fn main() {
     screen.hide_cursor();
     screen.blank_screen(start_line);
     screen.move_cursor(start_line, 0);
-    let mut i = 1;
     screen.write(format!("> {} ({} choices)\n", search.as_slice(), choices.len()).as_slice());
-    for choice in matches.iter() {
-      if i == index + 1 {
-        screen.write_inverted(choice.as_slice());
-      } else {
-        screen.write(choice.as_slice());
-      }
-      if i >= visible_choices as usize {
-        break;
-      } else {
-        screen.write("\n");
-      }
-      i += 1;
-    }
+    print_matches(&mut screen, &matches, index, visible_choices);
 
     screen.move_cursor(start_line, 2 + search.len() as u16);
     screen.show_cursor();
@@ -93,6 +80,23 @@ fn main() {
         _ => panic!("Unexpected input"),
       }
     }
+  }
+}
+
+fn print_matches(screen: &mut Screen, matches: &Vec<&String>, index: usize, visible_choices: u16) {
+  let mut i = 1;
+  for choice in matches.iter() {
+    if i == index + 1 {
+      screen.write_inverted(choice.as_slice());
+    } else {
+      screen.write(choice.as_slice());
+    }
+    if i >= visible_choices as usize {
+      return;
+    } else {
+      screen.write("\n");
+    }
+    i += 1;
   }
 }
 
