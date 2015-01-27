@@ -40,7 +40,6 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
   let mut screen = Screen::open_screen();
   let mut index = 0;
 
-  let start_line = screen.height - screen.visible_choices - 1;
   let mut matches_stale = true;
   let mut matches = matching::compute_matches(&choices, search.as_slice());
   loop {
@@ -49,7 +48,7 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
       matches_stale = false;
     }
 
-    draw_screen(&mut screen, &matches, search.as_slice(), choices.len(), start_line, index);
+    draw_screen(&mut screen, &matches, search.as_slice(), choices.len(), index);
 
     let chars = screen.get_buffered_keys();
     for char in chars.iter() {
@@ -66,7 +65,7 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
         Control('n') => { index = min(index + 1, min(screen.visible_choices as usize - 1, matches.len() - 1)); }
         Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
         Enter => {
-          let end_line = start_line + screen.visible_choices;
+          let end_line = screen.start_line + screen.visible_choices;
           screen.move_cursor(end_line, 0);
           screen.write("\n");
           if matches_stale {
@@ -81,15 +80,15 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
   }
 }
 
-fn draw_screen(screen: &mut Screen, matches: &Vec<&String>, search: &str, choices: usize, start_line: u16, index: usize) {
+fn draw_screen(screen: &mut Screen, matches: &Vec<&String>, search: &str, choices: usize, index: usize) {
   screen.hide_cursor();
-  screen.blank_screen(start_line);
-  screen.move_cursor(start_line, 0);
+  screen.blank_screen();
   screen.write(format!("> {} ({} choices)\n", search, choices).as_slice());
 
   print_matches(screen, matches, index);
 
-  screen.move_cursor(start_line, 2 + search.len() as u16);
+  let start = screen.start_line;
+  screen.move_cursor(start, 2 + search.len() as u16);
   screen.show_cursor();
 }
 

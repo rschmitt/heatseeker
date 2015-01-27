@@ -19,6 +19,7 @@ pub struct Screen {
   pub height: u16,
   pub width: u16,
   pub visible_choices: u16,
+  pub start_line: u16,
 }
 
 impl Screen {
@@ -27,12 +28,15 @@ impl Screen {
     let current_stty_state = tty.stty(&["-g"]);
     tty.initialize();
     let (cols, rows) = tty.winsize().unwrap();
+    let visible_choices = min(20, rows - 1);
+    let start_line = rows - visible_choices - 1;
     Screen {
         tty: tty,
         original_stty_state: current_stty_state,
         height: rows,
         width: cols,
-        visible_choices: min(20, rows - 1),
+        visible_choices: visible_choices,
+        start_line: start_line,
     }
   }
 
@@ -44,12 +48,14 @@ impl Screen {
     self.tty.write(ansi::setpos(line, column).as_slice());
   }
 
-  pub fn blank_screen(&mut self, start_line: u16) {
+  pub fn blank_screen(&mut self) {
+    let start_line = self.start_line;
     self.move_cursor(start_line, 0);
     let blank_line = repeat(' ').take(self.width as usize).collect::<String>();
     for _ in range(0, self.height) {
       self.tty.write(blank_line.as_bytes());
     }
+    self.move_cursor(start_line, 0);
   }
 
   pub fn show_cursor(&mut self) {
