@@ -30,7 +30,7 @@ fn main() {
   let initial_search = args.initial_search.clone();
   if args.use_first {
     let matches = matching::compute_matches(&choices, initial_search.as_slice());
-    println!("{}", matches[0]);
+    println!("{}", matches.get(0).unwrap_or(&&"".to_string()));
     return;
   } else {
     event_loop(choices, initial_search.as_slice());
@@ -141,12 +141,12 @@ impl<'a> Search<'a> {
     }
   }
 
-  fn get_selection(&mut self) -> &str {
+  fn get_selection(&mut self) -> String {
     if self.state == Canceled {
-      ""
+      "".to_string()
     } else {
       self.recompute_matches();
-      self.matches[self.index].as_slice()
+      self.matches.get(self.index).unwrap_or(&&"".to_string()).to_string()
     }
   }
 
