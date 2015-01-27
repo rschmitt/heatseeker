@@ -65,9 +65,7 @@ fn event_loop(choices: Vec<String>, initial_search: &str) {
         Control('n') => { index = min(index + 1, min(screen.visible_choices as usize - 1, matches.len() - 1)); }
         Control('p') => { index = if index == 0 { 0 } else { index - 1 }; }
         Enter => {
-          let end_line = screen.start_line + screen.visible_choices;
-          screen.move_cursor(end_line, 0);
-          screen.write("\n");
+          screen.move_cursor_to_bottom();
           if matches_stale {
             matches = matching::compute_matches(&choices, search.as_slice());
           }
