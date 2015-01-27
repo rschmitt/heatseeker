@@ -36,15 +36,9 @@ fn main() {
 }
 
 fn event_loop(choices: Vec<String>, initial_search: &str) {
+  let mut search = Search::new(&choices, initial_search.to_string());
   let mut screen = Screen::open_screen();
 
-  let mut search = Search {
-    choices: &choices,
-    query: initial_search.to_string(),
-    matches: Vec::new(),
-    stale: true,
-    index: 0,
-  };
   loop {
     search.recompute_matches();
     draw_screen(&mut screen, &search);
@@ -79,6 +73,16 @@ struct Search<'a> {
 }
 
 impl<'a> Search<'a> {
+  fn new(choices: &'a Vec<String>, initial_search: String) -> Search<'a> {
+    Search {
+      choices: choices,
+      query: initial_search,
+      matches: Vec::new(),
+      stale: true,
+      index: 0,
+    }
+  }
+
   fn up(&mut self) {
     self.index = if self.index == 0 { 0 } else { self.index - 1 };
   }
