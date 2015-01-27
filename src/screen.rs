@@ -13,7 +13,7 @@ use std::sync::mpsc::{Sender, Receiver};
 use std::sync::mpsc;
 
 pub struct Screen {
-  pub tty: Terminal,
+  tty: Terminal,
   original_stty_state: Vec<u8>,
   pub height: u16,
   pub width: u16,
@@ -61,17 +61,25 @@ impl Screen {
     self.tty.write(s.as_bytes());
     self.tty.write(ansi::reset().as_slice());
   }
+
+  // Return all buffered keystrokes, or the next key if buffer is empty.
+  pub fn get_buffered_keys(&mut self) -> Vec<Key> {
+    let mut ret = Vec::new();
+    while let Ok(byte) = self.tty.input.try_recv() {
+      ret.push(Terminal::translate_byte(byte));
+    }
+    if ret.is_empty() {
+      let byte = self.tty.input.recv().unwrap();
+      ret.push(Terminal::translate_byte(byte));
+    }
+    ret
+  }
 }
 
 impl Drop for Screen {
   fn drop(&mut self) {
     self.restore_tty();
   }
-}
-
-struct Terminal {
-  input: Receiver<u8>,
-  output: File,
 }
 
 pub enum Key {
@@ -81,8 +89,13 @@ pub enum Key {
   Backspace,
 }
 
+struct Terminal {
+  input: Receiver<u8>,
+  output: File,
+}
+
 impl Terminal {
-  pub fn open_terminal() -> Terminal {
+  fn open_terminal() -> Terminal {
     let term_path = Path::new("/dev/tty");
     let mut input_file = File::open_mode(&term_path, Open, Read).unwrap();
     let output_file = File::open_mode(&term_path, Open, Write).unwrap();
@@ -113,20 +126,7 @@ impl Terminal {
     process.stdout.as_mut().unwrap().read_to_end().unwrap()
   }
 
-  // Return all buffered keystrokes, or the next key if buffer is empty.
-  pub fn get_buffered_keys(&mut self) -> Vec<Key> {
-    let mut ret = Vec::new();
-    while let Ok(byte) = self.input.try_recv() {
-      ret.push(Terminal::translate_byte(byte));
-    }
-    if ret.is_empty() {
-      let byte = self.input.recv().unwrap();
-      ret.push(Terminal::translate_byte(byte));
-    }
-    ret
-  }
-
-  pub fn getchar(&mut self) -> Key {
+  fn getchar(&mut self) -> Key {
     let byte = self.input.recv().unwrap();
     Terminal::translate_byte(byte)
   }
@@ -143,15 +143,15 @@ impl Terminal {
     }
   }
 
-  pub fn write(&mut self, s: &[u8]) {
+  fn write(&mut self, s: &[u8]) {
     self.output.write(s.as_slice()).unwrap();
   }
 
-  pub fn writeln(&mut self, s: &str) {
+  fn writeln(&mut self, s: &str) {
     self.output.write_line(s).unwrap();
   }
 
-  pub fn winsize(&self) -> Option<(u16, u16)> {
+  fn winsize(&self) -> Option<(u16, u16)> {
     extern { fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int; }
     const TIOCGWINSZ: c_ulong = 0x40087468;
 

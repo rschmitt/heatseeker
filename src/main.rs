@@ -67,7 +67,7 @@ fn main() {
     screen.move_cursor(start_line, 2 + search.len() as u16);
     screen.show_cursor();
 
-    let chars = screen.tty.get_buffered_keys();
+    let chars = screen.get_buffered_keys();
     for char in chars.iter() {
       match *char {
         Char(x) => {
