@@ -1,6 +1,7 @@
-#![allow(dead_code)]
+#![cfg(not(windows))]
 
-use self::Key::*;
+use screen::Key;
+use screen::Key::*;
 use std::io::{File, Open, Read, Write};
 use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
@@ -100,13 +101,6 @@ impl Drop for Screen {
   fn drop(&mut self) {
     self.restore_tty();
   }
-}
-
-pub enum Key {
-  Char(char),
-  Control(char),
-  Enter,
-  Backspace,
 }
 
 struct Terminal {
