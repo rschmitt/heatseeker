@@ -200,7 +200,7 @@ fn read_choices() -> Vec<String> {
   lines
 }
 
-fn trim(s: &mut String) {
+pub fn trim(s: &mut String) {
   while let Some(x) = s.pop() {
     if x != '\n' {
       s.push(x);

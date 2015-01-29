@@ -6,6 +6,7 @@ use std::io::{File, Open, Read, Write};
 use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
 use std::io::process::{Command, InheritFd};
+use std::io::process::ProcessExit::*;
 use std::iter::repeat;
 use std::cmp::min;
 use ansi;
@@ -105,6 +106,7 @@ impl Drop for Screen {
 
 struct Terminal {
   input: Receiver<u8>,
+  input_fd: i32,
   output: File,
 }
 
@@ -113,6 +115,7 @@ impl Terminal {
     let term_path = Path::new("/dev/tty");
     let mut input_file = File::open_mode(&term_path, Open, Read).unwrap();
     let output_file = File::open_mode(&term_path, Open, Write).unwrap();
+    let input_fd = input_file.as_raw_fd();
     let (tx, rx) = mpsc::channel();
     Thread::spawn(move || {
       loop {
@@ -121,6 +124,7 @@ impl Terminal {
     });
     Terminal {
       input: rx,
+      input_fd: input_fd,
       output: output_file
     }
   }
@@ -130,14 +134,26 @@ impl Terminal {
   }
 
   fn stty(&mut self, args: &[&str]) -> Vec<u8> {
-    let term_input = File::open_mode(&Path::new("/dev/tty"), Open, Read).unwrap();
-    let fd = term_input.as_raw_fd();
-    let mut process = match Command::new("stty").args(args).stdin(InheritFd(fd)).spawn() {
+    let mut process = match Command::new("stty").args(args).stdin(InheritFd(self.input_fd)).spawn() {
       Ok(p) => p,
-      Err(e) => panic!("Command failed: {}", e),
+      Err(e) => panic!("Spawn failed: {}", e),
     };
 
-    process.stdout.as_mut().unwrap().read_to_end().unwrap()
+    let exit = process.wait();
+
+    if exit.unwrap() == ExitStatus(0) {
+      let bytes = process.stdout.as_mut().unwrap().read_to_end().unwrap();
+      let mut str = String::from_utf8(bytes).unwrap();
+
+      // The output from `stty -g` may include a newline, which we have to strip off. Otherwise,
+      // when we go to restore the tty, stty (on some platforms) will fail with an "invalid
+      // argument" error.
+      ::trim(&mut str);
+
+      str.into_bytes()
+    } else {
+      panic!(String::from_utf8(process.stderr.as_mut().unwrap().read_to_end().unwrap()).unwrap());
+    }
   }
 
   fn getchar(&mut self) -> Key {
