@@ -167,7 +167,11 @@ impl Terminal {
 
   fn winsize(&self) -> Option<(u16, u16)> {
     extern { fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int; }
+    #[cfg(any(target_os = "macos", target_os = "freebsd"))]
     const TIOCGWINSZ: c_ulong = 0x40087468;
+
+    #[cfg(any(target_os = "linux", target_os = "android"))]
+    const TIOCGWINSZ: c_ulong = 0x00005413;
 
     #[repr(C)]
     struct TermSize {
@@ -184,4 +188,16 @@ impl Terminal {
       None
     }
   }
+}
+
+#[test]
+fn winsize_test() {
+  let term = Terminal::open_terminal();
+  let (cols, rows) = term.winsize().expect("Failed to get window size!");
+  // We don't know the window size a priori, but we can at least
+  // assert that it is within some kind of sensible range.
+  assert!(cols > 40);
+  assert!(rows > 40);
+  assert!(cols < 1000);
+  assert!(rows < 1000);
 }
