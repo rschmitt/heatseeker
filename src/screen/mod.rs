@@ -4,10 +4,10 @@
 #[cfg(windows)] pub use screen::windows::Screen;
 
 pub enum Key {
-  Char(char),
-  Control(char),
-  Enter,
-  Backspace,
+    Char(char),
+    Control(char),
+    Enter,
+    Backspace,
 }
 
 #[cfg(not(windows))] mod unix;
