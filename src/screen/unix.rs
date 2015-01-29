@@ -2,10 +2,10 @@
 
 use screen::Key;
 use screen::Key::*;
-use std::old_io::{File, Open, Read, Write};
+use std::io::{File, Open, Read, Write};
 use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
-use std::old_io::process::{Command, InheritFd};
+use std::io::process::{Command, InheritFd};
 use std::iter::repeat;
 use std::cmp::min;
 use ansi;
