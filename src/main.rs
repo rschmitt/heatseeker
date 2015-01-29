@@ -8,7 +8,7 @@ mod matching;
 mod screen;
 
 use std::os;
-use std::io;
+use std::old_io;
 use std::cmp::min;
 use screen::Screen;
 use screen::Key;
@@ -189,7 +189,7 @@ fn print_matches(screen: &mut Screen, matches: &Vec<&String>, index: usize) {
 }
 
 fn read_choices() -> Vec<String> {
-  let mut stdin = io::stdio::stdin();
+  let mut stdin = old_io::stdio::stdin();
   let mut lines = Vec::new();
 
   while let Ok(mut s) = stdin.read_line() {
