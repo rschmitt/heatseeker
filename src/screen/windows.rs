@@ -65,6 +65,10 @@ impl Screen {
             orig_mode = ::std::mem::uninitialized();
         }
 
+        if conin == INVALID_HANDLE_VALUE || conout == INVALID_HANDLE_VALUE {
+            panic!("Unable to open console");
+        }
+
         let (cols, rows) = Screen::winsize(conout).unwrap();
 
         win32!(GetConsoleMode(conout, &mut orig_mode));
