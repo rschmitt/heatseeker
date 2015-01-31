@@ -5,3 +5,7 @@ authors = ["Ryan Schmitt <rschmitt@pobox.com>"]
 
 [dependencies]
 getopts = "0.1.4"
+
+[target.x86_64-pc-windows-gnu.dependencies]
+winapi = "*"
+kernel32-sys = "*"
