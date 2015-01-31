@@ -130,7 +130,7 @@ impl Terminal {
     }
 
     fn initialize(&mut self) {
-        self.stty(&["raw", "-echo", "cbreak"]);
+        self.stty(&["raw", "-echo", "cbreak", "opost"]);
     }
 
     fn stty(&mut self, args: &[&str]) -> Vec<u8> {
