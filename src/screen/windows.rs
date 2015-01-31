@@ -11,7 +11,6 @@ use std::iter::repeat;
 use std::cmp::min;
 use screen::Key;
 use screen::Key::*;
-use std::io::IoError;
 
 extern "system" {
     fn CreateFileA(lpFileName: LPCSTR, dwDesiredAccess: DWORD, dwShareMode: DWORD, lpSecurityAttributes: LPSECURITY_ATTRIBUTES, dwCreationDisposition: DWORD, dwFlagsAndAttributes: DWORD, hTemplateFile: HANDLE) -> HANDLE;
