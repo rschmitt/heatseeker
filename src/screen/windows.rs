@@ -19,6 +19,14 @@ extern "system" {
     fn WriteFile(hFile: HANDLE, lpBuffer: LPVOID, nNumberOfBytesToWrite: DWORD, lpNumberOfBytesWritten: LPDWORD, lpOverlapped: LPOVERLAPPED) -> BOOL;
 }
 
+macro_rules! win32 {
+    ($funcall:expr) => (
+        if unsafe { $funcall } == 0 {
+            panic!("Win32 call failed");
+        }
+    );
+}
+
 pub struct Screen {
     pub height: u16,
     pub width: u16,
@@ -32,7 +40,7 @@ pub struct Screen {
 
 impl Drop for Screen {
     fn drop(&mut self) {
-        unsafe { SetConsoleMode(self.conout, self.original_console_mode) };
+        win32!(SetConsoleMode(self.conout, self.original_console_mode));
     }
 }
 
@@ -58,18 +66,11 @@ impl Screen {
         }
 
         let (cols, rows) = Screen::winsize(conout).unwrap();
-        let result = unsafe { GetConsoleMode(conout, &mut orig_mode) };
 
-        if result == 0 {
-            panic!("GetConsoleMode returned FALSE; error: {}", IoError::last_error());
-        }
-
+        win32!(GetConsoleMode(conout, &mut orig_mode));
         let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
+        win32!(SetConsoleMode(conin, new_mode));
 
-        let result = unsafe { SetConsoleMode(conin, new_mode) };
-        if result == 0 {
-            panic!("SetConsoleMode returned FALSE; error: {}", IoError::last_error());
-        }
         let visible_choices = min(20, rows - 1);
         let start_line = rows - visible_choices - 1;
         let original_colors = Screen::get_original_colors(conout);
@@ -86,10 +87,7 @@ impl Screen {
     }
 
     pub fn move_cursor(&mut self, line: u16, column: u16) {
-        let result = unsafe { SetConsoleCursorPosition(self.conout, COORD { X: column as i16, Y: line as i16}) };
-        if result == 0 {
-            panic!("Unable to set cursor position");
-        }
+        win32!(SetConsoleCursorPosition(self.conout, COORD { X: column as i16, Y: line as i16}));
     }
 
     pub fn move_cursor_to_bottom(&mut self) {
@@ -110,18 +108,12 @@ impl Screen {
 
     pub fn show_cursor(&mut self) {
         let cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: TRUE };
-        let result = unsafe { SetConsoleCursorInfo(self.conout, &cursor_info) };
-        if result == 0 {
-            panic!("Unable to set cursor info");
-        }
+        win32!(SetConsoleCursorInfo(self.conout, &cursor_info));
     }
 
     pub fn hide_cursor(&mut self) {
         let cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: FALSE };
-        let result = unsafe { SetConsoleCursorInfo(self.conout, &cursor_info) };
-        if result == 0 {
-            panic!("Unable to set cursor info");
-        }
+        win32!(SetConsoleCursorInfo(self.conout, &cursor_info));
     }
 
     pub fn write(&mut self, s: &str) {
@@ -129,10 +121,7 @@ impl Screen {
         let len: DWORD = copy.len() as DWORD;
         copy.push('\0');
         let mut bytes_written: DWORD = 0;
-        let result = unsafe { WriteFile(self.conout, copy.as_ptr() as PVOID, len, &mut bytes_written as LPDWORD, ptr::null_mut()) };
-        if result == 0 {
-            panic!("Unable to write to console");
-        }
+        win32!(WriteFile(self.conout, copy.as_ptr() as PVOID, len, &mut bytes_written as LPDWORD, ptr::null_mut()));
     }
 
     pub fn write_inverted(&mut self, s: &str) {
@@ -144,20 +133,14 @@ impl Screen {
     }
 
     fn set_colors(&mut self, colors: WORD) {
-        let result = unsafe { SetConsoleTextAttribute(self.conout, colors) };
-        if result == 0 {
-            panic!("Unable to set colors");
-        }
+        win32!(SetConsoleTextAttribute(self.conout, colors));
     }
 
     // Return all buffered keystrokes, or the next key if buffer is empty.
     pub fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut buf: Vec<u16> = repeat(0u16).take(0x1000).collect();
         let mut chars_read: DWORD = 0;
-        let result = unsafe { ReadFile(self.conin, buf.as_mut_ptr() as LPVOID, 1, &mut chars_read as LPDWORD, ptr::null_mut()) };
-        if result == 0 {
-            panic!("ReadFile returned FALSE; read {} chars; errno {}", chars_read, IoError::last_error());
-        }
+        win32!(ReadFile(self.conin, buf.as_mut_ptr() as LPVOID, 1, &mut chars_read as LPDWORD, ptr::null_mut()));
 
         let mut ret = Vec::new();
         for i in range(0, chars_read) {
@@ -180,10 +163,7 @@ impl Screen {
 
     fn get_original_colors(handle: HANDLE) -> WORD {
         let mut buffer_info = unsafe { ::std::mem::uninitialized() };
-        let result = unsafe { GetConsoleScreenBufferInfo(handle, &mut buffer_info) };
-        if result == 0 {
-            panic!("Unable to get original colors");
-        }
+        win32!(GetConsoleScreenBufferInfo(handle, &mut buffer_info));
         buffer_info.wAttributes
     }
 
