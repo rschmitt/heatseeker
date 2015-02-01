@@ -1,5 +1,6 @@
-#![allow(dead_code, unused_features)]
-#![feature(collections, os, io, std_misc, core, libc, path)]
+#![allow(dead_code)]
+#![feature(collections, os, io, std_misc, core, libc)]
+#![cfg_attr(not(windows), feature(path))]
 
 extern crate libc;
 
