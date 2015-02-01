@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, unused_features)]
 #![feature(collections, os, io, std_misc, core, libc, path)]
 
 extern crate libc;
