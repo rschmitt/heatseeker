@@ -2,11 +2,11 @@
 
 use screen::Key;
 use screen::Key::*;
-use std::io::{File, Open, Read, Write};
+use std::old_io::{File, Open, Read, Write};
 use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
-use std::io::process::{Command, InheritFd};
-use std::io::process::ProcessExit::*;
+use std::old_io::process::{Command, InheritFd};
+use std::old_io::process::ProcessExit::*;
 use std::iter::repeat;
 use std::cmp::min;
 use ansi;
@@ -174,7 +174,7 @@ impl Terminal {
     }
 
     fn write(&mut self, s: &[u8]) {
-        self.output.write(s.as_slice()).unwrap();
+        self.output.write_all(s.as_slice()).unwrap();
     }
 
     fn writeln(&mut self, s: &str) {
