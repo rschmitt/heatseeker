@@ -17,6 +17,35 @@ pub fn compute_matches<'a>(choices: &'a Vec<String>, query: &str) -> Vec<&'a Str
     ret.iter().map(|s| s.choice).collect()
 }
 
+fn get_slice_indices(length: usize, workers: usize, idx: usize) -> (usize, usize) {
+    let lb = (length as f64 / workers as f64) * idx as f64;
+    let ub = (length as f64 / workers as f64) * (idx + 1) as f64;
+    (lb as usize, ub as usize)
+}
+
+#[test]
+fn get_slice_indices_test() {
+    assert_eq!(get_slice_indices(100, 1, 0), (0, 100));
+
+    assert_eq!(get_slice_indices(100, 2, 1), (50, 100));
+    assert_eq!(get_slice_indices(100, 2, 0), (0, 50));
+
+    assert_eq!(get_slice_indices(100, 3, 0), (0, 33));
+    assert_eq!(get_slice_indices(100, 3, 1), (33, 66));
+    assert_eq!(get_slice_indices(100, 3, 2), (66, 100));
+
+    assert_eq!(get_slice_indices(100, 4, 0), (0, 25));
+    assert_eq!(get_slice_indices(100, 4, 1), (25, 50));
+    assert_eq!(get_slice_indices(100, 4, 2), (50, 75));
+    assert_eq!(get_slice_indices(100, 4, 3), (75, 100));
+
+    assert_eq!(get_slice_indices(12, 12, 11), (11, 12));
+    assert_eq!(get_slice_indices(12, 12, 0), (0, 1));
+
+    assert_eq!(get_slice_indices(1, 2, 0), (0, 0));
+    assert_eq!(get_slice_indices(1, 2, 1), (0, 1));
+}
+
 fn score(choice: &str, query: &str) -> f64 {
     if query.len() == 0 {
         return 1.0;
