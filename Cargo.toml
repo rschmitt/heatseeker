@@ -4,7 +4,7 @@ version = "0.0.1"
 authors = ["Ryan Schmitt <rschmitt@pobox.com>"]
 
 [dependencies]
-getopts = "0.1.4"
+getopts = "*"
 
 [target.x86_64-pc-windows-gnu.dependencies]
 winapi = "*"

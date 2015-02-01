@@ -10,13 +10,13 @@ struct Args {
 
 pub fn parse_args() -> Option<Args> {
     let args = os::args();
-    let opts = [
-        getopts::optflag("h", "help", "Show this message"),
-        getopts::optopt("s", "search", "Specify an initial search string", "SEARCH"),
-        getopts::optflag("f", "first", "Automatically select the first match"),
-    ];
+    let mut opts = getopts::Options::new();
+    opts.optflag("h", "help", "Show this message");
+    opts.optflagopt("s", "search", "Specify an initial search string", "SEARCH");
+    opts.optflag("f", "first", "Automatically select the first match");
 
-    let matches = match getopts::getopts(args.tail(), &opts) {
+    let matches = match opts.parse(args.tail()) {
+    // let matches = match opts.getopts(args.tail(), &opts) {
         Ok(m) => m,
         Err(f) => {
             println!("{}", f);
@@ -42,8 +42,8 @@ pub fn parse_args() -> Option<Args> {
     })
 }
 
-fn print_usage(program: &str, opts: &[getopts::OptGroup]) {
+fn print_usage(program: &str, opts: &getopts::Options) {
     let brief = format!("Usage: {} [options]", program);
-    print!("{}", getopts::usage(brief.as_slice(), opts));
+    print!("{}", opts.usage(brief.as_slice()));
 }
 
