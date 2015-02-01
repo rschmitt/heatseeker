@@ -1,13 +1,13 @@
-#![allow(dead_code)]
+#![cfg_attr(test, allow(dead_code))]
 #![feature(collections, os, io, std_misc, core, libc)]
 #![cfg_attr(not(windows), feature(path))]
 
 extern crate libc;
 
 mod args;
-mod ansi;
 mod matching;
 mod screen;
+#[cfg(not(windows))] mod ansi;
 
 use std::os;
 use std::old_io;

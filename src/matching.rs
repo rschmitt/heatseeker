@@ -17,6 +17,7 @@ pub fn compute_matches<'a>(choices: &'a Vec<String>, query: &str) -> Vec<&'a Str
     ret.iter().map(|s| s.choice).collect()
 }
 
+#[allow(dead_code)]
 fn get_slice_indices(length: usize, workers: usize, idx: usize) -> (usize, usize) {
     let lb = (length as f64 / workers as f64) * idx as f64;
     let ub = (length as f64 / workers as f64) * (idx + 1) as f64;
