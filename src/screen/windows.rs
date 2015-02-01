@@ -139,7 +139,8 @@ impl Screen {
         win32!(SetConsoleTextAttribute(self.conout, colors));
     }
 
-    // Return all buffered keystrokes, or the next key if buffer is empty.
+    // Currently the Windows implementation does not buffer, so this function just performs a
+    // blocking read of a single key.
     pub fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut buf: Vec<u16> = repeat(0u16).take(0x1000).collect();
         let mut chars_read: DWORD = 0;
