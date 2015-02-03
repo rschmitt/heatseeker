@@ -8,7 +8,7 @@ pub fn compute_matches<'a>(choices: &'a Vec<String>, query: &str) -> Vec<&'a Str
     };
     let mut ret = Vec::new();
     for choice in choices.iter() {
-        let score = score(choice.as_slice(), query);
+        let score = score(&choice, query);
         if score > 0_f64 {
             ret.push(ScoredChoice{ score: score, choice: choice });
         }
@@ -58,7 +58,7 @@ fn score(choice: &str, query: &str) -> f64 {
     let query = query.to_ascii_lowercase();
     let choice = choice.to_ascii_lowercase();
 
-    match compute_match_length(choice.as_slice(), query.as_slice()) {
+    match compute_match_length(&choice, &query) {
         None => return 0.0,
         Some(match_length) => {
             let score = query.len() as f64 / match_length as f64;

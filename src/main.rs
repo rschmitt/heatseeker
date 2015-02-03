@@ -1,5 +1,5 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, os, io, std_misc, core, libc)]
+#![feature(collections, os, io, std_misc, libc)]
 #![cfg_attr(not(windows), feature(path))]
 
 extern crate libc;
@@ -31,11 +31,11 @@ fn main() {
     let choices = read_choices();
     let initial_search = args.initial_search.clone();
     if args.use_first {
-        let matches = matching::compute_matches(&choices, initial_search.as_slice());
+        let matches = matching::compute_matches(&choices, &initial_search);
         println!("{}", matches.get(0).unwrap_or(&&"".to_string()));
         return;
     } else {
-        event_loop(choices, initial_search.as_slice());
+        event_loop(choices, &initial_search);
     }
 }
 
@@ -138,7 +138,7 @@ impl<'a> Search<'a> {
 
     fn recompute_matches(&mut self) {
         if self.stale {
-            self.matches = matching::compute_matches(self.choices, self.query.as_slice());
+            self.matches = matching::compute_matches(self.choices, &self.query);
             self.stale = false;
         }
     }
@@ -164,7 +164,7 @@ impl<'a> Search<'a> {
 fn draw_screen(screen: &mut Screen, search: &Search) {
     screen.hide_cursor();
     screen.blank_screen();
-    screen.write(format!("> {} ({} choices)\n", search.query, search.choices.len()).as_slice());
+    screen.write(&format!("> {} ({} choices)\n", search.query, search.choices.len()));
 
     print_matches(screen, &search.matches, search.index);
 
@@ -177,9 +177,9 @@ fn print_matches(screen: &mut Screen, matches: &Vec<&String>, index: usize) {
     let mut i = 1;
     for choice in matches.iter() {
         if i == index + 1 {
-            screen.write_inverted(choice.as_slice());
+            screen.write_inverted(&choice);
         } else {
-            screen.write(choice.as_slice());
+            screen.write(&choice);
         }
         if i >= screen.visible_choices as usize {
             return;

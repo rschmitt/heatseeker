@@ -104,7 +104,7 @@ impl Screen {
         self.move_cursor(start_line, 0);
         let blank_line = repeat(' ').take(self.width as usize).collect::<String>();
         for _ in range(0, self.height) {
-            self.write(blank_line.as_slice());
+            self.write(&blank_line);
         }
         self.move_cursor(start_line, 0);
     }

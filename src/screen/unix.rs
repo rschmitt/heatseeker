@@ -43,11 +43,11 @@ impl Screen {
     }
 
     fn restore_tty(&mut self) {
-        self.tty.stty(&[String::from_utf8(self.original_stty_state.clone()).unwrap().as_slice()]);
+        self.tty.stty(&[&String::from_utf8(self.original_stty_state.clone()).unwrap()]);
     }
 
     pub fn move_cursor(&mut self, line: u16, column: u16) {
-        self.tty.write(ansi::setpos(line, column).as_slice());
+        self.tty.write(&ansi::setpos(line, column));
     }
 
     pub fn move_cursor_to_bottom(&mut self) {
@@ -60,18 +60,18 @@ impl Screen {
         let start_line = self.start_line;
         self.move_cursor(start_line, 0);
         let blank_line = repeat(' ').take(self.width as usize).collect::<String>();
-        for _ in range(0, self.height) {
+        for _ in 0..self.height {
             self.tty.write(blank_line.as_bytes());
         }
         self.move_cursor(start_line, 0);
     }
 
     pub fn show_cursor(&mut self) {
-        self.tty.write(ansi::show_cursor().as_slice());
+        self.tty.write(&ansi::show_cursor());
     }
 
     pub fn hide_cursor(&mut self) {
-        self.tty.write(ansi::hide_cursor().as_slice());
+        self.tty.write(&ansi::hide_cursor());
     }
 
     pub fn write(&mut self, s: &str) {
@@ -79,9 +79,9 @@ impl Screen {
     }
 
     pub fn write_inverted(&mut self, s: &str) {
-        self.tty.write(ansi::inverse().as_slice());
+        self.tty.write(&ansi::inverse());
         self.tty.write(s.as_bytes());
-        self.tty.write(ansi::reset().as_slice());
+        self.tty.write(&ansi::reset());
     }
 
     // Return all buffered keystrokes, or the next key if buffer is empty.
@@ -174,7 +174,7 @@ impl Terminal {
     }
 
     fn write(&mut self, s: &[u8]) {
-        self.output.write_all(s.as_slice()).unwrap();
+        self.output.write_all(&s).unwrap();
     }
 
     fn writeln(&mut self, s: &str) {

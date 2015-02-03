@@ -20,7 +20,7 @@ pub fn parse_args() -> Option<Args> {
         Ok(m) => m,
         Err(f) => {
             println!("{}", f);
-            print_usage(args[0].as_slice(), &opts);
+            print_usage(&args[0], &opts);
             return None;
         }
     };
@@ -32,7 +32,7 @@ pub fn parse_args() -> Option<Args> {
 
     let help = matches.opt_present("help");
     if help {
-        print_usage(args[0].as_slice(), &opts);
+        print_usage(&args[0], &opts);
     }
 
     Some(Args {
@@ -44,6 +44,6 @@ pub fn parse_args() -> Option<Args> {
 
 fn print_usage(program: &str, opts: &getopts::Options) {
     let brief = format!("Usage: {} [options]", program);
-    print!("{}", opts.usage(brief.as_slice()));
+    print!("{}", opts.usage(&brief));
 }
 

@@ -9,7 +9,7 @@ pub fn escape(sequence: &str) -> Vec<u8> {
 }
 
 pub fn setpos(line: u16, column: u16) -> Vec<u8> {
-    escape(format!("{};{}H", line + 1, column + 1).as_slice())
+    escape(&format!("{};{}H", line + 1, column + 1))
 }
 
 pub fn hide_cursor() -> Vec<u8> {
