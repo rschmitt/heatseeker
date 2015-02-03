@@ -96,10 +96,11 @@ enum SearchState {
 
 impl<'a> Search<'a> {
     fn new(choices: &'a [&'a str], initial_search: String) -> Search<'a> {
+        let matches = choices.to_vec();
         Search {
             choices: choices,
             query: initial_search,
-            matches: Vec::new(),
+            matches: matches,
             stale: true,
             index: 0,
             state: InProgress,
@@ -119,11 +120,13 @@ impl<'a> Search<'a> {
         self.query.pop();
         self.stale = true;
         self.index = 0;
+        self.matches = self.choices.to_vec();
     }
 
     fn delete_word(&mut self) {
         self.stale = true;
         delete_last_word(&mut self.query);
+        self.matches = self.choices.to_vec();
     }
 
     fn append(&mut self, c: char) {
@@ -134,12 +137,12 @@ impl<'a> Search<'a> {
 
     fn clear_query(&mut self) {
         self.query.clear();
-        self.stale = true;
+        self.matches = self.choices.to_vec();
     }
 
     fn recompute_matches(&mut self) {
         if self.stale {
-            self.matches = matching::compute_matches(self.choices, &self.query);
+            self.matches = matching::compute_matches(&self.matches, &self.query);
             self.stale = false;
         }
     }
