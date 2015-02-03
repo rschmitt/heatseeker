@@ -1,7 +1,7 @@
 use std::ascii::AsciiExt;
 use std::cmp::min;
 
-pub fn compute_matches<'a, 'b>(choices: &'a [&'b str], query: &str) -> Vec<&'b str> {
+pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
     struct ScoredChoice<'a> {
         score: f64,
         choice: &'a str,
