@@ -30,17 +30,18 @@ fn main() {
 
     let choices = read_choices();
     let initial_search = args.initial_search.clone();
+    let choices = choices.iter().map(|x| &x[]).collect::<Vec<&str>>();
     if args.use_first {
         let matches = matching::compute_matches(&choices, &initial_search);
-        println!("{}", matches.get(0).unwrap_or(&&"".to_string()));
+        println!("{}", matches.get(0).unwrap_or(&""));
         return;
     } else {
-        event_loop(choices, &initial_search);
+        event_loop(&choices, &initial_search);
     }
 }
 
-fn event_loop(choices: Vec<String>, initial_search: &str) {
-    let mut search = Search::new(&choices, initial_search.to_string());
+fn event_loop(choices: &[&str], initial_search: &str) {
+    let mut search = Search::new(choices, initial_search.to_string());
     let mut screen = Screen::open_screen();
 
     loop {
@@ -78,9 +79,9 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
 }
 
 struct Search<'a> {
-    choices: &'a Vec<String>,
+    choices: &'a [&'a str],
     query: String,
-    matches: Vec<&'a String>,
+    matches: Vec<&'a str>,
     stale: bool,
     index: usize,
     state: SearchState,
@@ -94,7 +95,7 @@ enum SearchState {
 }
 
 impl<'a> Search<'a> {
-    fn new(choices: &'a Vec<String>, initial_search: String) -> Search<'a> {
+    fn new(choices: &'a [&'a str], initial_search: String) -> Search<'a> {
         Search {
             choices: choices,
             query: initial_search,
@@ -148,7 +149,7 @@ impl<'a> Search<'a> {
             "".to_string()
         } else {
             self.recompute_matches();
-            self.matches.get(self.index).unwrap_or(&&"".to_string()).to_string()
+            self.matches.get(self.index).unwrap_or(&"").to_string()
         }
     }
 
@@ -173,7 +174,7 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     screen.show_cursor();
 }
 
-fn print_matches(screen: &mut Screen, matches: &Vec<&String>, index: usize) {
+fn print_matches(screen: &mut Screen, matches: &Vec<&str>, index: usize) {
     let mut i = 1;
     for choice in matches.iter() {
         if i == index + 1 {

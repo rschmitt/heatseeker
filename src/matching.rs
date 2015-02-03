@@ -1,16 +1,16 @@
 use std::ascii::AsciiExt;
 use std::cmp::min;
 
-pub fn compute_matches<'a>(choices: &'a Vec<String>, query: &str) -> Vec<&'a String> {
+pub fn compute_matches<'a>(choices: &'a [&str], query: &str) -> Vec<&'a str> {
     struct ScoredChoice<'a> {
         score: f64,
-        choice: &'a String,
+        choice: &'a str,
     };
     let mut ret = Vec::new();
     for choice in choices.iter() {
         let score = score(&choice, query);
         if score > 0_f64 {
-            ret.push(ScoredChoice{ score: score, choice: choice });
+            ret.push(ScoredChoice{ score: score, choice: &choice });
         }
     }
     ret.sort_by(|x, y| y.score.partial_cmp(&x.score).unwrap());
