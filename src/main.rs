@@ -168,7 +168,7 @@ impl<'a> Search<'a> {
 fn draw_screen(screen: &mut Screen, search: &Search) {
     screen.hide_cursor();
     screen.blank_screen();
-    screen.write(&format!("> {} ({} choices)\n", search.query, search.choices.len()));
+    screen.write(&format!("> {} ({}/{} choices)\n", search.query, search.matches.len(), search.choices.len()));
 
     print_matches(screen, &search.matches, search.index);
 
