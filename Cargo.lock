@@ -1,5 +1,5 @@
 [root]
-name = "selectric"
+name = "heatseeker"
 version = "0.0.1"
 dependencies = [
  "getopts 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
