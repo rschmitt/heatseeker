@@ -103,7 +103,7 @@ impl Screen {
         let start_line = self.start_line;
         self.move_cursor(start_line, 0);
         let blank_line = repeat(' ').take(self.width as usize).collect::<String>();
-        for _ in range(0, self.height) {
+        for _ in 0..self.height {
             self.write(&blank_line);
         }
         self.move_cursor(start_line, 0);
@@ -147,7 +147,7 @@ impl Screen {
         win32!(ReadFile(self.conin, buf.as_mut_ptr() as LPVOID, 1, &mut chars_read as LPDWORD, ptr::null_mut()));
 
         let mut ret = Vec::new();
-        for i in range(0, chars_read) {
+        for i in 0..chars_read {
             ret.push(Screen::translate_byte(buf[i as usize]));
         }
         ret
