@@ -125,6 +125,11 @@ fn find_end_of_match_test() {
 }
 
 #[test]
+fn unicode_boundary_handling_test() {
+    score("./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin", "he");
+}
+
+#[test]
 fn basic_scoring() {
     assert_eq!(score("", "a"), 0.0);
     assert_eq!(score("a", ""), 1.0);
