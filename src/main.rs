@@ -179,7 +179,9 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
 
 fn print_matches(screen: &mut Screen, matches: &Vec<&str>, index: usize) {
     let mut i = 1;
+    let max_width = screen.width as usize;
     for choice in matches.iter() {
+        let choice = choice.slice_chars(0, min(max_width, choice.width(false)));
         if i == index + 1 {
             screen.write_inverted(&choice);
         } else {
