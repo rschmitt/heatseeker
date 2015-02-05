@@ -63,8 +63,10 @@ fn score(choice: &str, query: &str) -> f64 {
 
     let query = query.to_ascii_lowercase();
     let choice = choice.to_ascii_lowercase();
+    let query = chars!(query);
+    let choice = chars!(choice);
 
-    match compute_match_length(chars!(choice), chars!(query)) {
+    match compute_match_length(choice, query) {
         None => return 0.0,
         Some(match_length) => {
             let score = query.len() as f64 / match_length as f64;
@@ -79,6 +81,7 @@ fn compute_match_length(string: &[char], chars: &[char]) -> Option<usize> {
     let indices = find_char_in_string(string, first_char);
 
     let mut current_min = None;
+    let smallest_possible_match = chars.len();
     for i in indices.iter() {
         let last_index = find_end_of_match(string, rest, *i);
         if last_index.is_some() {
@@ -86,6 +89,9 @@ fn compute_match_length(string: &[char], chars: &[char]) -> Option<usize> {
             if current_min.is_some() {
                 let cm = min(current_min.unwrap(), idx);
                 current_min = Some(cm);
+                if cm == smallest_possible_match {
+                    break;
+                }
             } else {
                 current_min = Some(idx)
             }
