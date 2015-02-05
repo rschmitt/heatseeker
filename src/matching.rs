@@ -102,10 +102,8 @@ fn find_char_in_string(string: &str, char: char) -> Vec<usize> {
 
 fn find_end_of_match(string: &str, rest_of_query: &str, first_index: usize) -> Option<usize> {
     let mut last_index = first_index + 1;
-    let chars_in_string = string.chars().collect::<Vec<_>>().len();
     for c in rest_of_query.chars() {
-        let current_substring = string.slice_chars(last_index, chars_in_string);
-        match current_substring.find(c) {
+        match string[last_index..].find(c) {
             None => return None,
             Some(ref i) => {
                 last_index += *i + 1;
