@@ -1,6 +1,12 @@
 use std::ascii::AsciiExt;
 use std::cmp::min;
 
+macro_rules! chars {
+    ($str:expr) => (
+        &$str.chars().collect::<Vec<char>>()
+    );
+}
+
 pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
     struct ScoredChoice<'a> {
         score: f64,
@@ -58,7 +64,7 @@ fn score(choice: &str, query: &str) -> f64 {
     let query = query.to_ascii_lowercase();
     let choice = choice.to_ascii_lowercase();
 
-    match compute_match_length(&choice, &query) {
+    match compute_match_length(chars!(choice), chars!(query)) {
         None => return 0.0,
         Some(match_length) => {
             let score = query.len() as f64 / match_length as f64;
@@ -67,11 +73,9 @@ fn score(choice: &str, query: &str) -> f64 {
     }
 }
 
-fn compute_match_length(string: &str, chars: &str) -> Option<usize> {
-    let (first_char, rest) = match chars.slice_shift_char() {
-        Some((f, r)) => (f, r),
-        None => return None,
-    };
+fn compute_match_length(string: &[char], chars: &[char]) -> Option<usize> {
+    let first_char = chars[0];
+    let rest = &chars[1..];
     let indices = find_char_in_string(string, first_char);
 
     let mut current_min = None;
@@ -90,24 +94,31 @@ fn compute_match_length(string: &str, chars: &str) -> Option<usize> {
     return current_min;
 }
 
-fn find_char_in_string(string: &str, char: char) -> Vec<usize> {
+fn find_char_in_string(string: &[char], char: char) -> Vec<usize> {
     let mut indices = Vec::new();
-    for (i, c) in string.chars().enumerate() {
-        if char == c {
+    for (i, c) in string.iter().enumerate() {
+        if char == *c {
             indices.push(i);
         }
     }
     return indices;
 }
 
-fn find_end_of_match(string: &str, rest_of_query: &str, first_index: usize) -> Option<usize> {
+fn find_end_of_match(string: &[char], rest_of_query: &[char], first_index: usize) -> Option<usize> {
     let mut last_index = first_index + 1;
-    for c in rest_of_query.chars() {
-        match string[last_index..].find(c) {
-            None => return None,
-            Some(ref i) => {
-                last_index += *i + 1;
+    for c in rest_of_query.iter() {
+        let current_substring = &string[last_index..];
+        let mut index = None;
+        for (i, x) in current_substring.iter().enumerate() {
+            if x == c {
+                index = Some(i);
+                break;
             }
+        }
+        if index.is_some() {
+            last_index += index.unwrap() + 1;
+        } else {
+            return None;
         }
     }
     return Some(last_index - 1);
@@ -115,13 +126,13 @@ fn find_end_of_match(string: &str, rest_of_query: &str, first_index: usize) -> O
 
 #[test]
 fn find_end_of_match_test() {
-    assert_eq!(find_end_of_match("a", "a", 0), None);
-    assert_eq!(find_end_of_match("ba", "a", 1), None);
-    assert_eq!(find_end_of_match("aaa", "aa", 0), Some(2));
-    assert_eq!(find_end_of_match("aaa", "b", 0), None);
-    assert_eq!(find_end_of_match("this is a long match", "this is a match", 0), None);
-    assert_eq!(find_end_of_match("this is a long match", "his is a match", 0), Some(19));
-    assert_eq!(find_end_of_match("./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin", "ust", 2), Some(5));
+    assert_eq!(find_end_of_match(chars!("a"), chars!("a"), 0), None);
+    assert_eq!(find_end_of_match(chars!("ba"), chars!("a"), 1), None);
+    assert_eq!(find_end_of_match(chars!("aaa"), chars!("aa"), 0), Some(2));
+    assert_eq!(find_end_of_match(chars!("aaa"), chars!("b"), 0), None);
+    assert_eq!(find_end_of_match(chars!("this is a long match"), chars!("this is a match"), 0), None);
+    assert_eq!(find_end_of_match(chars!("this is a long match"), chars!("his is a match"), 0), Some(19));
+    assert_eq!(find_end_of_match(chars!("./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin"), chars!("ust"), 2), Some(5));
 }
 
 #[test]
