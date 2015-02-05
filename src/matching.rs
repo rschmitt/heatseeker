@@ -92,12 +92,10 @@ fn compute_match_length(string: &str, chars: &str) -> Option<usize> {
 
 fn find_char_in_string(string: &str, char: char) -> Vec<usize> {
     let mut indices = Vec::new();
-    let mut i = 0;
-    for c in string.chars() {
-        if c == char {
+    for (i, c) in string.chars().enumerate() {
+        if char == c {
             indices.push(i);
         }
-        i = i + 1;
     }
     return indices;
 }
