@@ -3,6 +3,9 @@ name = "heatseeker"
 version = "0.0.1"
 authors = ["Ryan Schmitt <rschmitt@pobox.com>"]
 
+[[bin]]
+name = "hs"
+
 [dependencies]
 getopts = "*"
 
