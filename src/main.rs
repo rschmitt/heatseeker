@@ -1,5 +1,5 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, os, io, std_misc, libc)]
+#![feature(collections, os, env, io, std_misc, libc, core)]
 #![cfg_attr(not(windows), feature(path))]
 
 extern crate libc;
@@ -9,7 +9,7 @@ mod matching;
 mod screen;
 #[cfg(not(windows))] mod ansi;
 
-use std::os;
+use std::env;
 use std::old_io;
 use std::cmp::min;
 use screen::Screen;
@@ -21,7 +21,7 @@ fn main() {
     let args = match args::parse_args() {
         Some(args) => args,
         None => {
-            os::set_exit_status(1);
+            env::set_exit_status(1);
             return;
         },
     };

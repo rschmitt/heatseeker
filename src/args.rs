@@ -1,6 +1,6 @@
 extern crate getopts;
 
-use std::os;
+use std::env;
 
 struct Args {
     pub initial_search: String,
@@ -9,11 +9,16 @@ struct Args {
 }
 
 pub fn parse_args() -> Option<Args> {
-    let args = os::args();
+    let mut os_args = env::args();
     let mut opts = getopts::Options::new();
     opts.optflag("h", "help", "Show this message");
     opts.optflagopt("s", "search", "Specify an initial search string", "SEARCH");
     opts.optflag("f", "first", "Automatically select the first match");
+
+    let mut args = Vec::new();
+    while let Some(os_arg) = os_args.next() {
+        args.push(os_arg.into_string().unwrap());
+    }
 
     let matches = match opts.parse(args.tail()) {
     // let matches = match opts.getopts(args.tail(), &opts) {
