@@ -2,34 +2,42 @@
 name = "heatseeker"
 version = "0.1.1"
 dependencies = [
- "getopts 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "kernel32-sys 0.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "winapi 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "getopts 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "kernel32-sys 0.0.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "getopts"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "log 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "kernel32-sys"
-version = "0.0.6"
+version = "0.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "winapi 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.1.11 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
+name = "libc"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "log"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "winapi"
-version = "0.1.9"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
