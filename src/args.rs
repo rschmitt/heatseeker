@@ -17,11 +17,10 @@ pub fn parse_args() -> Option<Args> {
 
     let mut args = Vec::new();
     while let Some(os_arg) = os_args.next() {
-        args.push(os_arg.into_string().unwrap());
+        args.push(os_arg);
     }
 
     let matches = match opts.parse(args.tail()) {
-    // let matches = match opts.getopts(args.tail(), &opts) {
         Ok(m) => m,
         Err(f) => {
             println!("{}", f);
