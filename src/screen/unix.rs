@@ -2,7 +2,8 @@
 
 use screen::Key;
 use screen::Key::*;
-use std::old_io::{File, Open, Read, Write};
+use std::io::{Read, Write};
+use std::fs::{File, OpenOptions};
 use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::AsRawFd;
 use std::old_io::process::{Command, InheritFd};
@@ -113,13 +114,17 @@ struct Terminal {
 impl Terminal {
     fn open_terminal() -> Terminal {
         let term_path = Path::new("/dev/tty");
-        let mut input_file = File::open_mode(&term_path, Open, Read).unwrap();
-        let output_file = File::open_mode(&term_path, Open, Write).unwrap();
+        let mut input_file = File::open(&term_path).unwrap();
+        let output_file = OpenOptions::new().write(true).open(&term_path).unwrap();
         let input_fd = input_file.as_raw_fd();
         let (tx, rx) = mpsc::channel();
         Thread::spawn(move || {
             loop {
-                tx.send(input_file.read_byte().unwrap()).unwrap();
+                let mut buf = [0];
+                if input_file.read(&mut buf).unwrap() != 1 {
+                    panic!("Failed to read a single byte from tty");
+                }
+                tx.send(buf[0]).unwrap();
             }
         });
         Terminal {
@@ -178,7 +183,8 @@ impl Terminal {
     }
 
     fn writeln(&mut self, s: &str) {
-        self.output.write_line(s).unwrap();
+        self.output.write(s.as_bytes()).unwrap();
+        self.output.write("\n".as_bytes()).unwrap();
     }
 
     fn winsize(&self) -> Option<(u16, u16)> {
