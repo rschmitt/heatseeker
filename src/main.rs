@@ -72,7 +72,7 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
         Control('c') => search.cancel(),
         Control('g') => search.cancel(),
         Control('n') => search.down(visible_choices),
-        Control('p') => search.up(),
+        Control('p') => search.up(visible_choices),
         Enter => search.done(),
         _ => {}
     }
@@ -107,13 +107,14 @@ impl<'a> Search<'a> {
         }
     }
 
-    fn up(&mut self) {
-        self.index = if self.index == 0 { 0 } else { self.index - 1 };
+    fn up(&mut self, visible_choices: u16) {
+        let limit = min(visible_choices as usize - 1, self.matches.len() - 1);
+        self.index = if self.index == 0 { limit } else { self.index - 1 };
     }
 
     fn down(&mut self, visible_choices: u16) {
         let limit = min(visible_choices as usize - 1, self.matches.len() - 1);
-        self.index = min(self.index + 1, limit);
+        self.index = if self.index == limit { 0 } else { self.index + 1 }
     }
 
     fn backspace(&mut self) {
