@@ -1,5 +1,4 @@
 use std::ascii::AsciiExt;
-use std::cmp::min;
 
 macro_rules! chars {
     ($str:expr) => (
@@ -75,29 +74,38 @@ fn score(choice: &str, query: &str) -> f64 {
     }
 }
 
-fn compute_match_length(string: &[char], chars: &[char]) -> Option<usize> {
-    let first_char = chars[0];
-    let rest = &chars[1..];
+fn compute_match_length(string: &[char], query: &[char]) -> Option<usize> {
+    get_match_length(get_longest_match(string, query))
+}
+
+fn get_longest_match(string: &[char], query: &[char]) -> Option<(usize, usize)> {
+    let first_char = query[0];
+    let rest = &query[1..];
     let indices = find_char_in_string(string, first_char);
 
-    let mut current_min = None;
-    let smallest_possible_match = chars.len();
-    for i in indices.iter() {
-        let last_index = find_end_of_match(string, rest, *i);
-        if last_index.is_some() {
-            let idx = last_index.unwrap() - *i + 1;
-            if current_min.is_some() {
-                let cm = min(current_min.unwrap(), idx);
-                current_min = Some(cm);
-                if cm == smallest_possible_match {
+    let mut current_bounds: Option<(usize, usize)> = None;
+    let smallest_possible_match = query.len();
+    for &i in &indices {
+        if let Some(last_index) = find_end_of_match(string, rest, i) {
+            let last_bounds = Some((i, last_index));
+            let last_match_len = get_match_length(last_bounds).unwrap();
+            if current_bounds.is_none() || last_match_len < get_match_length(current_bounds).unwrap() {
+                current_bounds = last_bounds;
+                if last_match_len == smallest_possible_match {
                     break;
                 }
-            } else {
-                current_min = Some(idx)
             }
         }
     }
-    return current_min;
+    current_bounds
+}
+
+fn get_match_length(bounds: Option<(usize, usize)>) -> Option<usize> {
+    if let Some((lb, ub)) = bounds {
+        Some((ub - lb + 1))
+    } else {
+        None
+    }
 }
 
 fn find_char_in_string(string: &[char], char: char) -> Vec<usize> {
