@@ -1,5 +1,5 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, env, io, std_misc, libc)]
+#![feature(collections, env, libc, old_io)]
 #![cfg_attr(not(windows), feature(path, fs))]
 
 extern crate libc;
@@ -30,7 +30,7 @@ fn main() {
 
     let choices = read_choices();
     let initial_search = args.initial_search.clone();
-    let choices = choices.iter().map(|x| &x[]).collect::<Vec<&str>>();
+    let choices = choices.iter().map(|x| &x[..]).collect::<Vec<&str>>();
     if args.use_first {
         let matches = matching::compute_matches(&choices, &initial_search);
         println!("{}", matches.get(0).unwrap_or(&""));
