@@ -12,7 +12,7 @@ use std::iter::repeat;
 use std::cmp::min;
 use ansi;
 
-use std::thread::Thread;
+use std::thread;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc;
 
@@ -118,7 +118,7 @@ impl Terminal {
         let output_file = OpenOptions::new().write(true).open(&term_path).unwrap();
         let input_fd = input_file.as_raw_fd();
         let (tx, rx) = mpsc::channel();
-        Thread::spawn(move || {
+        thread::spawn(move || {
             loop {
                 let mut buf = [0];
                 if input_file.read(&mut buf).unwrap() != 1 {
