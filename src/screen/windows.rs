@@ -165,9 +165,9 @@ impl Screen {
         buffer_info.wAttributes
     }
 
-    fn winsize(conin: HANDLE) -> Option<(u16, u16)> {
+    fn winsize(conout: HANDLE) -> Option<(u16, u16)> {
         let mut buffer_info = unsafe { ::std::mem::uninitialized() };
-        let result = unsafe { GetConsoleScreenBufferInfo(conin, &mut buffer_info) };
+        let result = unsafe { GetConsoleScreenBufferInfo(conout, &mut buffer_info) };
         if result != 0 {
             // This code specifically computes the size of the window,
             // *not* the size of the buffer (which is easily available
