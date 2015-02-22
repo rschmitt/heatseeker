@@ -12,6 +12,10 @@ use std::cmp::min;
 use screen::Key;
 use screen::Key::*;
 
+use std::thread;
+use std::sync::mpsc::Receiver;
+use std::sync::mpsc;
+
 macro_rules! win32 {
     ($funcall:expr) => (
         if unsafe { $funcall } == 0 {
@@ -27,7 +31,7 @@ pub struct Screen {
     pub start_line: u16,
     original_console_mode: DWORD,
     original_colors: WORD,
-    conin: HANDLE,
+    input: Receiver<u16>,
     conout: HANDLE,
 }
 
@@ -68,6 +72,7 @@ impl Screen {
         let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
         win32!(SetConsoleMode(conin, new_mode));
 
+        let rx = Screen::spawn_input_thread(conin as usize);
         let visible_choices = min(20, rows - 1);
         let start_line = rows - visible_choices - 1;
         let original_colors = Screen::get_original_colors(conout);
@@ -78,9 +83,30 @@ impl Screen {
             start_line: start_line,
             original_console_mode: orig_mode,
             original_colors: original_colors,
-            conin: conin,
+            input: rx,
             conout: conout,
         }
+    }
+
+    // We have to take the conin handle as a usize instead of a *mut c_void in order to avoid a
+    // lecture from the compiler about how the latter type cannot be safely sent between threads.
+    // I'm not sure if a better solution exists at this time.
+    fn spawn_input_thread(conin: usize) -> Receiver<u16> {
+        let (tx, rx) = mpsc::channel();
+
+        thread::spawn(move || {
+            loop {
+                let conin = conin as *mut c_void;
+                let mut buf: Vec<u16> = repeat(0u16).take(0x1000).collect();
+                let mut chars_read: DWORD = 0;
+                win32!(ReadFile(conin, buf.as_mut_ptr() as LPVOID, 1, &mut chars_read as LPDWORD, ptr::null_mut()));
+                for i in 0..chars_read as usize {
+                    tx.send(buf[i]).unwrap();
+                }
+            }
+        });
+
+        rx
     }
 
     pub fn move_cursor(&mut self, line: u16, column: u16) {
@@ -133,16 +159,14 @@ impl Screen {
         win32!(SetConsoleTextAttribute(self.conout, colors));
     }
 
-    // Currently the Windows implementation does not buffer, so this function just performs a
-    // blocking read of a single key.
     pub fn get_buffered_keys(&mut self) -> Vec<Key> {
-        let mut buf: Vec<u16> = repeat(0u16).take(0x1000).collect();
-        let mut chars_read: DWORD = 0;
-        win32!(ReadFile(self.conin, buf.as_mut_ptr() as LPVOID, 1, &mut chars_read as LPDWORD, ptr::null_mut()));
-
         let mut ret = Vec::new();
-        for i in 0..chars_read {
-            ret.push(Screen::translate_byte(buf[i as usize]));
+        while let Ok(byte) = self.input.try_recv() {
+            ret.push(Screen::translate_byte(byte));
+        }
+        if ret.is_empty() {
+            let byte = self.input.recv().unwrap();
+            ret.push(Screen::translate_byte(byte));
         }
         ret
     }
