@@ -102,7 +102,7 @@ fn get_longest_match(string: &[char], query: &[char]) -> Option<(usize, usize)> 
 
 fn get_match_length(bounds: Option<(usize, usize)>) -> Option<usize> {
     if let Some((lb, ub)) = bounds {
-        Some((ub - lb + 1))
+        Some(ub - lb + 1)
     } else {
         None
     }
@@ -119,7 +119,17 @@ fn find_char_in_string(string: &[char], char: char) -> Vec<usize> {
 }
 
 fn find_end_of_match(string: &[char], rest_of_query: &[char], first_index: usize) -> Option<usize> {
+    if let Some(indices) = get_match_indices(string, rest_of_query, first_index) {
+        Some(indices[indices.len() - 1])
+    } else {
+        None
+    }
+}
+
+fn get_match_indices(string: &[char], rest_of_query: &[char], first_index: usize) -> Option<Vec<usize>> {
+    let mut ret = Vec::new();
     let mut last_index = first_index + 1;
+    ret.push(first_index);
     for c in rest_of_query.iter() {
         let current_substring = &string[last_index..];
         let mut index = None;
@@ -131,11 +141,19 @@ fn find_end_of_match(string: &[char], rest_of_query: &[char], first_index: usize
         }
         if index.is_some() {
             last_index += index.unwrap() + 1;
+            ret.push(last_index - 1);
         } else {
             return None;
         }
     }
-    return Some(last_index - 1);
+    Some(ret)
+}
+
+#[test]
+fn get_match_indices_test() {
+    assert_eq!(get_match_indices(chars!("asdf"), chars!("sdf"), 0).unwrap(), vec![0, 1, 2, 3]);
+    assert_eq!(get_match_indices(chars!("aoeuasdf"), chars!("sdf"), 4).unwrap(), vec![4, 5, 6, 7]);
+    assert_eq!(get_match_indices(chars!(" a s d f"), chars!("sdf"), 1).unwrap(), vec![1, 3, 5, 7]);
 }
 
 #[test]
