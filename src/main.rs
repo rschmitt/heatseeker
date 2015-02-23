@@ -200,12 +200,13 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
 
 fn print_match(choice: &str, indices: &[usize], writer: &mut FnMut(&str, bool)) {
     let mut last_idx = 0;
+    let len = choice.chars().collect::<Vec<char>>().len();
     for &idx in indices {
-        writer(&choice[last_idx..idx], false);
-        writer(&choice[idx..idx + 1], true);
+        writer(&choice.slice_chars(last_idx, idx), false);
+        writer(&choice.slice_chars(idx, idx + 1), true);
         last_idx = idx + 1;
     }
-    writer(&choice[last_idx..choice.len()], false);
+    writer(&choice.slice_chars(last_idx, len), false);
 }
 
 fn read_choices() -> Vec<String> {
