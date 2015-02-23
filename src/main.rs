@@ -178,21 +178,17 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     screen.show_cursor();
 }
 
-fn print_matches(screen: &mut Screen, matches: &Vec<&str>, query: &str, index: usize) {
+fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usize) {
     let mut i = 1;
     for choice in matches.iter() {
-        if i == index + 1 {
-            screen.write_inverted(&choice);
-        } else {
-            let indices = matching::visual_score(choice, query);
-            let mut last_idx = 0;
-            for &idx in &indices {
-                screen.write(&choice[last_idx..idx]);
-                screen.write_red(&choice[idx..idx + 1]);
-                last_idx = idx + 1;
+        let indices = matching::visual_score(choice, query);
+        print_match(choice, &indices, &mut |s, highlight| {
+            if i == index + 1 {
+                if highlight { screen.write_red_inverted(s); } else { screen.write_inverted(s); }
+            } else {
+                if highlight { screen.write_red(s); } else { screen.write(s); }
             }
-            screen.write(&choice[last_idx..choice.len()]);
-        }
+        });
         if i >= screen.visible_choices as usize {
             return;
         } else {
@@ -200,6 +196,16 @@ fn print_matches(screen: &mut Screen, matches: &Vec<&str>, query: &str, index: u
         }
         i += 1;
     }
+}
+
+fn print_match(choice: &str, indices: &[usize], writer: &mut FnMut(&str, bool)) {
+    let mut last_idx = 0;
+    for &idx in indices {
+        writer(&choice[last_idx..idx], false);
+        writer(&choice[idx..idx + 1], true);
+        last_idx = idx + 1;
+    }
+    writer(&choice[last_idx..choice.len()], false);
 }
 
 fn read_choices() -> Vec<String> {
