@@ -79,6 +79,12 @@ impl Screen {
         self.tty.write(s.as_bytes());
     }
 
+    pub fn write_red(&mut self, s: &str) {
+        self.tty.write(&ansi::red());
+        self.tty.write(s.as_bytes());
+        self.tty.write(&ansi::reset());
+    }
+
     pub fn write_inverted(&mut self, s: &str) {
         self.tty.write(&ansi::inverse());
         self.tty.write(s.as_bytes());

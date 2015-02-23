@@ -74,6 +74,22 @@ fn score(choice: &str, query: &str) -> f64 {
     }
 }
 
+// This function is for picking out the matching characters for a given (choice, query) pair for
+// rendering purposes. It assumes that the given choice is in fact a match for the given query, and
+// will panic if this is not the case.
+pub fn visual_score(choice: &str, query: &str) -> Vec<usize> {
+    if query.len() == 0 || choice.len() == 0 {
+        return Vec::new();
+    }
+    let query = query.to_ascii_lowercase();
+    let choice = choice.to_ascii_lowercase();
+    let query = chars!(query);
+    let choice = chars!(choice);
+
+    let (first_idx, _) = get_longest_match(&choice, &query).unwrap();
+    get_match_indices(&choice, &query[1..], first_idx).unwrap()
+}
+
 fn compute_match_length(string: &[char], query: &[char]) -> Option<usize> {
     get_match_length(get_longest_match(string, query))
 }

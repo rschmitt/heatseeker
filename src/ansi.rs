@@ -24,6 +24,10 @@ pub fn inverse() -> Vec<u8> {
     escape("7m")
 }
 
+pub fn red() -> Vec<u8> {
+    escape("31m")
+}
+
 pub fn reset() -> Vec<u8> {
     escape("0m")
 }

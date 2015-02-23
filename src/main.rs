@@ -171,22 +171,27 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     screen.blank_screen();
     screen.write(&format!("> {} ({}/{} choices)\n", search.query, search.matches.len(), search.choices.len()));
 
-    print_matches(screen, &search.matches, search.index);
+    print_matches(screen, &search.matches, &search.query, search.index);
 
     let start = screen.start_line;
     screen.move_cursor(start, 2 + search.query.len() as u16);
     screen.show_cursor();
 }
 
-fn print_matches(screen: &mut Screen, matches: &Vec<&str>, index: usize) {
+fn print_matches(screen: &mut Screen, matches: &Vec<&str>, query: &str, index: usize) {
     let mut i = 1;
-    let max_width = screen.width as usize;
     for choice in matches.iter() {
-        let choice = choice.slice_chars(0, min(max_width, choice.chars().count()));
         if i == index + 1 {
             screen.write_inverted(&choice);
         } else {
-            screen.write(&choice);
+            let indices = matching::visual_score(choice, query);
+            let mut last_idx = 0;
+            for &idx in &indices {
+                screen.write(&choice[last_idx..idx]);
+                screen.write_red(&choice[idx..idx + 1]);
+                last_idx = idx + 1;
+            }
+            screen.write(&choice[last_idx..choice.len()]);
         }
         if i >= screen.visible_choices as usize {
             return;

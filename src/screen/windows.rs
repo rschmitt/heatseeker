@@ -147,6 +147,14 @@ impl Screen {
         win32!(WriteFile(self.conout, copy.as_ptr() as PVOID, len, &mut bytes_written as LPDWORD, ptr::null_mut()));
     }
 
+    pub fn write_red(&mut self, s: &str) {
+        let orig = self.original_colors;
+        const RED_ON_BLACK: WORD = FOREGROUND_RED as WORD;
+        self.set_colors(RED_ON_BLACK);
+        self.write(s);
+        self.set_colors(orig);
+    }
+
     pub fn write_inverted(&mut self, s: &str) {
         let orig = self.original_colors;
         const BLACK_ON_WHITE: WORD = (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE) as WORD;
