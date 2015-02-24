@@ -200,6 +200,9 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
 }
 
 fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut FnMut(&str, bool)) {
+    #[cfg(windows)] const MARGIN: u16 = 1;
+    #[cfg(not(windows))] const MARGIN: u16 = 0;
+    let max_width = max_width - MARGIN;
     let chars_in_choice = choice.chars().collect::<Vec<char>>().len();
     let chars_to_draw = min(chars_in_choice, max_width as usize);
     let mut last_idx = 0;
