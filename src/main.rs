@@ -182,7 +182,8 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
     let mut i = 1;
     for choice in matches.iter() {
         let indices = matching::visual_score(choice, query);
-        print_match(choice, &indices, &mut |s, highlight| {
+        let max_width = screen.width;
+        print_match(choice, &indices, max_width, &mut |s, highlight| {
             if i == index + 1 {
                 if highlight { screen.write_red_inverted(s); } else { screen.write_inverted(s); }
             } else {
@@ -198,15 +199,21 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
     }
 }
 
-fn print_match(choice: &str, indices: &[usize], writer: &mut FnMut(&str, bool)) {
+fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut FnMut(&str, bool)) {
+    let chars_in_choice = choice.chars().collect::<Vec<char>>().len();
+    let chars_to_draw = min(chars_in_choice, max_width as usize);
     let mut last_idx = 0;
-    let len = choice.chars().collect::<Vec<char>>().len();
     for &idx in indices {
+        let idx = min(idx, chars_to_draw);
+        if last_idx >= chars_to_draw {
+            return;
+        }
         writer(&choice.slice_chars(last_idx, idx), false);
+        if idx == chars_to_draw { return }
         writer(&choice.slice_chars(idx, idx + 1), true);
         last_idx = idx + 1;
     }
-    writer(&choice.slice_chars(last_idx, len), false);
+    writer(&choice.slice_chars(last_idx, chars_to_draw), false);
 }
 
 fn read_choices() -> Vec<String> {
