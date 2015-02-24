@@ -204,7 +204,7 @@ fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut FnM
     #[cfg(windows)] const MARGIN: u16 = 1;
     #[cfg(not(windows))] const MARGIN: u16 = 0;
     let max_width = max_width - MARGIN;
-    let chars_in_choice = choice.chars().collect::<Vec<char>>().len();
+    let chars_in_choice = choice.chars().count();
     let chars_to_draw = min(chars_in_choice, max_width as usize);
     let mut last_idx = 0;
     for &idx in indices {
