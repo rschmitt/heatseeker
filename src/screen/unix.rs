@@ -174,11 +174,6 @@ impl Terminal {
         }
     }
 
-    fn getchar(&mut self) -> Key {
-        let byte = self.input.recv().unwrap();
-        Terminal::translate_byte(byte)
-    }
-
     fn translate_byte(byte: u8) -> Key {
         if byte == '\r' as u8 {
             Enter
