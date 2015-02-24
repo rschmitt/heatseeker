@@ -1,8 +1,9 @@
 #![cfg_attr(test, allow(dead_code))]
 #![feature(collections, env, libc, old_io, os)]
-#![cfg_attr(not(windows), feature(old_path, fs, io, std_misc))]
+#![cfg_attr(not(windows), feature(old_path, fs, io, std_misc, core))]
 
 extern crate libc;
+#[cfg(not(windows))] extern crate collections;
 
 mod args;
 mod matching;
@@ -174,7 +175,7 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     print_matches(screen, &search.matches, &search.query, search.index);
 
     let start = screen.start_line;
-    screen.move_cursor(start, 2 + search.query.len() as u16);
+    screen.move_cursor(start, 2 + search.query.chars().count() as u16);
     screen.show_cursor();
 }
 

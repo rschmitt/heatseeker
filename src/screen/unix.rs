@@ -10,6 +10,7 @@ use std::old_io::process::{Command, InheritFd};
 use std::old_io::process::ProcessExit::*;
 use std::iter::repeat;
 use std::cmp::min;
+use collections::str::Utf8Error;
 use ansi;
 
 use std::thread;
@@ -102,13 +103,21 @@ impl Screen {
     pub fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut ret = Vec::new();
         while let Ok(byte) = self.tty.input.try_recv() {
-            ret.push(Terminal::translate_byte(byte));
+            ret.push(byte);
         }
-        if ret.is_empty() {
-            let byte = self.tty.input.recv().unwrap();
-            ret.push(Terminal::translate_byte(byte));
+        while ret.is_empty() || Screen::more_bytes_needed(&ret) {
+            ret.push(self.tty.input.recv().unwrap());
         }
-        ret
+        Terminal::translate_bytes(ret.clone())
+    }
+
+    fn more_bytes_needed(bytes: &Vec<u8>) -> bool {
+        if let Err(e) = String::from_utf8(bytes.clone()) {
+            if e.utf8_error() == Utf8Error::TooShort {
+                return true;
+            }
+        }
+        false
     }
 }
 
@@ -174,15 +183,22 @@ impl Terminal {
         }
     }
 
-    fn translate_byte(byte: u8) -> Key {
-        if byte == '\r' as u8 {
+    fn translate_bytes(bytes: Vec<u8>) -> Vec<Key> {
+        let chars = String::from_utf8(bytes).unwrap().chars().collect::<Vec<char>>();
+        chars.into_iter().map(|c| Terminal::translate_char(c)).collect()
+    }
+
+    fn translate_char(c: char) -> Key {
+        let numeric_char = c as u32;
+        if c == '\r' {
             Enter
-        } else if byte == 127 {
+        } else if numeric_char == 127 {
             Backspace
-        } else if byte & 96 == 0 {
-            Control((byte + 96u8) as char)
+        } else if numeric_char & 96 == 0 && numeric_char <= 128u32 {
+            let c = c as u8;
+            Control((c + 96u8) as char)
         } else {
-            Char(byte as char)
+            Char(c)
         }
     }
 
