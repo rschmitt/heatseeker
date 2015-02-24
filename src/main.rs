@@ -175,7 +175,7 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     print_matches(screen, &search.matches, &search.query, search.index);
 
     let start = screen.start_line;
-    screen.move_cursor(start, 2 + search.query.chars().count() as u16);
+    screen.move_cursor(start, 2 + search.query.width(false) as u16);
     screen.show_cursor();
 }
 
