@@ -157,7 +157,7 @@ fn get_match_length(bounds: Option<(usize, usize)>) -> Option<usize> {
 fn find_char_in_string(string: &[char], char: char) -> Vec<usize> {
     let mut indices = Vec::new();
     for (i, c) in string.iter().enumerate() {
-        if char == *c {
+        if chars_equal(&char, c) {
             indices.push(i);
         }
     }
@@ -180,7 +180,7 @@ fn get_match_indices(string: &[char], rest_of_query: &[char], first_index: usize
         let current_substring = &string[last_index..];
         let mut index = None;
         for (i, x) in current_substring.iter().enumerate() {
-            if x == c {
+            if chars_equal(c, x) {
                 index = Some(i);
                 break;
             }
@@ -193,6 +193,19 @@ fn get_match_indices(string: &[char], rest_of_query: &[char], first_index: usize
         }
     }
     Some(ret)
+}
+
+fn chars_equal(q: &char, c: &char) -> bool {
+    q.eq_ignore_ascii_case(c)
+}
+
+#[test]
+fn chars_equal_test() {
+    assert!(chars_equal(&'a', &'a'));
+    assert!(!chars_equal(&'a', &'b'));
+    assert!(chars_equal(&'A', &'A'));
+    assert!(chars_equal(&'A', &'a'));
+    assert!(chars_equal(&'a', &'A'));
 }
 
 #[test]
