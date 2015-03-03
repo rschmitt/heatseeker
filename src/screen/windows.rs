@@ -190,6 +190,8 @@ impl Screen {
     fn translate_byte(byte: u16) -> Key {
         if byte == '\r' as u16 {
             Enter
+        } else if byte == 9 {
+            Tab
         } else if byte == 127 {
             Backspace
         } else if byte & 96 == 0 {

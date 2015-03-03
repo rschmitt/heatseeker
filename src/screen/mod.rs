@@ -8,6 +8,7 @@ pub enum Key {
     Control(char),
     Enter,
     Backspace,
+    Tab,
 }
 
 #[cfg(not(windows))] mod unix;

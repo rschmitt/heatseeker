@@ -192,6 +192,8 @@ impl Terminal {
         let numeric_char = c as u32;
         if c == '\r' {
             Enter
+        } else if numeric_char == 9 {
+            Tab
         } else if numeric_char == 127 {
             Backspace
         } else if numeric_char & 96 == 0 && numeric_char <= 128u32 {

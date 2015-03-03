@@ -72,8 +72,9 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
         Control('u') => search.clear_query(),
         Control('c') => search.cancel(),
         Control('g') => search.cancel(),
-        Control('n') => search.down(visible_choices),
         Control('p') => search.up(visible_choices),
+        Control('n') => search.down(visible_choices),
+        Tab => search.down(visible_choices),
         Enter => search.done(),
         _ => {}
     }
