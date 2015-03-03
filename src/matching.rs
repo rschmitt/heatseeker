@@ -90,8 +90,6 @@ fn score(choice: &str, query: &str) -> f64 {
         return 0.0;
     }
 
-    let query = query.to_ascii_lowercase();
-    let choice = choice.to_ascii_lowercase();
     let query = chars!(query);
     let choice = chars!(choice);
 
@@ -111,8 +109,6 @@ pub fn visual_score(choice: &str, query: &str) -> Vec<usize> {
     if query.len() == 0 || choice.len() == 0 {
         return Vec::new();
     }
-    let query = query.to_ascii_lowercase();
-    let choice = choice.to_ascii_lowercase();
     let query = chars!(query);
     let choice = chars!(choice);
 
@@ -196,7 +192,7 @@ fn get_match_indices(string: &[char], rest_of_query: &[char], first_index: usize
 }
 
 fn chars_equal(q: &char, c: &char) -> bool {
-    q.eq_ignore_ascii_case(c)
+    *q == *c || *q == c.to_ascii_lowercase()
 }
 
 #[test]
@@ -204,7 +200,7 @@ fn chars_equal_test() {
     assert!(chars_equal(&'a', &'a'));
     assert!(!chars_equal(&'a', &'b'));
     assert!(chars_equal(&'A', &'A'));
-    assert!(chars_equal(&'A', &'a'));
+    assert!(!chars_equal(&'A', &'a'));
     assert!(chars_equal(&'a', &'A'));
 }
 
@@ -255,8 +251,9 @@ fn basic_scoring() {
 fn character_matching() {
     assert!(score("/! symbols $^", "/!$^") > 0.0);
 
-    assert_eq!(score("a", "A"), 1.0);
+    assert_eq!(score("a", "A"), 0.0);
     assert_eq!(score("A", "a"), 1.0);
+    assert_eq!(score("A", "A"), 1.0);
 
     assert_eq!(score("a", "aa"), 0.0);
 }
