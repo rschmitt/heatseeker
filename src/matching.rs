@@ -192,7 +192,7 @@ fn get_match_indices(string: &[char], rest_of_query: &[char], first_index: usize
 }
 
 fn chars_equal(q: &char, c: &char) -> bool {
-    *q == *c || *q == c.to_ascii_lowercase()
+    q == c || *q == c.to_ascii_lowercase()
 }
 
 #[test]
