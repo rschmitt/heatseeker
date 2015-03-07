@@ -1,6 +1,6 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, exit_status, libc, old_io, os)]
-#![cfg_attr(not(windows), feature(old_path, fs, io, std_misc, core))]
+#![feature(collections, exit_status, libc, io, os)]
+#![cfg_attr(not(windows), feature(old_path, fs, io, std_misc, core, old_io))]
 
 extern crate libc;
 #[cfg(not(windows))] extern crate collections;
@@ -11,7 +11,7 @@ mod screen;
 #[cfg(not(windows))] mod ansi;
 
 use std::env;
-use std::old_io;
+use std::io::{stdin, BufRead};
 use std::cmp::min;
 use screen::Screen;
 use screen::Key;
@@ -222,12 +222,19 @@ fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut FnM
 }
 
 fn read_choices() -> Vec<String> {
-    let mut stdin = old_io::stdio::stdin();
+    let stdin = stdin();
     let mut lines = Vec::new();
 
-    while let Ok(mut s) = stdin.read_line() {
-        trim(&mut s);
-        lines.push(s);
+    let mut stdin = stdin.lock();
+    loop {
+        let mut s = String::new();
+        stdin.read_line(&mut s).unwrap();
+        if s.len() == 0 {
+            break;
+        } else {
+            trim(&mut s);
+            lines.push(s);
+        }
     }
 
     lines
