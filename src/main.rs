@@ -1,6 +1,7 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, exit_status, libc, io, os)]
-#![cfg_attr(not(windows), feature(old_path, fs, io, std_misc, core, old_io))]
+#![feature(collections, exit_status, libc, os)]
+#![cfg_attr(not(windows), feature(io_ext, core, old_io, unicode))]
+#![allow(deprecated)]
 
 extern crate libc;
 #[cfg(not(windows))] extern crate collections;

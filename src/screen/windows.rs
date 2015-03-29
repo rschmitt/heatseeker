@@ -2,7 +2,7 @@
 
 extern crate libc;
 extern crate winapi;
-extern crate "kernel32-sys" as kernel32;
+extern crate kernel32;
 
 use self::kernel32::*;
 use self::winapi::*;

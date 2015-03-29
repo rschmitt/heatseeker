@@ -2,7 +2,7 @@ extern crate getopts;
 
 use std::env;
 
-struct Args {
+pub struct Args {
     pub initial_search: String,
     pub help: bool,
     pub use_first: bool,
