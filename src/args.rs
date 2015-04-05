@@ -6,12 +6,14 @@ pub struct Args {
     pub initial_search: String,
     pub help: bool,
     pub use_first: bool,
+    pub version: bool,
 }
 
 pub fn parse_args() -> Option<Args> {
     let mut os_args = env::args();
     let mut opts = getopts::Options::new();
     opts.optflag("h", "help", "Show this message");
+    opts.optflag("v", "version", "Show version");
     opts.optflagopt("s", "search", "Specify an initial search string", "SEARCH");
     opts.optflag("f", "first", "Automatically select the first match");
 
@@ -39,10 +41,13 @@ pub fn parse_args() -> Option<Args> {
         print_usage(&args[0], &opts);
     }
 
+    let version = matches.opt_present("version");
+
     Some(Args {
         initial_search: initial_search,
         help: help,
         use_first: matches.opt_present("first"),
+        version: version,
     })
 }
 

@@ -10,8 +10,10 @@ extern crate libc;
 mod args;
 mod matching;
 mod screen;
+mod version;
 #[cfg(not(windows))] mod ansi;
 
+use version::*;
 use std::env;
 use std::io::{stdin, BufRead};
 use std::cmp::min;
@@ -30,6 +32,11 @@ fn main() {
     };
 
     if args.help { return; }
+
+    if args.version {
+        println!("heatseeker {} ({}) (built {})", VERSION, COMMIT, TIMESTAMP);
+        return;
+    }
 
     let choices = read_choices();
     let initial_search = args.initial_search.clone();

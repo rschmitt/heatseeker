@@ -1,3 +1,4 @@
 /selectric
 /target
 /*.txt
+/src/version.rs

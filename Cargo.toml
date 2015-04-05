@@ -2,12 +2,17 @@
 name = "heatseeker"
 version = "0.2.0"
 authors = ["Ryan Schmitt <rschmitt@pobox.com>"]
+build = "build.rs"
 
 [[bin]]
 name = "hs"
 
 [dependencies]
 getopts = "*"
+
+[build-dependencies]
+time = "*"
+git2 = "*"
 
 [target.x86_64-pc-windows-gnu.dependencies]
 winapi = "*"
