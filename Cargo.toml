@@ -12,7 +12,6 @@ getopts = "*"
 
 [build-dependencies]
 time = "*"
-git2 = "*"
 
 [target.x86_64-pc-windows-gnu.dependencies]
 winapi = "*"
