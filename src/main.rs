@@ -1,8 +1,9 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, libc, unicode, scoped)]
+#![feature(collections, libc, scoped, convert)]
 #![cfg_attr(windows, feature(negate_unsigned))]
 
 extern crate libc;
+extern crate unicode_width;
 
 mod args;
 mod matching;
@@ -18,6 +19,7 @@ use screen::Screen;
 use screen::Key;
 use screen::Key::*;
 use self::SearchState::*;
+use unicode_width::UnicodeWidthStr;
 
 fn main() {
     let args = match args::parse_args() {
@@ -181,7 +183,7 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     print_matches(screen, &search.matches, &search.query, search.index);
 
     let start = screen.start_line;
-    screen.move_cursor(start, 2 + search.query.width(false) as u16);
+    screen.move_cursor(start, 2 + UnicodeWidthStr::width(search.query.as_str()) as u16);
     screen.show_cursor();
 }
 
