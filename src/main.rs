@@ -1,11 +1,8 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, exit_status, libc, unicode)]
-#![cfg_attr(not(windows), feature(core, old_io))]
+#![feature(collections, libc, unicode, scoped)]
 #![cfg_attr(windows, feature(negate_unsigned))]
-#![allow(deprecated)]
 
 extern crate libc;
-#[cfg(not(windows))] extern crate collections;
 
 mod args;
 mod matching;
@@ -14,7 +11,7 @@ mod version;
 #[cfg(not(windows))] mod ansi;
 
 use version::*;
-use std::env;
+use std::process;
 use std::io::{stdin, BufRead};
 use std::cmp::min;
 use screen::Screen;
@@ -26,8 +23,7 @@ fn main() {
     let args = match args::parse_args() {
         Some(args) => args,
         None => {
-            env::set_exit_status(1);
-            return;
+            process::exit(1);
         },
     };
 

@@ -6,13 +6,10 @@ use std::io::{Read, Write};
 use std::fs::{File, OpenOptions};
 use libc::{c_ushort, c_int, c_ulong};
 use std::os::unix::io::AsRawFd;
-use std::old_io::Reader;
 use std::path::*;
-use std::old_io::process::{Command, InheritFd};
-use std::old_io::process::ProcessExit::*;
+use std::process::Command;
 use std::iter::repeat;
 use std::cmp::min;
-use collections::str::Utf8Error;
 use ansi;
 
 use std::thread;
@@ -114,10 +111,8 @@ impl Screen {
     }
 
     fn more_bytes_needed(bytes: &Vec<u8>) -> bool {
-        if let Err(e) = String::from_utf8(bytes.clone()) {
-            if e.utf8_error() == Utf8Error::TooShort {
-                return true;
-            }
+        if let Err(_) = String::from_utf8(bytes.clone()) {
+            return true;
         }
         false
     }
@@ -163,16 +158,21 @@ impl Terminal {
     }
 
     fn stty(&mut self, args: &[&str]) -> Vec<u8> {
-        let mut process = match Command::new("stty").args(args).stdin(InheritFd(self.input_fd)).spawn() {
+        let mut process = match Command::new("stty")
+            .args(args)
+            // .stdin(InheritFd(self.input_fd))
+            .spawn()
+        {
             Ok(p) => p,
             Err(e) => panic!("Spawn failed: {}", e),
         };
 
         let exit = process.wait();
 
-        if exit.unwrap() == ExitStatus(0) {
-            let bytes = process.stdout.as_mut().unwrap().read_to_end().unwrap();
-            let mut str = String::from_utf8(bytes).unwrap();
+        let mut buf = Vec::new();
+        if exit.unwrap().success() {
+            process.stdout.as_mut().unwrap().read_to_end(&mut buf).unwrap();
+            let mut str = String::from_utf8(buf).unwrap();
 
             // The output from `stty -g` may include a newline, which we have to strip off. Otherwise,
             // when we go to restore the tty, stty (on some platforms) will fail with an "invalid
@@ -181,7 +181,8 @@ impl Terminal {
 
             str.into_bytes()
         } else {
-            panic!(String::from_utf8(process.stderr.as_mut().unwrap().read_to_end().unwrap()).unwrap());
+            process.stderr.as_mut().unwrap().read_to_end(&mut buf).unwrap();
+            panic!(String::from_utf8(buf).unwrap());
         }
     }
 
