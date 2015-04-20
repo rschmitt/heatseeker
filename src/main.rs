@@ -1,7 +1,6 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, libc, scoped, convert)]
+#![feature(collections, scoped, convert)]
 
-extern crate libc;
 extern crate unicode_width;
 
 mod args;

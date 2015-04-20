@@ -1,6 +1,5 @@
 #![cfg(windows)]
 
-extern crate libc;
 extern crate winapi;
 extern crate kernel32;
 

@@ -2,7 +2,8 @@ use std::ascii::AsciiExt;
 use std::cmp::*;
 use std::thread;
 use std::sync::mpsc::*;
-use libc;
+
+extern crate num_cpus;
 
 macro_rules! chars {
     ($str:expr) => (
@@ -29,7 +30,7 @@ pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
     }
     let mut join_guards = Vec::new();
     let (tx, rx) = channel();
-    let workers = num_cpus();
+    let workers = num_cpus::get();
     for current_worker in 0..workers {
         let tx = tx.clone();
         join_guards.push(thread::scoped(move|| {
@@ -51,12 +52,6 @@ pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
 
     ret.sort_by(|x, y| x.partial_cmp(y).unwrap());
     ret.iter().map(|x| choices[x.idx]).collect()
-}
-
-extern { fn rust_get_num_cpus() -> libc::uintptr_t;  }
-
-pub fn num_cpus() -> usize {
-    unsafe { rust_get_num_cpus() as usize  }
 }
 
 fn get_slice_indices(length: usize, workers: usize, idx: usize) -> (usize, usize) {
