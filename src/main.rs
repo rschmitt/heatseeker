@@ -1,5 +1,5 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, scoped, convert)]
+#![feature(collections, scoped)]
 
 extern crate unicode_width;
 
@@ -181,7 +181,8 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     print_matches(screen, &search.matches, &search.query, search.index);
 
     let start = screen.start_line;
-    screen.move_cursor(start, 2 + UnicodeWidthStr::width(search.query.as_str()) as u16);
+    let query_str: &str = &search.query;
+    screen.move_cursor(start, 2 + UnicodeWidthStr::width(query_str) as u16);
     screen.show_cursor();
 }
 
