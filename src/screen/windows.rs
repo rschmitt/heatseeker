@@ -231,7 +231,7 @@ impl Screen {
 
 #[test]
 fn winsize_test() {
-    let conout = unsafe { kernel32::GetStdHandle(-11) };
+    let conout = unsafe { kernel32::GetStdHandle(0xFFFFFFF5) };
     let (cols, rows) = Screen::winsize(conout).expect("Failed to get window size!");
     // We don't know the window size a priori, but we can at least
     // assert that it is within some kind of sensible range.

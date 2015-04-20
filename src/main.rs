@@ -1,6 +1,5 @@
 #![cfg_attr(test, allow(dead_code))]
 #![feature(collections, libc, scoped, convert)]
-#![cfg_attr(windows, feature(negate_unsigned))]
 
 extern crate libc;
 extern crate unicode_width;
