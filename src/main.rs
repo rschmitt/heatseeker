@@ -1,6 +1,8 @@
 #![cfg_attr(test, allow(dead_code))]
 #![feature(collections, scoped)]
+#![cfg_attr(not(windows), feature(libc))]
 
+#[cfg(not(windows))] extern crate libc;
 extern crate unicode_width;
 
 mod args;
