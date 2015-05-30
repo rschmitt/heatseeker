@@ -22,7 +22,7 @@ pub fn parse_args() -> Option<Args> {
         args.push(os_arg);
     }
 
-    let matches = match opts.parse(args.tail()) {
+    let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
         Err(f) => {
             println!("{}", f);
@@ -33,7 +33,7 @@ pub fn parse_args() -> Option<Args> {
 
     let initial_search = match matches.opt_str("search") {
         Some(x) => x.clone(),
-        None => String::from_str(""),
+        None => "".to_string(),
     };
 
     let help = matches.opt_present("help");

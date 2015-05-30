@@ -1,5 +1,5 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(collections, scoped)]
+#![feature(scoped)]
 #![cfg_attr(not(windows), feature(libc))]
 
 #[cfg(not(windows))] extern crate libc;
@@ -221,12 +221,12 @@ fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut FnM
         if last_idx >= chars_to_draw {
             return;
         }
-        writer(&choice.slice_chars(last_idx, idx), false);
+        writer(&slice_chars(choice, last_idx, idx), false);
         if idx == chars_to_draw { return }
-        writer(&choice.slice_chars(idx, idx + 1), true);
+        writer(&slice_chars(choice, idx, idx + 1), true);
         last_idx = idx + 1;
     }
-    writer(&choice.slice_chars(last_idx, chars_to_draw), false);
+    writer(&slice_chars(choice, last_idx, chars_to_draw), false);
 }
 
 fn read_choices() -> Vec<String> {
@@ -268,6 +268,31 @@ fn delete_last_word(s: &mut String) {
         } else {
             deleted_something = true;
         }
+    }
+}
+
+// This is technically a standard library function, but it's plastered with
+// stability warnings and therefore only available on the nightly channel.
+fn slice_chars(s: &str, begin: usize, end: usize) -> &str {
+    assert!(begin <= end);
+    let mut count = 0;
+    let mut begin_byte = None;
+    let mut end_byte = None;
+
+    // This could be even more efficient by not decoding,
+    // only finding the char boundaries
+    for (idx, _) in s.char_indices() {
+        if count == begin { begin_byte = Some(idx); }
+        if count == end { end_byte = Some(idx); break; }
+        count += 1;
+    }
+    if begin_byte.is_none() && count == begin { begin_byte = Some(s.len()) }
+    if end_byte.is_none() && count == end { end_byte = Some(s.len()) }
+
+    match (begin_byte, end_byte) {
+        (None, _) => panic!("slice_chars: `begin` is beyond end of string"),
+        (_, None) => panic!("slice_chars: `end` is beyond end of string"),
+        (Some(a), Some(b)) => unsafe { s.slice_unchecked(a, b) }
     }
 }
 

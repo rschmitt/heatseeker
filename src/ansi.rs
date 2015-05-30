@@ -3,8 +3,8 @@ const ESC: u8 = 27;
 pub fn escape(sequence: &str) -> Vec<u8> {
     let mut ret = Vec::new();
     ret.push(ESC);
-    ret.push_all(String::from_str("[").as_bytes());
-    ret.push_all(sequence.as_bytes());
+    ret.extend("[".to_string().as_bytes().iter().map(|&i| i));
+    ret.extend(sequence.as_bytes().iter().map(|&i| i));
     ret
 }
 
