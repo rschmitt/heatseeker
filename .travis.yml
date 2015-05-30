@@ -2,3 +2,6 @@ language: rust
 
 rust:
   - nightly
+
+env:
+  - TRAVIS=1
