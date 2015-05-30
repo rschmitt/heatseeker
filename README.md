@@ -1,3 +1,5 @@
+[![Build Status](http://img.shields.io/travis/rschmitt/heatseeker.svg)](https://travis-ci.org/rschmitt/heatseeker)
+
 # Heatseeker
 
 Heatseeker is a rewrite of Gary Bernhardt's
