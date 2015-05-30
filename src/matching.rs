@@ -1,7 +1,5 @@
 use std::ascii::AsciiExt;
 use std::cmp::*;
-use std::thread;
-use std::sync::mpsc::*;
 
 extern crate num_cpus;
 
@@ -11,23 +9,28 @@ macro_rules! chars {
     );
 }
 
-pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
-    #[derive(PartialEq)]
-    struct ScoredChoice {
-        idx: usize,
-        score: f64,
-    }
-    impl PartialOrd for ScoredChoice {
-        fn partial_cmp(&self, other: &ScoredChoice) -> Option<Ordering> {
-            if other.score == self.score {
-                // We fall back to an array index comparison in order to guarantee a stable sort;
-                // otherwise the matches may be displayed in a nondeterministic order.
-                Some(self.idx.cmp(&other.idx))
-            } else {
-                other.score.partial_cmp(&self.score)
-            }
+#[derive(PartialEq)]
+struct ScoredChoice {
+    idx: usize,
+    score: f64,
+}
+
+impl PartialOrd for ScoredChoice {
+    fn partial_cmp(&self, other: &ScoredChoice) -> Option<Ordering> {
+        if other.score == self.score {
+            // We fall back to an array index comparison in order to guarantee a stable sort;
+            // otherwise the matches may be displayed in a nondeterministic order.
+            Some(self.idx.cmp(&other.idx))
+        } else {
+            other.score.partial_cmp(&self.score)
         }
     }
+}
+
+#[cfg(nightly)]
+pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
+    use std::thread;
+    use std::sync::mpsc::*;
     let mut join_guards = Vec::new();
     let (tx, rx) = channel();
     let workers = num_cpus::get();
@@ -47,6 +50,20 @@ pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
         let scored_choice = rx.recv().unwrap();
         if scored_choice.score > 0_f64 {
             ret.push(scored_choice);
+        }
+    }
+
+    ret.sort_by(|x, y| x.partial_cmp(y).unwrap());
+    ret.iter().map(|x| choices[x.idx]).collect()
+}
+
+#[cfg(not(nightly))]
+pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
+    let mut ret = Vec::new();
+    for i in 0..choices.len() {
+        let score = score(choices[i], query);
+        if score > 0_f64 {
+            ret.push(ScoredChoice{ idx: i, score: score });
         }
     }
 

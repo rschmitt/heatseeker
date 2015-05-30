@@ -1,5 +1,5 @@
 #![cfg_attr(test, allow(dead_code))]
-#![feature(scoped)]
+#![cfg_attr(nightly, feature(scoped))]
 #![cfg_attr(not(windows), feature(libc))]
 
 #[cfg(not(windows))] extern crate libc;
