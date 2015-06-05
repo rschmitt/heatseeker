@@ -5,9 +5,11 @@ use screen::Key::*;
 use std::io::{Read, Write};
 use std::fs::{File, OpenOptions};
 use libc::{c_ushort, c_int, c_ulong};
+use libc::funcs::posix88::unistd::dup2;
 use std::os::unix::io::AsRawFd;
 use std::path::*;
 use std::process::Command;
+use std::process::Stdio;
 use std::iter::repeat;
 use std::cmp::min;
 use ansi;
@@ -158,9 +160,14 @@ impl Terminal {
     }
 
     fn stty(&mut self, args: &[&str]) -> Vec<u8> {
+        unsafe {
+            // This is a hack until a replacement for InheritFd from old_io is available.
+            dup2(self.input_fd, 0);
+        }
         let mut process = match Command::new("stty")
             .args(args)
-            // .stdin(InheritFd(self.input_fd))
+            .stdin(Stdio::inherit())
+            .stdout(Stdio::piped())
             .spawn()
         {
             Ok(p) => p,
