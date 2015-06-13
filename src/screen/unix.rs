@@ -4,8 +4,6 @@ use screen::Key;
 use screen::Key::*;
 use std::io::{Read, Write};
 use std::fs::{File, OpenOptions};
-use libc::{c_ushort, c_int, c_ulong};
-use libc::funcs::posix88::unistd::dup2;
 use std::os::unix::io::AsRawFd;
 use std::path::*;
 use std::process::Command;
@@ -17,6 +15,10 @@ use ansi;
 use std::thread;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc;
+
+#[allow(non_camel_case_types)] type c_ushort = u16;
+#[allow(non_camel_case_types)] type c_int = i32;
+#[allow(non_camel_case_types)] type c_ulong = u64;
 
 pub struct Screen {
     tty: Terminal,
@@ -160,6 +162,7 @@ impl Terminal {
     }
 
     fn stty(&mut self, args: &[&str]) -> Vec<u8> {
+        extern { fn dup2(src: c_int, dst: c_int) -> c_int;  }
         unsafe {
             // This is a hack until a replacement for InheritFd from old_io is available.
             dup2(self.input_fd, 0);
