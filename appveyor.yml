@@ -25,3 +25,5 @@ build: false
 
 test_script:
   - cargo test --verbose
+  - cargo build --release
+  - target\release\hs.exe -v
