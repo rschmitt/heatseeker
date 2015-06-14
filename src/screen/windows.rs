@@ -230,6 +230,11 @@ impl Screen {
 
 #[test]
 fn winsize_test() {
+    // AppVeyor builds run without a console, making this test impossible.
+    if option_env!("APPVEYOR").is_some() {
+        // TODO: It should be made obvious from the output that this test was skipped
+        return;
+    }
     let conout = unsafe { kernel32::GetStdHandle(0xFFFFFFF5) };
     let (cols, rows) = Screen::winsize(conout).expect("Failed to get window size!");
     // We don't know the window size a priori, but we can at least
