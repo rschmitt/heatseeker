@@ -10,6 +10,7 @@ mod version;
 #[cfg(not(windows))] mod ansi;
 
 use version::*;
+use std::collections::HashSet;
 use std::process;
 use std::io::{stdin, BufRead};
 use std::cmp::min;
@@ -82,7 +83,7 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
         Control('c') => search.cancel(),
         Control('g') => search.cancel(),
         Control('p') => search.up(visible_choices),
-        Control('t') => search.buffer_selection(),
+        Control('t') => search.toggle_selection(),
         Control('n') => search.down(visible_choices),
         Tab => search.down(visible_choices),
         Enter => search.done(),
@@ -97,7 +98,7 @@ struct Search<'a> {
     stale: bool,
     index: usize,
     state: SearchState,
-    buffer: String,
+    selections: HashSet<String>,
 }
 
 #[derive(PartialEq, Eq)]
@@ -117,7 +118,7 @@ impl<'a> Search<'a> {
             stale: true,
             index: 0,
             state: InProgress,
-            buffer: String::new(),
+            selections: HashSet::new(),
         }
     }
 
@@ -162,20 +163,28 @@ impl<'a> Search<'a> {
         }
     }
 
-    fn buffer_selection(&mut self) {
+    fn toggle_selection(&mut self) {
         self.recompute_matches();
-        self.buffer.push_str(self.matches.get(self.index).unwrap_or(&""));
-        self.buffer.push('\n');
+        let selection = self.matches.get(self.index).unwrap_or(&"").to_string();
+        if self.selections.contains(&selection) {
+            self.selections.remove(&selection);
+        } else {
+            self.selections.insert(selection);
+        }
     }
 
     fn get_selections(&mut self) -> String {
-        if self.state == Canceled {
-            self.buffer.clone()
-        } else {
+        let mut ret = String::new();
+        if self.state != Canceled {
             self.recompute_matches();
-            self.buffer.push_str(self.matches.get(self.index).unwrap_or(&""));
-            self.buffer.clone()
+            let selection = self.matches.get(self.index).unwrap_or(&"").to_string();
+            self.selections.insert(selection);
         }
+        for selection in self.selections.iter() {
+            ret.push_str(selection);
+            ret.push('\n');
+        }
+        ret
     }
 
     fn cancel(&mut self) {
