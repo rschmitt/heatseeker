@@ -201,7 +201,7 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     screen.blank_screen();
     screen.write(&format!("> {} ({}/{} choices)\n", search.query, search.matches.len(), search.choices.len()));
 
-    print_matches(screen, &search.matches, &search.query, search.index);
+    print_matches(screen, &search.matches, &search.query, search.index, &search.selections);
 
     let start = screen.start_line;
     let query_str: &str = &search.query;
@@ -209,12 +209,19 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     screen.show_cursor();
 }
 
-fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usize) {
+fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usize, selections: &HashSet<String>) {
+    #[cfg(windows)] const SELECTED: char = '*';
+    #[cfg(not(windows))] const SELECTED: char = '✓';
     let mut i = 1;
     for choice in matches.iter() {
         let indices = matching::visual_score(choice, query);
         let max_width = screen.width;
-        print_match(choice, &indices, max_width, &mut |s, highlight| {
+        let mut annotated_choice = choice.to_string();
+        if selections.contains(&annotated_choice) {
+            annotated_choice.push(' ');
+            annotated_choice.push(SELECTED);
+        }
+        print_match(&annotated_choice, &indices, max_width, &mut |s, highlight| {
             if i == index + 1 {
                 if highlight { screen.write_red_inverted(s); } else { screen.write_inverted(s); }
             } else {
