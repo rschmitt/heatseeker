@@ -30,7 +30,11 @@ fn main() {
     if args.help { return; }
 
     if args.version {
-        println!("heatseeker {} ({}) (built {})", VERSION, COMMIT, TIMESTAMP);
+        if COMMIT == "" {
+            println!("heatseeker {} (built {})", VERSION, TIMESTAMP);
+        } else {
+            println!("heatseeker {} ({}) (built {})", VERSION, COMMIT, TIMESTAMP);
+        }
         return;
     }
 
