@@ -1,4 +1,5 @@
 [![Build Status](http://img.shields.io/travis/rschmitt/heatseeker.svg)](https://travis-ci.org/rschmitt/heatseeker)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/rschmitt/heatseeker?svg=true)](https://ci.appveyor.com/project/rschmitt/heatseeker)
 
 # Heatseeker
 
