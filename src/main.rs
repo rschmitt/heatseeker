@@ -278,7 +278,7 @@ fn read_choices() -> Vec<String> {
 
 pub fn trim(s: &mut String) {
     while let Some(x) = s.pop() {
-        if x != '\n' {
+        if x != '\n' && x != '\r' {
             s.push(x);
             return;
         }
@@ -337,6 +337,7 @@ fn trim_test() {
     should_become("asdf", "asdf");
     should_become("asdf\n", "asdf");
     should_become("asdf\nasdf\n", "asdf\nasdf");
+    should_become("asdf\r\n", "asdf");
 }
 
 #[test]
