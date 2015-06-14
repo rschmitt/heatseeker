@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- Do not remove this test for UTF-8: if “Ω” doesn’t appear as greek uppercase omega letter enclosed in quotation marks, you should use an editor that supports UTF-8, not this one. -->
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>heatseeker</id>
+    <version>1.1.1</version>
+    <title>Heatseeker</title>
+    <authors>Ryan Schmitt</authors>
+    <owners>Ryan Schmitt</owners>
+    <summary>A high-performance general purpose fuzzy finder, based on selecta</summary>
+    <description>A high-performance general purpose fuzzy finder, based on selecta</description>
+    <projectUrl>https://github.com/rschmitt/heatseeker</projectUrl>
+    <licenseUrl>https://github.com/rschmitt/heatseeker/blob/master/LICENSE</licenseUrl>
+    <tags>heatseeker selecta utilities tools vim editor search fuzzy finder</tags>
+    <copyright></copyright>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <releaseNotes></releaseNotes>
+  </metadata>
+</package>

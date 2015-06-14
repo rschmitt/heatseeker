@@ -2,3 +2,5 @@
 /target
 /*.txt
 /src/version.rs
+/chocolatey
+/*.nupkg
