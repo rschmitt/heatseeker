@@ -10,7 +10,15 @@ Heatseeker is a rewrite of Gary Bernhardt's
 * Be as fast as possible (for usability with a large number of choices)
 * Support Windows
 
+## Installation
+
 Compiled binaries for the latest version can be downloaded [from GitHub](https://github.com/rschmitt/heatseeker/releases/tag/v0.3.0).
+
+To install on OS X using [Homebrew](http://brew.sh/), run:
+
+```shell
+brew install https://raw.githubusercontent.com/rschmitt/heatseeker/master/heatseeker.rb
+```
 
 ## Project Status
 
@@ -18,7 +26,6 @@ Compiled binaries for the latest version can be downloaded [from GitHub](https:/
 * Heatseeker requires no unstable language features and can be compiled with the stable Rust toolchain (currently version 1.0.0).
 * Heatseeker contains a fully working implementation of multi-threaded matching, but because it depends on an unstable feature (scoped threads) it is disabled by default. Since Heatseeker is extremely fast even with a single thread, this is not a big deal.
 * In a few places in the Heatseeker code, there are workarounds to avoid the use of experimental features, such as libc, scoped, collections, and old_io. As Rust matures, these workarounds will be eliminated.
-* Heatseeker is not currently available through package managers like choco, brew, or apt-get. However, this may now be possible, due to the recent stabilization of Rust and the elimination of the last uses of experimental features in Heatseeker.
 
 ## Building
 
