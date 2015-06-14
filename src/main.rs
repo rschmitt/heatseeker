@@ -69,7 +69,7 @@ fn event_loop(choices: &[&str], initial_search: &str) {
     }
 
     screen.move_cursor_to_bottom();
-    println!("{}", search.get_selection());
+    println!("{}", search.get_selections());
 }
 
 fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
@@ -82,6 +82,7 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
         Control('c') => search.cancel(),
         Control('g') => search.cancel(),
         Control('p') => search.up(visible_choices),
+        Control('t') => search.buffer_selection(),
         Control('n') => search.down(visible_choices),
         Tab => search.down(visible_choices),
         Enter => search.done(),
@@ -96,6 +97,7 @@ struct Search<'a> {
     stale: bool,
     index: usize,
     state: SearchState,
+    buffer: String,
 }
 
 #[derive(PartialEq, Eq)]
@@ -115,6 +117,7 @@ impl<'a> Search<'a> {
             stale: true,
             index: 0,
             state: InProgress,
+            buffer: String::new(),
         }
     }
 
@@ -159,12 +162,19 @@ impl<'a> Search<'a> {
         }
     }
 
-    fn get_selection(&mut self) -> String {
+    fn buffer_selection(&mut self) {
+        self.recompute_matches();
+        self.buffer.push_str(self.matches.get(self.index).unwrap_or(&""));
+        self.buffer.push('\n');
+    }
+
+    fn get_selections(&mut self) -> String {
         if self.state == Canceled {
-            "".to_string()
+            self.buffer.clone()
         } else {
             self.recompute_matches();
-            self.matches.get(self.index).unwrap_or(&"").to_string()
+            self.buffer.push_str(self.matches.get(self.index).unwrap_or(&""));
+            self.buffer.clone()
         }
     }
 
