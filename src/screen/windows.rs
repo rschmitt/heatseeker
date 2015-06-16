@@ -30,6 +30,7 @@ pub struct Screen {
     pub start_line: u16,
     original_console_mode: DWORD,
     original_colors: WORD,
+    original_cp: DWORD,
     input: Receiver<u16>,
     conout: HANDLE,
 }
@@ -37,6 +38,7 @@ pub struct Screen {
 impl Drop for Screen {
     fn drop(&mut self) {
         win32!(SetConsoleMode(self.conout, self.original_console_mode));
+        win32!(SetConsoleOutputCP(self.original_cp));
     }
 }
 
@@ -45,20 +47,14 @@ impl Screen {
         let mut orig_mode;
         let conin: HANDLE;
         let conout: HANDLE;
+        let cp: DWORD;
         unsafe {
-            // Unlike in Linux, we *could* use the default stdin/stdout file handles to talk
-            // directly to the console. However, we need the default stdin handle for the list of
-            // choices, and we need to write just the final selection to stdout. Therefore we have
-            // to explicitly create new handles to talk to the console. The gory details are
-            // available at:
-            //
-            // https://msdn.microsoft.com/en-us/library/windows/desktop/ms682075%28v=vs.85%29.aspx
-            // http://stackoverflow.com/questions/377152/what-does-createfileconin-do
             const OPEN_EXISTING: DWORD = 3;
             let rw_access = GENERIC_READ | GENERIC_WRITE;
             conin = CreateFileA("CONIN$\0".as_ptr() as *const i8, rw_access, FILE_SHARE_READ, ptr::null_mut(), OPEN_EXISTING, 0, ptr::null_mut());
             conout = CreateFileA("CONOUT$\0".as_ptr() as *const i8, rw_access, FILE_SHARE_READ, ptr::null_mut(), OPEN_EXISTING, 0, ptr::null_mut());
             orig_mode = ::std::mem::uninitialized();
+            cp = GetConsoleOutputCP();
         }
 
         if conin == INVALID_HANDLE_VALUE || conout == INVALID_HANDLE_VALUE {
@@ -70,6 +66,7 @@ impl Screen {
         win32!(GetConsoleMode(conout, &mut orig_mode));
         let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
         win32!(SetConsoleMode(conin, new_mode));
+        win32!(SetConsoleOutputCP(437 as DWORD));
 
         let rx = Screen::spawn_input_thread(conin as usize);
         let visible_choices = min(20, rows - 1);
@@ -82,6 +79,7 @@ impl Screen {
             start_line: start_line,
             original_console_mode: orig_mode,
             original_colors: original_colors,
+            original_cp: cp,
             input: rx,
             conout: conout,
         }

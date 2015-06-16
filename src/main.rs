@@ -210,8 +210,6 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
 }
 
 fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usize, selections: &HashSet<String>) {
-    #[cfg(windows)] const SELECTED: char = '*';
-    #[cfg(not(windows))] const SELECTED: char = '✓';
     let mut i = 1;
     for choice in matches.iter() {
         let indices = matching::visual_score(choice, query);
@@ -219,7 +217,11 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
         let mut annotated_choice = choice.to_string();
         if selections.contains(&annotated_choice) {
             annotated_choice.push(' ');
-            annotated_choice.push(SELECTED);
+            if cfg!(windows) {
+                unsafe { annotated_choice.as_mut_vec().push(251u8); }
+            } else {
+                annotated_choice.push('✓');
+            }
         }
         print_match(&annotated_choice, &indices, max_width, &mut |s, highlight| {
             if i == index + 1 {
