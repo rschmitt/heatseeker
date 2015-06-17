@@ -141,7 +141,7 @@ impl Screen {
         let len: DWORD = copy.len() as DWORD;
         copy.push('\0');
         let mut bytes_written: DWORD = 0;
-        win32!(WriteFile(self.conout, copy.as_ptr() as PVOID, len, &mut bytes_written as LPDWORD, ptr::null_mut()));
+        win32!(WriteConsoleA(self.conout, copy.as_ptr() as PVOID, len, &mut bytes_written as LPDWORD, ptr::null_mut()));
     }
 
     pub fn write_red_inverted(&mut self, s: &str) {
