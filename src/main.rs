@@ -218,7 +218,7 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
         if selections.contains(&annotated_choice) {
             annotated_choice.push(' ');
             if cfg!(windows) {
-                unsafe { annotated_choice.as_mut_vec().push(251u8); }
+                annotated_choice.push('√');
             } else {
                 annotated_choice.push('✓');
             }
