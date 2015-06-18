@@ -20,6 +20,9 @@ use screen::Key::*;
 use self::SearchState::*;
 use unicode_width::UnicodeWidthStr;
 
+#[cfg(windows)] const NEWLINE: &'static str = "\r\n";
+#[cfg(not(windows))] const NEWLINE: &'static str = "\n";
+
 fn main() {
     let args = match args::parse_args() {
         Some(args) => args,
@@ -182,7 +185,7 @@ impl<'a> Search<'a> {
         }
         for selection in self.selections.iter() {
             ret.push_str(selection);
-            ret.push('\n');
+            ret.push_str(NEWLINE);
         }
         ret
     }
@@ -199,7 +202,7 @@ impl<'a> Search<'a> {
 fn draw_screen(screen: &mut Screen, search: &Search) {
     screen.hide_cursor();
     screen.blank_screen();
-    screen.write(&format!("> {} ({}/{} choices)\n", search.query, search.matches.len(), search.choices.len()));
+    screen.write(&format!("> {} ({}/{} choices){}", search.query, search.matches.len(), search.choices.len(), NEWLINE));
 
     print_matches(screen, &search.matches, &search.query, search.index, &search.selections);
 
@@ -233,7 +236,7 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
         if i >= screen.visible_choices as usize {
             return;
         } else {
-            screen.write("\n");
+            screen.write(NEWLINE);
         }
         i += 1;
     }
