@@ -14,4 +14,4 @@ copy README.md chocolatey\tools\README || exit /b 1
 mkdir chocolatey\tools\bin || exit /b 1
 copy target\release\hs.exe chocolatey\tools\bin || exit /b 1
 
-cpack chocolatey\heatseeker.nuspec || exit /b 1
+choco pack chocolatey\heatseeker.nuspec || exit /b 1
