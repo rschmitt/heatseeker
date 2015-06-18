@@ -73,7 +73,7 @@ fn event_loop(choices: &[&str], initial_search: &str) {
     }
 
     screen.move_cursor_to_bottom();
-    println!("{}", search.get_selections());
+    print!("{}", search.get_selections());
 }
 
 fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
