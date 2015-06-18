@@ -1,9 +1,9 @@
 @echo on
 
-cargo clean || exit /b 1
 cargo test || exit /b 1
 cargo build --release || exit /b 1
 
+rd /s /q chocolatey
 mkdir chocolatey || exit /b 1
 copy heatseeker.nuspec chocolatey\ || exit /b 1
 
