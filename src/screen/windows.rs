@@ -34,12 +34,6 @@ pub struct Screen {
     conout: HANDLE,
 }
 
-impl Drop for Screen {
-    fn drop(&mut self) {
-        win32!(SetConsoleMode(self.conout, self.original_console_mode));
-    }
-}
-
 impl Screen {
     pub fn open_screen() -> Screen {
         let mut orig_mode;
@@ -59,13 +53,14 @@ impl Screen {
 
         let (cols, rows) = Screen::winsize(conout).unwrap();
 
-        win32!(GetConsoleMode(conout, &mut orig_mode));
+        win32!(GetConsoleMode(conin, &mut orig_mode));
         let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
         win32!(SetConsoleMode(conin, new_mode));
 
         let rx = Screen::spawn_input_thread(conin as usize);
+        let initial_pos = Screen::get_cursor_pos(conout);
         let visible_choices = min(20, rows - 1);
-        let start_line = rows - visible_choices - 1;
+        let start_line = get_start_line(rows, visible_choices, initial_pos);
         let original_colors = Screen::get_original_colors(conout);
         Screen {
             height: rows,
@@ -113,10 +108,12 @@ impl Screen {
     pub fn blank_screen(&mut self) {
         let start_line = self.start_line;
         self.move_cursor(start_line, 0);
-        let blank_line = repeat(' ').take(self.width as usize).collect::<String>();
-        for _ in 0..self.height {
+        let blank_line = repeat(' ').take((self.width - 1) as usize).collect::<String>();
+        for _ in 0..self.visible_choices {
             self.write(&blank_line);
+            self.write("\r\n");
         }
+        self.write(&blank_line);
         self.move_cursor(start_line, 0);
     }
 
@@ -199,6 +196,13 @@ impl Screen {
         }
     }
 
+    fn get_cursor_pos(handle: HANDLE) -> (u16, u16) {
+        let mut buffer_info = unsafe { ::std::mem::uninitialized() };
+        win32!(GetConsoleScreenBufferInfo(handle, &mut buffer_info));
+        let cursor_pos = buffer_info.dwCursorPosition;
+        (cursor_pos.X as u16, cursor_pos.Y as u16)
+    }
+
     fn get_original_colors(handle: HANDLE) -> WORD {
         let mut buffer_info = unsafe { ::std::mem::uninitialized() };
         win32!(GetConsoleScreenBufferInfo(handle, &mut buffer_info));
@@ -234,7 +238,7 @@ fn winsize_test() {
         // TODO: It should be made obvious from the output that this test was skipped
         return;
     }
-    let conout = unsafe { kernel32::GetStdHandle(0xFFFFFFF5) };
+    let conout = unsafe { kernel32::GetStdHandle(STD_OUTPUT_HANDLE) };
     let (cols, rows) = Screen::winsize(conout).expect("Failed to get window size!");
     // We don't know the window size a priori, but we can at least
     // assert that it is within some kind of sensible range.
@@ -242,4 +246,23 @@ fn winsize_test() {
     assert!(rows > 40);
     assert!(cols < 1000);
     assert!(rows < 1000);
+}
+
+fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u16 {
+    let bottom_most_line = rows - visible_choices - 1;
+    let (initial_x, initial_y) = initial_pos;
+    let line_under_cursor = if initial_x == 0 { initial_y } else { initial_y + 1 };
+    if line_under_cursor + 1 + visible_choices > rows {
+        bottom_most_line
+    } else {
+        line_under_cursor
+    }
+}
+
+#[test]
+fn start_line_test() {
+    assert_eq!(5, get_start_line(100, 20, (0, 5)));
+    assert_eq!(6, get_start_line(100, 20, (1, 5)));
+    assert_eq!(79, get_start_line(100, 20, (0, 100)));
+    assert_eq!(0, get_start_line(15, 14, ((0, 5))));
 }
