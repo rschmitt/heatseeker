@@ -5,5 +5,14 @@ rust:
   - beta
   - nightly
 
-env:
-  - TRAVIS=1
+matrix:
+  include:
+    - rust: nightly
+      env: FEATURES=nightly
+
+script:
+   - cargo build --features "$FEATURES"
+
+global:
+  env:
+    - TRAVIS=1
