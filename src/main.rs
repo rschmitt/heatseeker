@@ -20,8 +20,8 @@ use screen::Key::*;
 use self::SearchState::*;
 use unicode_width::UnicodeWidthStr;
 
-#[cfg(windows)] const NEWLINE: &'static str = "\r\n";
-#[cfg(not(windows))] const NEWLINE: &'static str = "\n";
+#[cfg(windows)] pub const NEWLINE: &'static str = "\r\n";
+#[cfg(not(windows))] pub const NEWLINE: &'static str = "\n";
 
 fn main() {
     let args = match args::parse_args() {

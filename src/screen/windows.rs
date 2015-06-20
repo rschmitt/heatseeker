@@ -15,6 +15,7 @@ use screen::get_start_line;
 use std::thread;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc;
+use ::NEWLINE;
 
 macro_rules! win32 {
     ($funcall:expr) => (
@@ -63,11 +64,18 @@ impl Screen {
         let visible_choices = min(20, rows - 1);
         let start_line = get_start_line(rows, visible_choices, initial_pos);
         let original_colors = Screen::get_original_colors(conout);
+        let (column, _) = initial_pos;
+        if column > 0 {
+            Self::write_to(conout, NEWLINE);
+        }
+        for _ in 0..visible_choices {
+            Self::write_to(conout, NEWLINE);
+        }
         Screen {
             height: rows,
             width: cols,
             visible_choices: visible_choices,
-            start_line: start_line + Screen::get_buffer_offset(conout),
+            start_line: start_line + Self::get_buffer_offset(conout),
             original_console_mode: orig_mode,
             original_colors: original_colors,
             input: rx,
@@ -112,12 +120,12 @@ impl Screen {
     }
 
     pub fn blank_screen(&mut self) {
+        let blank_line = repeat(' ').take((self.width - 1) as usize).collect::<String>();
         let start_line = self.start_line;
         self.move_cursor(start_line, 0);
-        let blank_line = repeat(' ').take((self.width - 1) as usize).collect::<String>();
         for _ in 0..self.visible_choices {
             self.write(&blank_line);
-            self.write("\r\n");
+            self.write(NEWLINE);
         }
         self.write(&blank_line);
         self.move_cursor(start_line, 0);
@@ -134,9 +142,13 @@ impl Screen {
     }
 
     pub fn write(&mut self, s: &str) {
+        Self::write_to(self.conout, s);
+    }
+
+    fn write_to(conout: HANDLE, s: &str) {
         let mut chars_written: DWORD = 0;
         let chars_to_write = s.chars().count() as DWORD;
-        win32!(WriteConsoleW(self.conout, Screen::to_wide_char(s), chars_to_write, &mut chars_written as LPDWORD, ptr::null_mut()));
+        win32!(WriteConsoleW(conout, Screen::to_wide_char(s), chars_to_write, &mut chars_written as LPDWORD, ptr::null_mut()));
     }
 
     fn to_wide_char(s: &str) -> PVOID {
