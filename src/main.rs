@@ -1,5 +1,5 @@
 #![cfg_attr(test, allow(dead_code))]
-#![cfg_attr(nightly, feature(scoped))]
+#![cfg_attr(feature = "nightly", feature(scoped))]
 
 extern crate unicode_width;
 
@@ -34,10 +34,12 @@ fn main() {
     if args.help { return; }
 
     if args.version {
+        #[cfg(feature = "nightly")] const THREADS: &'static str = "multi-threaded";
+        #[cfg(not(feature = "nightly"))] const THREADS: &'static str = "single-threaded";
         if COMMIT == "" {
-            println!("heatseeker {} (built {})", VERSION, TIMESTAMP);
+            println!("heatseeker {} {} (built {} for {})", VERSION, THREADS, TIMESTAMP, TARGET);
         } else {
-            println!("heatseeker {} ({}) (built {})", VERSION, COMMIT, TIMESTAMP);
+            println!("heatseeker {} {} ({}) (built {} for {})", VERSION, THREADS, COMMIT, TIMESTAMP, TARGET);
         }
         return;
     }

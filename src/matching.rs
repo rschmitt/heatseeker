@@ -27,7 +27,7 @@ impl PartialOrd for ScoredChoice {
     }
 }
 
-#[cfg(nightly)]
+#[cfg(feature = "nightly")]
 pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
     use std::thread;
     use std::sync::mpsc::*;
@@ -57,7 +57,7 @@ pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
     ret.iter().map(|x| choices[x.idx]).collect()
 }
 
-#[cfg(not(nightly))]
+#[cfg(not(feature = "nightly"))]
 pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
     let mut ret = Vec::new();
     for i in 0..choices.len() {

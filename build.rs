@@ -9,18 +9,21 @@ use std::process::Command;
 
 fn main() {
     let basedir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let version = env!("CARGO_PKG_VERSION");
+    let version = env::var("CARGO_PKG_VERSION").unwrap();
     let dest_path = Path::new(&basedir).join("src/version.rs");
     let mut f = File::create(&dest_path).unwrap();
 
     let timestamp = strftime("%F %H:%M:%S %z", &now()).unwrap();
     let commit = get_head_commit();
 
+    let target = env::var("TARGET").unwrap();
+
     let contents = format!(
 "pub const VERSION: &'static str = \"{}\";
 pub const TIMESTAMP: &'static str = \"{}\";
+pub const TARGET: &'static str = \"{}\";
 pub const COMMIT: &'static str = \"{}\";\n",
-        version, timestamp, commit);
+        version, timestamp, target, commit);
     f.write_all(contents.as_bytes()).unwrap();
 }
 
