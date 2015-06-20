@@ -129,7 +129,6 @@ impl Screen {
 
 impl Drop for Screen {
     fn drop(&mut self) {
-        self.tty.write(&ansi::cursor_up(1));
         self.restore_tty();
     }
 }
