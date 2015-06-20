@@ -28,7 +28,7 @@ pub struct Screen {
     pub height: u16,
     pub width: u16,
     pub visible_choices: u16,
-    pub start_line: u16,
+    start_line: u16,
     original_console_mode: DWORD,
     original_colors: WORD,
     input: Receiver<u16>,
@@ -96,8 +96,13 @@ impl Screen {
         rx
     }
 
-    pub fn move_cursor(&mut self, line: u16, column: u16) {
+    fn move_cursor(&mut self, line: u16, column: u16) {
         win32!(SetConsoleCursorPosition(self.conout, COORD { X: column as i16, Y: line as i16}));
+    }
+
+    pub fn move_cursor_to_prompt_line(&mut self, col: u16) {
+        let start_line = self.start_line;
+        self.move_cursor(start_line, col);
     }
 
     pub fn move_cursor_to_bottom(&mut self) {

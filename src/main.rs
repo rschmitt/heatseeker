@@ -210,9 +210,8 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
 
     print_matches(screen, &search.matches, &search.query, search.index, &search.selections);
 
-    let start = screen.start_line;
     let query_str: &str = &search.query;
-    screen.move_cursor(start, 2 + UnicodeWidthStr::width(query_str) as u16);
+    screen.move_cursor_to_prompt_line(2 + UnicodeWidthStr::width(query_str) as u16);
     screen.show_cursor();
 }
 

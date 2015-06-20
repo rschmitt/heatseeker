@@ -27,7 +27,7 @@ pub struct Screen {
     pub height: u16,
     pub width: u16,
     pub visible_choices: u16,
-    pub start_line: u16,
+    start_line: u16,
 }
 
 impl Screen {
@@ -53,8 +53,13 @@ impl Screen {
         self.tty.stty(&[&String::from_utf8(self.original_stty_state.clone()).unwrap()]);
     }
 
-    pub fn move_cursor(&mut self, line: u16, column: u16) {
+    fn move_cursor(&mut self, line: u16, column: u16) {
         self.tty.write(&ansi::setpos(line, column));
+    }
+
+    pub fn move_cursor_to_prompt_line(&mut self, col: u16) {
+        let start_line = self.start_line;
+        self.move_cursor(start_line, col);
     }
 
     pub fn move_cursor_to_bottom(&mut self) {
