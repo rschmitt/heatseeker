@@ -2,6 +2,7 @@
 
 use screen::Key;
 use screen::Key::*;
+use screen::get_start_line;
 use std::io::{Read, Write};
 use std::fs::{File, OpenOptions};
 use std::os::unix::io::AsRawFd;
@@ -36,7 +37,8 @@ impl Screen {
         tty.initialize();
         let (cols, rows) = tty.winsize().unwrap();
         let visible_choices = min(20, rows - 1);
-        let start_line = rows - visible_choices - 1;
+        let initial_pos = (0, 999);
+        let start_line = get_start_line(rows, visible_choices, initial_pos);
         Screen {
             tty: tty,
             original_stty_state: current_stty_state,
@@ -153,7 +155,7 @@ impl Terminal {
         Terminal {
             input: rx,
             input_fd: input_fd,
-            output: output_file
+            output: output_file,
         }
     }
 
