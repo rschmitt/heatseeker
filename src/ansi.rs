@@ -8,8 +8,20 @@ pub fn escape(sequence: &str) -> Vec<u8> {
     ret
 }
 
-pub fn setpos(line: u16, column: u16) -> Vec<u8> {
-    escape(&format!("{};{}H", line + 1, column + 1))
+pub fn cursor_up(lines: u16) -> Vec<u8> {
+    escape(&format!("{}A", lines))
+}
+
+pub fn cursor_right(lines: u16) -> Vec<u8> {
+    escape(&format!("{}C", lines))
+}
+
+pub fn save_cursor() -> Vec<u8> {
+    escape("s")
+}
+
+pub fn restore_cursor() -> Vec<u8> {
+    escape("u")
 }
 
 pub fn hide_cursor() -> Vec<u8> {

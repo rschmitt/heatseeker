@@ -113,12 +113,6 @@ impl Screen {
         self.move_cursor(start_line, col);
     }
 
-    pub fn move_cursor_to_bottom(&mut self) {
-        let end_line = self.start_line + self.visible_choices;
-        self.move_cursor(end_line, 0);
-        self.write("\n");
-    }
-
     pub fn blank_screen(&mut self) {
         let blank_line = repeat(' ').take((self.width - 1) as usize).collect::<String>();
         let start_line = self.start_line;

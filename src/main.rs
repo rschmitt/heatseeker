@@ -72,11 +72,7 @@ fn event_loop(choices: &[&str], initial_search: &str) {
         }
     }
 
-    if cfg!(windows) {
-        screen.blank_screen();
-    } else {
-        screen.move_cursor_to_bottom();
-    }
+    screen.blank_screen();
     print!("{}", search.get_selections());
 }
 

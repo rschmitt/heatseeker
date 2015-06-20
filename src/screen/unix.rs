@@ -12,6 +12,7 @@ use std::process::Stdio;
 use std::iter::repeat;
 use std::cmp::min;
 use ansi;
+use ::NEWLINE;
 
 use std::thread;
 use std::sync::mpsc::Receiver;
@@ -37,8 +38,13 @@ impl Screen {
         tty.initialize();
         let (cols, rows) = tty.winsize().unwrap();
         let visible_choices = min(20, rows - 1);
-        let initial_pos = (0, 999);
+        let initial_pos = (0, 2);
         let start_line = get_start_line(rows, visible_choices, initial_pos);
+        for _ in 0..visible_choices {
+            tty.write(NEWLINE.as_bytes());
+        }
+        tty.write(&ansi::save_cursor());
+
         Screen {
             tty: tty,
             original_stty_state: current_stty_state,
@@ -53,29 +59,23 @@ impl Screen {
         self.tty.stty(&[&String::from_utf8(self.original_stty_state.clone()).unwrap()]);
     }
 
-    fn move_cursor(&mut self, line: u16, column: u16) {
-        self.tty.write(&ansi::setpos(line, column));
+    fn reset_cursor(&mut self) {
+        self.tty.write(&ansi::restore_cursor());
+        self.tty.write(&ansi::cursor_up(self.visible_choices));
     }
 
     pub fn move_cursor_to_prompt_line(&mut self, col: u16) {
-        let start_line = self.start_line;
-        self.move_cursor(start_line, col);
-    }
-
-    pub fn move_cursor_to_bottom(&mut self) {
-        let end_line = self.start_line + self.visible_choices;
-        self.move_cursor(end_line, 0);
-        self.write("\n");
+        self.reset_cursor();
+        self.tty.write(&ansi::cursor_right(col));
     }
 
     pub fn blank_screen(&mut self) {
-        let start_line = self.start_line;
-        self.move_cursor(start_line, 0);
+        self.reset_cursor();
         let blank_line = repeat(' ').take(self.width as usize).collect::<String>();
-        for _ in 0..self.height {
+        for _ in 0..self.visible_choices + 1 {
             self.tty.write(blank_line.as_bytes());
         }
-        self.move_cursor(start_line, 0);
+        self.reset_cursor();
     }
 
     pub fn show_cursor(&mut self) {
@@ -131,6 +131,7 @@ impl Screen {
 
 impl Drop for Screen {
     fn drop(&mut self) {
+        self.tty.write(&ansi::cursor_up(1));
         self.restore_tty();
     }
 }
