@@ -20,6 +20,86 @@ To install on OS X using [Homebrew](http://brew.sh/), run:
 brew install https://raw.githubusercontent.com/rschmitt/heatseeker/master/heatseeker.rb
 ```
 
+## Use
+
+### PowerShell
+
+With [PSReadLine](https://github.com/lzybkr/PSReadLine), Heatseeker can be integrated directly into the Windows command line.
+
+```posh
+$ps = $null
+try {
+    # On Windows 10, PSReadLine ships with PowerShell
+    $ps = [Microsoft.PowerShell.PSConsoleReadline]
+} catch [Exception] {
+    # Otherwise, it can be installed from the PowerShell Gallery:
+    # https://github.com/lzybkr/PSReadLine#installation
+    Import-Module PSReadLine
+    $ps = [PSConsoleUtilities.PSConsoleReadLine]
+}
+
+Set-PSReadlineKeyHandler `
+     -Chord 'Ctrl+s' `
+     -BriefDescription "InsertHeatseekerPathInCommandLine" `
+     -LongDescription "Run Heatseeker in the PWD, appending any selected paths to the current command" `
+     -ScriptBlock {
+         $choices = $(Get-ChildItem -Name -Attributes !D -Recurse | hs)
+         $ps::Insert($choices -join " ")
+    }
+```
+
+### Vim
+
+The Vimscript [samples](https://github.com/garybernhardt/selecta) from the Selecta README basically work, but it is preferable to modify them for use with Heatseeker in order to add support for Windows and multi-select.
+
+```vim
+function! HeatseekerCommand(choice_command, hs_args, first_command, rest_command)
+    try
+        silent let selections = system(a:choice_command . " | hs " . a:hs_args)
+    catch /Vim:Interrupt/
+        redraw!
+        return
+    endtry
+    redraw!
+    let first = 1
+    for selection in split(selections, "\n")
+        if first
+            exec a:first_command . " " . selection
+            let first = 0
+        else
+            exec a:rest_command . " " . selection
+        endif
+    endfor
+endfunction
+
+if has('win32')
+    nnoremap <leader>f :call HeatseekerCommand("dir /a-d /s /b", "", ':e', ':tabe')<CR>
+else
+    nnoremap <leader>f :call HeatseekerCommand("find . ! -path '*/.git/*' -type f -follow", "", ':e', ':tabe')<cr>
+endif
+```
+
+The same goes for buffer selection. This is a bit trickier on Windows, because the most straightforward way to send the list of buffers to Heatseeker is to write a temp file.
+
+```posh
+function! HeatseekerBuffer()
+    let bufnrs = filter(range(1, bufnr("$")), 'buflisted(v:val)')
+    let buffers = map(bufnrs, 'bufname(v:val)')
+    let named_buffers = filter(buffers, '!empty(v:val)')
+    if has('win32')
+        let filename = tempname()
+        call writefile(named_buffers, filename)
+        call HeatseekerCommand("type " . filename, "", ":b", ":b")
+        silent let _ = system("del " . filename)
+    else
+        call HeatseekerCommand('echo "' . join(named_buffers, "\n") . '"', "", ":b", ":b")
+    endif
+endfunction
+
+" Fuzzy select a buffer. Open the selected buffer with :b.
+nnoremap <leader>b :call HeatseekerBuffer()<cr>
+```
+
 ## Project Status
 
 * Heatseeker is fully implemented. It works smoothly on all supported platforms, including Windows; it has even been successfully smoke tested (both building and running) on Windows 10 Technical Preview.
