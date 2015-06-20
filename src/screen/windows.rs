@@ -67,7 +67,7 @@ impl Screen {
             height: rows,
             width: cols,
             visible_choices: visible_choices,
-            start_line: start_line,
+            start_line: start_line + Screen::get_buffer_offset(conout),
             original_console_mode: orig_mode,
             original_colors: original_colors,
             input: rx,
@@ -234,6 +234,12 @@ impl Screen {
         } else {
             None
         }
+    }
+
+    fn get_buffer_offset(conout: HANDLE) -> u16 {
+        let mut buffer_info = unsafe { ::std::mem::uninitialized() };
+        win32!(GetConsoleScreenBufferInfo(conout, &mut buffer_info));
+        buffer_info.srWindow.Top as u16
     }
 }
 
