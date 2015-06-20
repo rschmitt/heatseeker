@@ -2,7 +2,6 @@
 
 use screen::Key;
 use screen::Key::*;
-use screen::get_start_line;
 use std::io::{Read, Write};
 use std::fs::{File, OpenOptions};
 use std::os::unix::io::AsRawFd;
@@ -38,8 +37,7 @@ impl Screen {
         tty.initialize();
         let (cols, rows) = tty.winsize().unwrap();
         let visible_choices = min(20, rows - 1);
-        let initial_pos = (0, 2);
-        let start_line = get_start_line(rows, visible_choices, initial_pos);
+        let start_line = rows - visible_choices - 1;
         for _ in 0..visible_choices {
             tty.write(NEWLINE.as_bytes());
         }

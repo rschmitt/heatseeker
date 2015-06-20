@@ -10,7 +10,6 @@ use std::iter::repeat;
 use std::cmp::min;
 use screen::Key;
 use screen::Key::*;
-use screen::get_start_line;
 
 use std::thread;
 use std::sync::mpsc::Receiver;
@@ -264,4 +263,24 @@ fn winsize_test() {
     assert!(rows > 40);
     assert!(cols < 1000);
     assert!(rows < 1000);
+}
+
+fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u16 {
+    let bottom_most_line = rows - visible_choices - 1;
+    let (initial_x, initial_y) = initial_pos;
+    let line_under_cursor = if initial_x == 0 { initial_y } else { initial_y + 1 };
+    if line_under_cursor + 1 + visible_choices > rows {
+        bottom_most_line
+    } else {
+        line_under_cursor
+    }
+}
+
+#[test]
+fn start_line_test() {
+    assert_eq!(5, get_start_line(100, 20, (0, 5)));
+    assert_eq!(6, get_start_line(100, 20, (1, 5)));
+    assert_eq!(79, get_start_line(100, 20, (0, 100)));
+    assert_eq!(0, get_start_line(15, 14, ((0, 5))));
+    assert_eq!(79, get_start_line(100, 20, (50, 100)));
 }
