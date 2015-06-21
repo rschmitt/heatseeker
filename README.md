@@ -26,6 +26,10 @@ brew install https://raw.githubusercontent.com/rschmitt/heatseeker/master/heatse
 
 With [PSReadLine](https://github.com/lzybkr/PSReadLine), Heatseeker can be integrated directly into the Windows command line.
 
+![ps-readline-demo](https://cloud.githubusercontent.com/assets/3725049/8273451/0ac04144-1824-11e5-8338-99e4b861c898.gif)
+
+Add this code to your `$profile`. The file selector can be summoned with Ctrl-S.
+
 ```posh
 $ps = $null
 try {
@@ -49,6 +53,10 @@ Set-PSReadlineKeyHandler `
 ```
 
 ### Vim
+
+With a bit of Vimscript, you can use Heatseeker to open files in Vim, without any need for a special plugin.
+
+![vim-demo](https://cloud.githubusercontent.com/assets/3725049/8273517/2a2f9afa-1826-11e5-9e1e-a15e84751bd0.gif)
 
 The Vimscript [samples](https://github.com/garybernhardt/selecta) from the Selecta README basically work, but it is preferable to modify them for use with Heatseeker in order to add support for Windows and multi-select.
 
