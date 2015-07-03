@@ -20,6 +20,18 @@ To install on OS X using [Homebrew](http://brew.sh/), run:
 brew install https://raw.githubusercontent.com/rschmitt/heatseeker/master/heatseeker.rb
 ```
 
+To install on Linux, run:
+
+```shell
+wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.2.0/linux-hs-musl && sudo install hs /usr/local/bin/
+```
+
+Or install it in your home directory instead by running:
+
+```shell
+wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.2.0/linux-hs-musl && install -D hs ~/bin/hs
+```
+
 ## Use
 
 ### PowerShell
@@ -117,9 +129,7 @@ nnoremap <leader>b :call HeatseekerBuffer()<cr>
 
 ## Building
 
-Building Heatseeker requires Rust 1.0.0 stable or later. On Windows, MinGW-w64 must also be installed to build some dependencies.
-
-Perform the build by invoking:
+Building Heatseeker requires Rust 1.0.0 stable or later. Perform the build by invoking:
 
 ```
 $ cargo build --release
