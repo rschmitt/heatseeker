@@ -1,20 +1,6 @@
 platform:
   - x64
-environment:
-  global:
-    MSYS2_BASEVER: 20150512
-  matrix:
-    - MSYS2_ARCH: x86_64
 install:
-  - ps: |
-        $url  = "http://sourceforge.net/projects/mingw-w64/files/"
-        $url += "Toolchains%20targetting%20Win64/Personal%20Builds/"
-        $url += "mingw-builds/4.9.2/threads-win32/seh/"
-        $url += "x86_64-4.9.2-release-win32-seh-rt_v3-rev0.7z/download"
-        Invoke-WebRequest -UserAgent wget -Uri $url -OutFile x86_64-4.9.2-release-win32-seh-rt_v3-rev0.7z
-        &7z x -oC:\ x86_64-4.9.2-release-win32-seh-rt_v3-rev0.7z > $null
-  - set PATH=C:\mingw64\bin;%PATH%
-  - gcc --version
   - ps: Start-FileDownload 'http://static.rust-lang.org/dist/rust-1.0.0-x86_64-pc-windows-gnu.exe'
   - rust-1.0.0-x86_64-pc-windows-gnu.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
   - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
