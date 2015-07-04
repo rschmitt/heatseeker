@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -eux
+
+LD_LIBRARY_PATH=~/musl/lib ~/musl/bin/rustc "$@" -L/usr/local/musl/lib
