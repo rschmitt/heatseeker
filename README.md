@@ -75,7 +75,7 @@ The Vimscript [samples](https://github.com/garybernhardt/selecta) from the Selec
 ```vim
 function! HeatseekerCommand(choice_command, hs_args, first_command, rest_command)
     try
-        silent let selections = system(a:choice_command . " | hs " . a:hs_args)
+        let selections = system(a:choice_command . " | hs " . a:hs_args)
     catch /Vim:Interrupt/
         redraw!
         return
