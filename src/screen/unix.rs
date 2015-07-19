@@ -59,6 +59,16 @@ impl Screen {
 
     fn reset_cursor(&mut self) {
         self.tty.write(&ansi::restore_cursor());
+
+        // Writing this carriage return works around a rendering bug in
+        // Neovim's terminal emulation. Without it, the cursor flies
+        // around all over the place while typing, and the input prompt
+        // is not rendered correctly. I have no idea why this workaround
+        // is effective, or why others are not, or what the root cause
+        // of the issue is (likely something involving save/restore
+        // support).
+        self.tty.write("\r".as_bytes());
+
         self.tty.write(&ansi::cursor_up(self.visible_choices));
     }
 
