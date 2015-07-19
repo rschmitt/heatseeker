@@ -52,13 +52,14 @@ fn main() {
         println!("{}", matches.get(0).unwrap_or(&""));
         return;
     } else {
-        event_loop(&choices, &initial_search);
+        let desired_rows = if args.full_screen { 999 } else { 20 };
+        event_loop(desired_rows, &choices, &initial_search);
     }
 }
 
-fn event_loop(choices: &[&str], initial_search: &str) {
+fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str) {
     let mut search = Search::new(choices, initial_search.to_string());
-    let mut screen = Screen::open_screen(20);
+    let mut screen = Screen::open_screen(desired_rows);
 
     loop {
         search.recompute_matches();

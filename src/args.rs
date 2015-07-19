@@ -7,6 +7,7 @@ pub struct Args {
     pub help: bool,
     pub use_first: bool,
     pub version: bool,
+    pub full_screen: bool,
 }
 
 pub fn parse_args() -> Option<Args> {
@@ -16,6 +17,7 @@ pub fn parse_args() -> Option<Args> {
     opts.optflag("v", "version", "Show version");
     opts.optflagopt("s", "search", "Specify an initial search string", "SEARCH");
     opts.optflag("f", "first", "Automatically select the first match");
+    opts.optflag("F", "full-screen", "Use the entire screen in order to display as many choices as possible");
 
     let mut args = Vec::new();
     while let Some(os_arg) = os_args.next() {
@@ -42,12 +44,14 @@ pub fn parse_args() -> Option<Args> {
     }
 
     let version = matches.opt_present("version");
+    let full_screen = matches.opt_present("full-screen");
 
     Some(Args {
         initial_search: initial_search,
         help: help,
         use_first: matches.opt_present("first"),
         version: version,
+        full_screen: full_screen,
     })
 }
 
