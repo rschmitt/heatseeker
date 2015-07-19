@@ -124,7 +124,13 @@ impl Screen {
             ret.push(byte);
         }
         while ret.is_empty() || Screen::more_bytes_needed(&ret) {
-            ret.push(self.tty.input.recv().unwrap());
+            let byte = self.tty.input.recv().unwrap();
+            if byte == 0 {
+                self.tty.initialize();
+                return vec![Nothing];
+            } else {
+                ret.push(byte);
+            }
         }
         Terminal::translate_bytes(ret.clone())
     }
@@ -159,10 +165,12 @@ impl Terminal {
         thread::spawn(move || {
             loop {
                 let mut buf = [0];
-                if input_file.read(&mut buf).unwrap() != 1 {
-                    panic!("Failed to read a single byte from tty");
+                let result = input_file.read(&mut buf);
+                if result.is_ok() {
+                    tx.send(buf[0]).unwrap();
+                } else {
+                    tx.send(0u8).unwrap();
                 }
-                tx.send(buf[0]).unwrap();
             }
         });
         Terminal {
