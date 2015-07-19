@@ -36,7 +36,7 @@ pub struct Screen {
 }
 
 impl Screen {
-    pub fn open_screen() -> Screen {
+    pub fn open_screen(desired_rows: u16) -> Screen {
         let mut orig_mode;
         let conin: HANDLE;
         let conout: HANDLE;
@@ -60,7 +60,7 @@ impl Screen {
 
         let rx = Screen::spawn_input_thread(conin as usize);
         let initial_pos = Screen::get_cursor_pos(conout);
-        let visible_choices = min(20, rows - 1);
+        let visible_choices = min(desired_rows, rows - 1);
         let start_line = get_start_line(rows, visible_choices, initial_pos);
         let original_colors = Screen::get_original_colors(conout);
         let (column, _) = initial_pos;

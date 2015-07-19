@@ -31,12 +31,12 @@ pub struct Screen {
 }
 
 impl Screen {
-    pub fn open_screen() -> Screen {
+    pub fn open_screen(desired_rows: u16) -> Screen {
         let mut tty = Terminal::open_terminal();
         let current_stty_state = tty.stty(&["-g"]);
         tty.initialize();
         let (cols, rows) = tty.winsize().unwrap();
-        let visible_choices = min(20, rows - 1);
+        let visible_choices = min(desired_rows, rows - 1);
         let start_line = rows - visible_choices - 1;
         for _ in 0..visible_choices {
             tty.write(NEWLINE.as_bytes());

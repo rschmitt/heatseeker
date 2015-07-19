@@ -58,7 +58,7 @@ fn main() {
 
 fn event_loop(choices: &[&str], initial_search: &str) {
     let mut search = Search::new(choices, initial_search.to_string());
-    let mut screen = Screen::open_screen();
+    let mut screen = Screen::open_screen(20);
 
     loop {
         search.recompute_matches();
