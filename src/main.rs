@@ -182,13 +182,15 @@ impl<'a> Search<'a> {
     fn get_selections(&mut self) -> String {
         let mut ret = String::new();
         if self.state != Canceled {
-            self.recompute_matches();
-            let selection = self.matches.get(self.index).unwrap_or(&"").to_string();
-            self.selections.insert(selection);
-        }
-        for selection in self.selections.iter() {
-            ret.push_str(selection);
-            ret.push_str(NEWLINE);
+            for selection in self.selections.iter() {
+                ret.push_str(selection);
+                ret.push_str(NEWLINE);
+            }
+            if ret.is_empty() {
+                self.recompute_matches();
+                let selection = self.matches.get(self.index).unwrap_or(&"").to_string();
+                ret.push_str(&selection);
+            }
         }
         ret
     }
