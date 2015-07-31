@@ -129,7 +129,7 @@ nnoremap <leader>b :call HeatseekerBuffer()<cr>
 
 ## Building
 
-Building Heatseeker requires Rust 1.0.0 stable or later. Perform the build by invoking:
+Building Heatseeker requires Rust 1.1.0 stable or later. Perform the build by invoking:
 
 ```
 $ cargo build --release
