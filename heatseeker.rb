@@ -1,8 +1,8 @@
 class Heatseeker < Formula
   desc "A high-performance general purpose fuzzy finder, based on selecta"
   homepage "https://github.com/rschmitt/heatseeker"
-  url "https://github.com/rschmitt/heatseeker/archive/v1.2.0.tar.gz"
-  sha256 "41675022a46801cc30bf3d31b546daf85e88054116f5d4a56f541c564523a0de"
+  url "https://github.com/rschmitt/heatseeker/archive/v1.3.0.tar.gz"
+  sha256 "9805d7e2e6542bcb157c7b2f86e66a8aaac97b204c99d54d62955e3519d4cd4d"
 
   depends_on "rust"
 
