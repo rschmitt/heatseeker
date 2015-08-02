@@ -1,14 +1,12 @@
 [![Build Status](http://img.shields.io/travis/rschmitt/heatseeker.svg?label=Linux%20build)](https://travis-ci.org/rschmitt/heatseeker)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/github/rschmitt/heatseeker?svg=true)](https://ci.appveyor.com/project/rschmitt/heatseeker)
 
-# Heatseeker
-
 Heatseeker is a rewrite of Gary Bernhardt's
-[selecta](https://github.com/garybernhardt/selecta), a fuzzy selector. The project has the following goals:
+[selecta](https://github.com/garybernhardt/selecta), a general-purpose fuzzy selector. It looks like this:
 
-* Produce a drop-in replacement for Selecta
-* Be as fast as possible (for usability with a large number of choices)
-* Support Windows
+![ps-readline-demo](https://cloud.githubusercontent.com/assets/3725049/8273451/0ac04144-1824-11e5-8338-99e4b861c898.gif)
+
+The purpose of the rewrite is to combine the simplicity and generality of Selecta with the speed and portability of native code.
 
 ## Installation
 
@@ -23,24 +21,20 @@ brew install https://raw.githubusercontent.com/rschmitt/heatseeker/master/heatse
 To install on Linux, run:
 
 ```shell
-wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.2.0/linux-hs-musl && sudo install hs /usr/local/bin/
+wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.3.0/hs-linux && sudo install hs /usr/local/bin/
 ```
 
 Or install it in your home directory instead by running:
 
 ```shell
-wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.2.0/linux-hs-musl && install -D hs ~/bin/hs
+wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.3.0/hs-linux && install -D hs ~/bin/hs
 ```
 
 ## Use
 
 ### PowerShell
 
-With [PSReadLine](https://github.com/lzybkr/PSReadLine), Heatseeker can be integrated directly into the Windows command line.
-
-![ps-readline-demo](https://cloud.githubusercontent.com/assets/3725049/8273451/0ac04144-1824-11e5-8338-99e4b861c898.gif)
-
-Add this code to your `$profile`. The file selector can be summoned with Ctrl-S.
+With [PSReadLine](https://github.com/lzybkr/PSReadLine), Heatseeker can be integrated directly into the Windows command line. Add this code to your `$profile`. The file selector can be summoned with Ctrl-S.
 
 ```posh
 $ps = $null
@@ -123,7 +117,7 @@ nnoremap <leader>b :call HeatseekerBuffer()<cr>
 ## Project Status
 
 * Heatseeker is fully implemented. It works smoothly on all supported platforms, including Windows; it has even been successfully smoke tested (both building and running) on Windows 10 Technical Preview.
-* Heatseeker requires no unstable language features and can be compiled with the stable Rust toolchain (currently version 1.0.0).
+* Heatseeker requires no unstable language features and can be compiled with the stable Rust toolchain (currently version 1.1.0).
 * Heatseeker contains a fully working implementation of multi-threaded matching, but because it depends on an unstable feature (scoped threads) it is disabled by default. Since Heatseeker is extremely fast even with a single thread, this is not a big deal.
 * In a few places in the Heatseeker code, there are workarounds to avoid the use of experimental features, such as libc, scoped, collections, and old_io. As Rust matures, these workarounds will be eliminated.
 
