@@ -34,8 +34,7 @@ fn main() {
     if args.help { return; }
 
     if args.version {
-        #[cfg(feature = "nightly")] const THREADS: &'static str = "multi-threaded";
-        #[cfg(not(feature = "nightly"))] const THREADS: &'static str = "single-threaded";
+        const THREADS: &'static str = "single-threaded";
         if COMMIT == "" {
             println!("heatseeker {} {} (built {} for {})", VERSION, THREADS, TIMESTAMP, TARGET);
         } else {
