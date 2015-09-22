@@ -7,7 +7,7 @@ dependencies = [
  "num_cpus 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.32 (registry+https://github.com/rust-lang/crates.io-index)",
  "unicode-width 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "winapi 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -20,7 +20,7 @@ name = "kernel32-sys"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "winapi 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -44,7 +44,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "kernel32-sys 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "winapi 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -54,7 +54,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "winapi"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
