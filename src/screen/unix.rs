@@ -120,16 +120,16 @@ impl Screen {
     // Return all buffered keystrokes, or the next key if buffer is empty.
     pub fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut ret = Vec::new();
-        while let Ok(byte) = self.tty.input.try_recv() {
-            ret.push(byte);
+        while let Ok(bytes) = self.tty.input.try_recv() {
+            ret.extend(bytes);
         }
-        while ret.is_empty() || Screen::more_bytes_needed(&ret) {
-            let byte = self.tty.input.recv().unwrap();
-            if byte == 0 {
+        while ret.is_empty() {
+            let bytes = self.tty.input.recv().unwrap();
+            if bytes.len() == 1 && bytes[0] == 0 {
                 self.tty.initialize();
                 return vec![Nothing];
             } else {
-                ret.push(byte);
+                ret.extend(bytes);
             }
         }
         Terminal::translate_bytes(ret.clone())
@@ -150,7 +150,7 @@ impl Drop for Screen {
 }
 
 struct Terminal {
-    input: Receiver<u8>,
+    input: Receiver<Vec<u8>>,
     input_fd: i32,
     output: File,
 }
@@ -164,12 +164,11 @@ impl Terminal {
         let (tx, rx) = mpsc::channel();
         thread::spawn(move || {
             loop {
-                let mut buf = [0];
-                let result = input_file.read(&mut buf);
-                if result.is_ok() {
-                    tx.send(buf[0]).unwrap();
+                let mut buf = [0; 255];
+                if let Ok(length) = input_file.read(&mut buf) {
+                    tx.send(buf[0..length].to_vec()).unwrap();
                 } else {
-                    tx.send(0u8).unwrap();
+                    tx.send([0].to_vec()).unwrap();
                 }
             }
         });
