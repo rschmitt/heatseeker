@@ -25,10 +25,10 @@ impl PartialOrd for ScoredChoice {
     }
 }
 
-pub fn compute_matches<'a>(choices: &[&'a str], query: &str) -> Vec<&'a str> {
+pub fn compute_matches<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
     let mut ret = Vec::new();
     for i in 0..choices.len() {
-        let score = score(choices[i], query);
+        let score = if filter_only { filter(choices[i], query) } else { score(choices[i], query) };
         if score > 0_f64 {
             ret.push(ScoredChoice{ idx: i, score: score });
         }
@@ -85,6 +85,23 @@ fn score(choice: &str, query: &str) -> f64 {
             let score = query.len() as f64 / match_length as f64;
             return score as f64 / choice.len() as f64;
         }
+    }
+}
+
+fn filter(choice: &str, query: &str) -> f64 {
+    if query.len() == 0 {
+        return 1.0;
+    }
+    if choice.len() == 0 {
+        return 0.0;
+    }
+
+    let query = chars!(query);
+    let choice = chars!(choice);
+
+    match compute_match_length(choice, query) {
+        None => 0.0,
+        Some(_) => 1.0,
     }
 }
 

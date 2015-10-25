@@ -47,17 +47,17 @@ fn main() {
     let initial_search = args.initial_search.clone();
     let choices = choices.iter().map(|x| &x[..]).collect::<Vec<&str>>();
     if args.use_first {
-        let matches = matching::compute_matches(&choices, &initial_search);
+        let matches = matching::compute_matches(&choices, &initial_search, args.filter_only);
         println!("{}", matches.get(0).unwrap_or(&""));
         return;
     } else {
         let desired_rows = if args.full_screen { 999 } else { 20 };
-        event_loop(desired_rows, &choices, &initial_search);
+        event_loop(desired_rows, &choices, &initial_search, args.filter_only);
     }
 }
 
-fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str) {
-    let mut search = Search::new(choices, initial_search.to_string());
+fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_only: bool) {
+    let mut search = Search::new(choices, initial_search.to_string(), filter_only);
     let mut screen = Screen::open_screen(desired_rows);
 
     loop {
@@ -104,6 +104,7 @@ struct Search<'a> {
     index: usize,
     state: SearchState,
     selections: HashSet<String>,
+    filter_only: bool,
 }
 
 #[derive(PartialEq, Eq)]
@@ -114,7 +115,7 @@ enum SearchState {
 }
 
 impl<'a> Search<'a> {
-    fn new(choices: &'a [&'a str], initial_search: String) -> Search<'a> {
+    fn new(choices: &'a [&'a str], initial_search: String, filter_only: bool) -> Search<'a> {
         let matches = choices.to_vec();
         Search {
             choices: choices,
@@ -124,6 +125,7 @@ impl<'a> Search<'a> {
             index: 0,
             state: InProgress,
             selections: HashSet::new(),
+            filter_only: filter_only,
         }
     }
 
@@ -163,7 +165,7 @@ impl<'a> Search<'a> {
 
     fn recompute_matches(&mut self) {
         if self.stale {
-            self.matches = matching::compute_matches(&self.matches, &self.query);
+            self.matches = matching::compute_matches(&self.matches, &self.query, self.filter_only);
             self.stale = false;
         }
     }
