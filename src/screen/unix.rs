@@ -219,6 +219,11 @@ impl Terminal {
     }
 
     fn translate_bytes(bytes: Vec<u8>) -> Vec<Key> {
+        if bytes == [27, '[' as u8, 'A' as u8] { return vec![Up] };
+        if bytes == [27, '[' as u8, 'B' as u8] { return vec![Down] };
+        if bytes == [27, 'O' as u8, 'A' as u8] { return vec![Up] };
+        if bytes == [27, 'O' as u8, 'B' as u8] { return vec![Down] };
+
         let chars = String::from_utf8(bytes).unwrap().chars().collect::<Vec<char>>();
         chars.into_iter().map(|c| Terminal::translate_char(c)).collect()
     }

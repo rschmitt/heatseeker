@@ -10,6 +10,8 @@ pub enum Key {
     Backspace,
     Tab,
     Nothing,
+    Down,
+    Up,
 }
 
 #[cfg(not(windows))] mod unix;
