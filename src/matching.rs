@@ -1,8 +1,6 @@
 use std::ascii::AsciiExt;
 use std::cmp::*;
 
-extern crate num_cpus;
-
 macro_rules! chars {
     ($str:expr) => (
         &$str.chars().collect::<Vec<char>>()

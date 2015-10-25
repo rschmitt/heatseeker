@@ -10,7 +10,6 @@ name = "hs"
 [dependencies]
 getopts = "*"
 unicode-width = "0.1.1"
-num_cpus = "0.2.2"
 
 [build-dependencies]
 time = "*"
