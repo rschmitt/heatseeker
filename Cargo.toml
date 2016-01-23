@@ -9,7 +9,7 @@ name = "hs"
 
 [dependencies]
 getopts = "*"
-unicode-width = "0.1.1"
+unicode-width = "*"
 
 [build-dependencies]
 time = "*"
