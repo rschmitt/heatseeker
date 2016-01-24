@@ -8,6 +8,7 @@ build = "build.rs"
 name = "hs"
 
 [dependencies]
+libc = "*"
 getopts = "*"
 unicode-width = "*"
 

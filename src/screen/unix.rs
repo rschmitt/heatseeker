@@ -1,5 +1,7 @@
 #![cfg(not(windows))]
 
+extern crate libc;
+
 use screen::Key;
 use screen::Key::*;
 use std::io::{Read, Write};
@@ -13,13 +15,13 @@ use std::cmp::min;
 use ansi;
 use ::NEWLINE;
 
+use std::{mem, ptr};
 use std::thread;
+use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc, Mutex};
 
-#[allow(non_camel_case_types)] type c_ushort = u16;
-#[allow(non_camel_case_types)] type c_int = i32;
-#[allow(non_camel_case_types)] type c_ulong = u64;
+use self::libc::{sigaction, SIGWINCH, SA_SIGINFO, sighandler_t, c_int, c_ushort, c_ulong};
 
 pub struct Screen {
     tty: Terminal,
@@ -155,6 +157,36 @@ struct Terminal {
     output: File,
 }
 
+static mut GLOBAL_TX: *const Arc<Mutex<Sender<Vec<u8>>>> = 0 as *const Arc<Mutex<Sender<Vec<u8>>>>;
+
+fn set_global_tx(tx: Sender<Vec<u8>>) {
+    unsafe {
+        let singleton = Arc::new(Mutex::new(tx));
+        GLOBAL_TX = mem::transmute(Box::new(singleton));
+    }
+}
+
+fn get_global_tx() -> Sender<Vec<u8>> {
+    let singleton = unsafe { (*GLOBAL_TX).clone() };
+    let tx = singleton.lock().unwrap();
+    tx.clone()
+}
+
+unsafe extern fn sigwinch_handler(signum: c_int) {
+    if signum == SIGWINCH {
+        get_global_tx().send([0].to_vec()).unwrap();
+    }
+}
+
+fn register_sigwinch_handler() {
+    unsafe {
+        let mut action: sigaction = mem::zeroed();
+        action.sa_flags = SA_SIGINFO;
+        action.sa_sigaction = sigwinch_handler as sighandler_t;
+        sigaction(SIGWINCH, &action, ptr::null_mut());
+    }
+}
+
 impl Terminal {
     fn open_terminal() -> Terminal {
         let term_path = Path::new("/dev/tty");
@@ -162,9 +194,14 @@ impl Terminal {
         let output_file = OpenOptions::new().write(true).open(&term_path).unwrap();
         let input_fd = input_file.as_raw_fd();
         let (tx, rx) = mpsc::channel();
+        set_global_tx(tx);
+
+        register_sigwinch_handler();
+
         thread::spawn(move || {
             loop {
                 let mut buf = [0; 255];
+                let tx = get_global_tx();
                 if let Ok(length) = input_file.read(&mut buf) {
                     tx.send(buf[0..length].to_vec()).unwrap();
                 } else {
