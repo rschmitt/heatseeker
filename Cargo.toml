@@ -8,16 +8,16 @@ build = "build.rs"
 name = "hs"
 
 [dependencies]
-libc = "*"
-getopts = "*"
-unicode-width = "*"
+libc = "0.2.5"
+getopts = "0.2.14"
+unicode-width = "0.1.3"
 
 [build-dependencies]
-time = "*"
+time = "0.1.34"
 
 [target.x86_64-pc-windows-gnu.dependencies]
-winapi = "*"
-kernel32-sys = "*"
+winapi = "0.2.5"
+kernel32-sys = "0.2.1"
 
 [features]
 nightly = []
