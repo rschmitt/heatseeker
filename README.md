@@ -10,7 +10,13 @@ The purpose of the rewrite is to combine the simplicity and generality of Select
 
 ## Installation
 
-Compiled binaries for the latest version can be downloaded [from GitHub](https://github.com/rschmitt/heatseeker/releases/tag/v0.3.0).
+Compiled binaries for the latest version can be downloaded [from GitHub](https://github.com/rschmitt/heatseeker/releases/latest).
+
+To install on Windows using [Chocolatey](https://chocolatey.org/), run:
+
+```shell
+choco install heatseeker
+```
 
 To install on OS X using [Homebrew](http://brew.sh/), run:
 
@@ -21,13 +27,13 @@ brew install https://raw.githubusercontent.com/rschmitt/heatseeker/master/heatse
 To install on Linux, run:
 
 ```shell
-wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.3.0/hs-linux && sudo install hs /usr/local/bin/
+wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.4.0/hs-linux && sudo install hs /usr/local/bin/
 ```
 
 Or install it in your home directory instead by running:
 
 ```shell
-wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.3.0/hs-linux && install -D hs ~/bin/hs
+wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.4.0/hs-linux && install -D hs ~/bin/hs
 ```
 
 ## Use
