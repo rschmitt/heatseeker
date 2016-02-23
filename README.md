@@ -38,6 +38,16 @@ wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.4.0/hs
 
 ## Use
 
+Heatseeker supports basically the same keys as Selecta, along with a few others to support multi-select:
+
+* ^T to select or deselect the currently highlighted match
+* Enter to select the currently highlighted match, *or* any matches previously highlighted with ^T
+* ^G to quit without selecting a match
+* Backspace to delete the last query character typed
+* ^U to delete the entire query
+* ^N, down arrow, or tab to highlight the next match
+* ^P or up arrow to highlight the previous match
+
 ### PowerShell
 
 With [PSReadLine](https://github.com/lzybkr/PSReadLine), Heatseeker can be integrated directly into the Windows command line. Add this code to your `$profile`. The file selector can be summoned with Ctrl-S.
