@@ -315,19 +315,24 @@ impl Terminal {
     }
 }
 
-#[test]
-fn winsize_test() {
-    // Travis-CI builds run without a tty, making this test impossible.
-    if option_env!("TRAVIS").is_some() {
-        // TODO: It should be made obvious from the output that this test was skipped
-        return;
+#[cfg(test)]
+mod tests {
+    use super::Terminal;
+
+    #[test]
+    fn winsize_test() {
+        // Travis-CI builds run without a tty, making this test impossible.
+        if option_env!("TRAVIS").is_some() {
+            // TODO: It should be made obvious from the output that this test was skipped
+            return;
+        }
+        let term = Terminal::open_terminal();
+        let (cols, rows) = term.winsize().expect("Failed to get window size!");
+        // We don't know the window size a priori, but we can at least
+        // assert that it is within some kind of sensible range.
+        assert!(cols > 40);
+        assert!(rows > 40);
+        assert!(cols < 1000);
+        assert!(rows < 1000);
     }
-    let term = Terminal::open_terminal();
-    let (cols, rows) = term.winsize().expect("Failed to get window size!");
-    // We don't know the window size a priori, but we can at least
-    // assert that it is within some kind of sensible range.
-    assert!(cols > 40);
-    assert!(rows > 40);
-    assert!(cols < 1000);
-    assert!(rows < 1000);
 }

@@ -1,4 +1,3 @@
-#![cfg_attr(test, allow(dead_code))]
 #![cfg_attr(feature = "nightly", feature(scoped))]
 
 extern crate unicode_width;
@@ -336,33 +335,38 @@ fn slice_chars(s: &str, begin: usize, end: usize) -> &str {
     }
 }
 
-#[test]
-fn trim_test() {
-    fn should_become(before: &str, after: &str) {
-        let mut x = before.to_string();
-        trim(&mut x);
-        assert_eq!(after.to_string(), x);
-    }
-    should_become("", "");
-    should_become("\n", "");
-    should_become("\n\n", "");
-    should_become("asdf", "asdf");
-    should_become("asdf\n", "asdf");
-    should_become("asdf\nasdf\n", "asdf\nasdf");
-    should_become("asdf\r\n", "asdf");
-}
+#[cfg(test)]
+mod tests {
+    use super::{trim, delete_last_word};
 
-#[test]
-fn delete_word_test() {
-    fn should_become(before: &str, after: &str) {
-        let mut x = before.to_string();
-        delete_last_word(&mut x);
-        assert_eq!(after.to_string(), x);
+    #[test]
+    fn trim_test() {
+        fn should_become(before: &str, after: &str) {
+            let mut x = before.to_string();
+            trim(&mut x);
+            assert_eq!(after.to_string(), x);
+        }
+        should_become("", "");
+        should_become("\n", "");
+        should_become("\n\n", "");
+        should_become("asdf", "asdf");
+        should_become("asdf\n", "asdf");
+        should_become("asdf\nasdf\n", "asdf\nasdf");
+        should_become("asdf\r\n", "asdf");
     }
-    should_become("", "");
-    should_become("a", "");
-    should_become("asdf", "");
-    should_become("asdf asdf asdf", "asdf asdf ");
-    should_become("asdf asdf asdf ", "asdf asdf ");
-    should_become("asdf asdf asdf  ", "asdf asdf ");
+
+    #[test]
+    fn delete_word_test() {
+        fn should_become(before: &str, after: &str) {
+            let mut x = before.to_string();
+            delete_last_word(&mut x);
+            assert_eq!(after.to_string(), x);
+        }
+        should_become("", "");
+        should_become("a", "");
+        should_become("asdf", "");
+        should_become("asdf asdf asdf", "asdf asdf ");
+        should_become("asdf asdf asdf ", "asdf asdf ");
+        should_become("asdf asdf asdf  ", "asdf asdf ");
+    }
 }

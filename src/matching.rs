@@ -45,29 +45,6 @@ fn get_slice_indices(length: usize, workers: usize, idx: usize) -> (usize, usize
     (lb as usize, ub as usize)
 }
 
-#[test]
-fn get_slice_indices_test() {
-    assert_eq!(get_slice_indices(100, 1, 0), (0, 100));
-
-    assert_eq!(get_slice_indices(100, 2, 1), (50, 100));
-    assert_eq!(get_slice_indices(100, 2, 0), (0, 50));
-
-    assert_eq!(get_slice_indices(100, 3, 0), (0, 33));
-    assert_eq!(get_slice_indices(100, 3, 1), (33, 66));
-    assert_eq!(get_slice_indices(100, 3, 2), (66, 100));
-
-    assert_eq!(get_slice_indices(100, 4, 0), (0, 25));
-    assert_eq!(get_slice_indices(100, 4, 1), (25, 50));
-    assert_eq!(get_slice_indices(100, 4, 2), (50, 75));
-    assert_eq!(get_slice_indices(100, 4, 3), (75, 100));
-
-    assert_eq!(get_slice_indices(12, 12, 11), (11, 12));
-    assert_eq!(get_slice_indices(12, 12, 0), (0, 1));
-
-    assert_eq!(get_slice_indices(1, 2, 0), (0, 0));
-    assert_eq!(get_slice_indices(1, 2, 1), (0, 1));
-}
-
 fn score(choice: &str, query: &str) -> f64 {
     if query.len() == 0 {
         return 1.0;
@@ -198,82 +175,110 @@ fn chars_equal(q: &char, c: &char) -> bool {
     q == c || *q == c.to_ascii_lowercase()
 }
 
-#[test]
-fn chars_equal_test() {
-    assert!(chars_equal(&'a', &'a'));
-    assert!(!chars_equal(&'a', &'b'));
-    assert!(chars_equal(&'A', &'A'));
-    assert!(!chars_equal(&'A', &'a'));
-    assert!(chars_equal(&'a', &'A'));
-}
+#[cfg(test)]
+mod tests {
+    use super::{chars_equal, find_end_of_match, get_match_indices, get_slice_indices, score};
 
-#[test]
-fn get_match_indices_test() {
-    assert_eq!(get_match_indices(chars!("asdf"), chars!("sdf"), 0).unwrap(), vec![0, 1, 2, 3]);
-    assert_eq!(get_match_indices(chars!("aoeuasdf"), chars!("sdf"), 4).unwrap(), vec![4, 5, 6, 7]);
-    assert_eq!(get_match_indices(chars!(" a s d f"), chars!("sdf"), 1).unwrap(), vec![1, 3, 5, 7]);
-}
+    #[test]
+    fn chars_equal_test() {
+        assert!(chars_equal(&'a', &'a'));
+        assert!(!chars_equal(&'a', &'b'));
+        assert!(chars_equal(&'A', &'A'));
+        assert!(!chars_equal(&'A', &'a'));
+        assert!(chars_equal(&'a', &'A'));
+    }
 
-#[test]
-fn find_end_of_match_test() {
-    assert_eq!(find_end_of_match(chars!("a"), chars!("a"), 0), None);
-    assert_eq!(find_end_of_match(chars!("ba"), chars!("a"), 1), None);
-    assert_eq!(find_end_of_match(chars!("aaa"), chars!("aa"), 0), Some(2));
-    assert_eq!(find_end_of_match(chars!("aaa"), chars!("b"), 0), None);
-    assert_eq!(find_end_of_match(chars!("this is a long match"), chars!("this is a match"), 0), None);
-    assert_eq!(find_end_of_match(chars!("this is a long match"), chars!("his is a match"), 0), Some(19));
-    assert_eq!(find_end_of_match(chars!("./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin"), chars!("ust"), 2), Some(5));
-}
+    #[test]
+    fn get_match_indices_test() {
+        assert_eq!(get_match_indices(chars!("asdf"), chars!("sdf"), 0).unwrap(), vec![0, 1, 2, 3]);
+        assert_eq!(get_match_indices(chars!("aoeuasdf"), chars!("sdf"), 4).unwrap(), vec![4, 5, 6, 7]);
+        assert_eq!(get_match_indices(chars!(" a s d f"), chars!("sdf"), 1).unwrap(), vec![1, 3, 5, 7]);
+    }
 
-#[test]
-fn unicode_boundary_handling_test() {
-    score("./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin", "he");
-}
+    #[test]
+    fn find_end_of_match_test() {
+        assert_eq!(find_end_of_match(chars!("a"), chars!("a"), 0), None);
+        assert_eq!(find_end_of_match(chars!("ba"), chars!("a"), 1), None);
+        assert_eq!(find_end_of_match(chars!("aaa"), chars!("aa"), 0), Some(2));
+        assert_eq!(find_end_of_match(chars!("aaa"), chars!("b"), 0), None);
+        assert_eq!(find_end_of_match(chars!("this is a long match"), chars!("this is a match"), 0), None);
+        assert_eq!(find_end_of_match(chars!("this is a long match"), chars!("his is a match"), 0), Some(19));
+        assert_eq!(find_end_of_match(chars!("./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin"), chars!("ust"), 2), Some(5));
+    }
 
-#[test]
-fn basic_scoring() {
-    assert_eq!(score("", "a"), 0.0);
-    assert_eq!(score("a", ""), 1.0);
-    assert_eq!(score("short", "longer"), 0.0);
-    assert_eq!(score("a", "b"), 0.0);
-    assert_eq!(score("ab", "ac"), 0.0);
+    #[test]
+    fn unicode_boundary_handling_test() {
+        score("./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin", "he");
+    }
 
-    assert!(score("a", "a") > 0.0);
-    assert!(score("ab", "a") > 0.0);
-    assert!(score("ba", "a") > 0.0);
-    assert!(score("bab", "a") > 0.0);
-    assert!(score("babababab", "aaaa") > 0.0);
+    #[test]
+    fn basic_scoring() {
+        assert_eq!(score("", "a"), 0.0);
+        assert_eq!(score("a", ""), 1.0);
+        assert_eq!(score("short", "longer"), 0.0);
+        assert_eq!(score("a", "b"), 0.0);
+        assert_eq!(score("ab", "ac"), 0.0);
 
-    assert_eq!(score("a", "a"), 1_f64 / "a".len() as f64);
-    assert_eq!(score("ab", "ab"), 0.5);
-    assert_eq!(score("a long string", "a long string"), 1_f64 / "a long string".len() as f64);
-    assert_eq!(score("spec/search_spec.rb", "sear"), 1_f64 / "spec/search_spec.rb".len() as f64);
-}
+        assert!(score("a", "a") > 0.0);
+        assert!(score("ab", "a") > 0.0);
+        assert!(score("ba", "a") > 0.0);
+        assert!(score("bab", "a") > 0.0);
+        assert!(score("babababab", "aaaa") > 0.0);
 
-#[test]
-fn character_matching() {
-    assert!(score("/! symbols $^", "/!$^") > 0.0);
+        assert_eq!(score("a", "a"), 1_f64 / "a".len() as f64);
+        assert_eq!(score("ab", "ab"), 0.5);
+        assert_eq!(score("a long string", "a long string"), 1_f64 / "a long string".len() as f64);
+        assert_eq!(score("spec/search_spec.rb", "sear"), 1_f64 / "spec/search_spec.rb".len() as f64);
+    }
 
-    assert_eq!(score("a", "A"), 0.0);
-    assert_eq!(score("A", "a"), 1.0);
-    assert_eq!(score("A", "A"), 1.0);
+    #[test]
+    fn character_matching() {
+        assert!(score("/! symbols $^", "/!$^") > 0.0);
 
-    assert_eq!(score("a", "aa"), 0.0);
-}
+        assert_eq!(score("a", "A"), 0.0);
+        assert_eq!(score("A", "a"), 1.0);
+        assert_eq!(score("A", "A"), 1.0);
 
-#[test]
-fn match_equality() {
-    assert!(score("selecta.gemspec", "asp") > score("algorithm4_spec.rb", "asp"));
-    assert!(score("README.md", "em") > score("benchmark.rb", "em"));
-    assert!(score("search.rb", "sear") > score("spec/search_spec.rb", "sear"));
+        assert_eq!(score("a", "aa"), 0.0);
+    }
 
-    assert!(score("fbb", "fbb") > score("foo bar baz", "fbb"));
-    assert!(score("foo", "foo") > score("longer foo", "foo"));
-    assert!(score("foo", "foo") > score("foo longer", "foo"));
-    assert!(score("1/2/3/4", "1/2/3") > score("1/9/2/3/4", "1/2/3"));
+    #[test]
+    fn match_equality() {
+        assert!(score("selecta.gemspec", "asp") > score("algorithm4_spec.rb", "asp"));
+        assert!(score("README.md", "em") > score("benchmark.rb", "em"));
+        assert!(score("search.rb", "sear") > score("spec/search_spec.rb", "sear"));
 
-    assert!(score("long 12 long", "12") > score("1 long 2", "12"));
+        assert!(score("fbb", "fbb") > score("foo bar baz", "fbb"));
+        assert!(score("foo", "foo") > score("longer foo", "foo"));
+        assert!(score("foo", "foo") > score("foo longer", "foo"));
+        assert!(score("1/2/3/4", "1/2/3") > score("1/9/2/3/4", "1/2/3"));
 
-    assert_eq!(score("121padding2", "12"), 1.0 / "121padding2".len() as f64);
-    assert_eq!(score("1padding212", "12"), 1.0 / "1padding212".len() as f64);
+        assert!(score("long 12 long", "12") > score("1 long 2", "12"));
+
+        assert_eq!(score("121padding2", "12"), 1.0 / "121padding2".len() as f64);
+        assert_eq!(score("1padding212", "12"), 1.0 / "1padding212".len() as f64);
+    }
+
+    #[test]
+    fn get_slice_indices_test() {
+        assert_eq!(get_slice_indices(100, 1, 0), (0, 100));
+
+        assert_eq!(get_slice_indices(100, 2, 1), (50, 100));
+        assert_eq!(get_slice_indices(100, 2, 0), (0, 50));
+
+        assert_eq!(get_slice_indices(100, 3, 0), (0, 33));
+        assert_eq!(get_slice_indices(100, 3, 1), (33, 66));
+        assert_eq!(get_slice_indices(100, 3, 2), (66, 100));
+
+        assert_eq!(get_slice_indices(100, 4, 0), (0, 25));
+        assert_eq!(get_slice_indices(100, 4, 1), (25, 50));
+        assert_eq!(get_slice_indices(100, 4, 2), (50, 75));
+        assert_eq!(get_slice_indices(100, 4, 3), (75, 100));
+
+        assert_eq!(get_slice_indices(12, 12, 11), (11, 12));
+        assert_eq!(get_slice_indices(12, 12, 0), (0, 1));
+
+        assert_eq!(get_slice_indices(1, 2, 0), (0, 0));
+        assert_eq!(get_slice_indices(1, 2, 1), (0, 1));
+    }
 }

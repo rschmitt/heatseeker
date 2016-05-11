@@ -248,23 +248,6 @@ impl Screen {
     }
 }
 
-#[test]
-fn winsize_test() {
-    // AppVeyor builds run without a console, making this test impossible.
-    if option_env!("APPVEYOR").is_some() {
-        // TODO: It should be made obvious from the output that this test was skipped
-        return;
-    }
-    let conout = unsafe { kernel32::GetStdHandle(STD_OUTPUT_HANDLE) };
-    let (cols, rows) = Screen::winsize(conout).expect("Failed to get window size!");
-    // We don't know the window size a priori, but we can at least
-    // assert that it is within some kind of sensible range.
-    assert!(cols > 40);
-    assert!(rows > 40);
-    assert!(cols < 1000);
-    assert!(rows < 1000);
-}
-
 fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u16 {
     let bottom_most_line = rows - visible_choices - 1;
     let (initial_x, initial_y) = initial_pos;
@@ -276,11 +259,35 @@ fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u
     }
 }
 
-#[test]
-fn start_line_test() {
-    assert_eq!(5, get_start_line(100, 20, (0, 5)));
-    assert_eq!(6, get_start_line(100, 20, (1, 5)));
-    assert_eq!(79, get_start_line(100, 20, (0, 100)));
-    assert_eq!(0, get_start_line(15, 14, ((0, 5))));
-    assert_eq!(79, get_start_line(100, 20, (50, 100)));
+#[cfg(test)]
+mod tests {
+    use super::kernel32;
+    use super::winapi::STD_OUTPUT_HANDLE;
+    use super::{Screen, get_start_line};
+
+    #[test]
+    fn winsize_test() {
+        // AppVeyor builds run without a console, making this test impossible.
+        if option_env!("APPVEYOR").is_some() {
+            // TODO: It should be made obvious from the output that this test was skipped
+            return;
+        }
+        let conout = unsafe { kernel32::GetStdHandle(STD_OUTPUT_HANDLE) };
+        let (cols, rows) = Screen::winsize(conout).expect("Failed to get window size!");
+        // We don't know the window size a priori, but we can at least
+        // assert that it is within some kind of sensible range.
+        assert!(cols > 40);
+        assert!(rows > 40);
+        assert!(cols < 1000);
+        assert!(rows < 1000);
+    }
+
+    #[test]
+    fn start_line_test() {
+        assert_eq!(5, get_start_line(100, 20, (0, 5)));
+        assert_eq!(6, get_start_line(100, 20, (1, 5)));
+        assert_eq!(79, get_start_line(100, 20, (0, 100)));
+        assert_eq!(0, get_start_line(15, 14, ((0, 5))));
+        assert_eq!(79, get_start_line(100, 20, (50, 100)));
+    }
 }
