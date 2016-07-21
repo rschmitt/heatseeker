@@ -1,5 +1,5 @@
-[![Build Status](http://img.shields.io/travis/rschmitt/heatseeker.svg?label=Linux%20build)](https://travis-ci.org/rschmitt/heatseeker)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/rschmitt/heatseeker?svg=true)](https://ci.appveyor.com/project/rschmitt/heatseeker)
+[![Linux Build Status](https://travis-ci.org/rschmitt/heatseeker.svg)](https://travis-ci.org/rschmitt/heatseeker)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/rschmitt/heatseeker?svg=true)](https://ci.appveyor.com/project/rschmitt/heatseeker)
 
 Heatseeker is a rewrite of Gary Bernhardt's
 [selecta](https://github.com/garybernhardt/selecta), a general-purpose fuzzy selector. It looks like this:
