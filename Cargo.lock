@@ -1,6 +1,6 @@
 [root]
 name = "heatseeker"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "getopts 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
