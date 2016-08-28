@@ -1,6 +1,9 @@
 use std::ascii::AsciiExt;
 use std::cmp::*;
 
+extern crate num_cpus;
+extern crate crossbeam;
+
 macro_rules! chars {
     ($str:expr) => (
         &$str.chars().collect::<Vec<char>>()
@@ -26,6 +29,14 @@ impl PartialOrd for ScoredChoice {
 }
 
 pub fn compute_matches<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
+    if choices.len() > 100 {
+        compute_matches_single_threaded(choices, query, filter_only)
+    } else {
+        compute_matches_multi_threaded(choices, query, filter_only)
+    }
+}
+
+pub fn compute_matches_single_threaded<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
     let mut ret = Vec::new();
     for i in 0..choices.len() {
         let score = if filter_only { filter(choices[i], query) } else { score(choices[i], query) };
@@ -38,7 +49,35 @@ pub fn compute_matches<'a>(choices: &[&'a str], query: &str, filter_only: bool) 
     ret.iter().map(|x| choices[x.idx]).collect()
 }
 
-#[cfg_attr(not(nightly), allow(dead_code))]
+pub fn compute_matches_multi_threaded<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
+    use std::sync::mpsc::channel;
+    let mut join_guards = Vec::new();
+    let (tx, rx) = channel();
+    let workers = num_cpus::get();
+    for current_worker in 0..workers {
+        let tx = tx.clone();
+        let join_guard = crossbeam::scope(|_| {
+            let (lower_bound, upper_bound) = get_slice_indices(choices.len(), workers, current_worker);
+            for i in lower_bound..upper_bound {
+                let score = if filter_only { filter(choices[i], query) } else { score(choices[i], query) };
+                tx.send(ScoredChoice{ idx: i, score: score }).unwrap()
+            }
+        });
+        join_guards.push(join_guard);
+    }
+
+    let mut ret = Vec::new();
+    for _ in 0..choices.len() {
+        let scored_choice = rx.recv().unwrap();
+        if scored_choice.score > 0_f64 {
+            ret.push(scored_choice);
+        }
+    }
+
+    ret.sort_by(|x, y| x.partial_cmp(y).unwrap());
+    ret.iter().map(|x| choices[x.idx]).collect()
+}
+
 fn get_slice_indices(length: usize, workers: usize, idx: usize) -> (usize, usize) {
     let lb = (length as f64 / workers as f64) * idx as f64;
     let ub = (length as f64 / workers as f64) * (idx + 1) as f64;

@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "nightly", feature(scoped))]
-
 extern crate unicode_width;
 
 mod args;
@@ -33,7 +31,7 @@ fn main() {
     if args.help { return; }
 
     if args.version {
-        const THREADS: &'static str = "single-threaded";
+        const THREADS: &'static str = "multi-threaded";
         if COMMIT == "" {
             println!("heatseeker {} {} (built {} for {})", VERSION, THREADS, TIMESTAMP, TARGET);
         } else {
