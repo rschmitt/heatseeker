@@ -12,7 +12,7 @@ pub struct Args {
 }
 
 pub fn parse_args() -> Option<Args> {
-    let mut os_args = env::args();
+    let os_args = env::args();
     let mut opts = getopts::Options::new();
     opts.optflag("h", "help", "Show this message");
     opts.optflag("v", "version", "Show version");
@@ -21,10 +21,7 @@ pub fn parse_args() -> Option<Args> {
     opts.optflag("F", "full-screen", "Use the entire screen in order to display as many choices as possible");
     opts.optflag("", "filter-only", "Just filter choices without ranking them");
 
-    let mut args = Vec::new();
-    while let Some(os_arg) = os_args.next() {
-        args.push(os_arg);
-    }
+    let args = os_args.collect::<Vec<_>>();
 
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,

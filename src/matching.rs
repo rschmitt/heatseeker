@@ -38,8 +38,8 @@ pub fn compute_matches<'a>(choices: &[&'a str], query: &str, filter_only: bool) 
 
 pub fn compute_matches_single_threaded<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
     let mut ret = Vec::new();
-    for i in 0..choices.len() {
-        let score = if filter_only { filter(choices[i], query) } else { score(choices[i], query) };
+    for (i, choice) in choices.iter().enumerate() {
+        let score = if filter_only { filter(choice, query) } else { score(choice, query) };
         if score > 0_f64 {
             ret.push(ScoredChoice{ idx: i, score: score });
         }
@@ -85,10 +85,10 @@ fn get_slice_indices(length: usize, workers: usize, idx: usize) -> (usize, usize
 }
 
 fn score(choice: &str, query: &str) -> f64 {
-    if query.len() == 0 {
+    if query.is_empty() {
         return 1.0;
     }
-    if choice.len() == 0 {
+    if choice.is_empty() {
         return 0.0;
     }
 
@@ -96,19 +96,19 @@ fn score(choice: &str, query: &str) -> f64 {
     let choice = chars!(choice);
 
     match compute_match_length(choice, query) {
-        None => return 0.0,
+        None => 0.0,
         Some(match_length) => {
             let score = query.len() as f64 / match_length as f64;
-            return score as f64 / choice.len() as f64;
+            score as f64 / choice.len() as f64
         }
     }
 }
 
 fn filter(choice: &str, query: &str) -> f64 {
-    if query.len() == 0 {
+    if query.is_empty() {
         return 1.0;
     }
-    if choice.len() == 0 {
+    if choice.is_empty() {
         return 0.0;
     }
 
@@ -125,14 +125,14 @@ fn filter(choice: &str, query: &str) -> f64 {
 // rendering purposes. It assumes that the given choice is in fact a match for the given query, and
 // will panic if this is not the case.
 pub fn visual_score(choice: &str, query: &str) -> Vec<usize> {
-    if query.len() == 0 || choice.len() == 0 {
+    if query.is_empty() || choice.is_empty() {
         return Vec::new();
     }
     let query = chars!(query);
     let choice = chars!(choice);
 
-    let (first_idx, _) = get_longest_match(&choice, &query).unwrap();
-    get_match_indices(&choice, &query[1..], first_idx).unwrap()
+    let (first_idx, _) = get_longest_match(choice, query).unwrap();
+    get_match_indices(choice, &query[1..], first_idx).unwrap()
 }
 
 fn compute_match_length(string: &[char], query: &[char]) -> Option<usize> {
@@ -176,7 +176,7 @@ fn find_char_in_string(string: &[char], char: char) -> Vec<usize> {
             indices.push(i);
         }
     }
-    return indices;
+    indices
 }
 
 fn find_end_of_match(string: &[char], rest_of_query: &[char], first_index: usize) -> Option<usize> {

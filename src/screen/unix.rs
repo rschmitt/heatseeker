@@ -10,6 +10,7 @@ use std::os::unix::io::AsRawFd;
 use std::path::*;
 use std::process::Command;
 use std::process::Stdio;
+use std::str;
 use std::iter::repeat;
 use std::cmp::min;
 use ansi;
@@ -69,7 +70,7 @@ impl Screen {
         // is effective, or why others are not, or what the root cause
         // of the issue is (likely something involving save/restore
         // support).
-        self.tty.write("\r".as_bytes());
+        self.tty.write(b"\r");
 
         self.tty.write(&ansi::cursor_up(self.visible_choices));
     }
@@ -137,11 +138,8 @@ impl Screen {
         Terminal::translate_bytes(ret.clone())
     }
 
-    fn more_bytes_needed(bytes: &Vec<u8>) -> bool {
-        if let Err(_) = String::from_utf8(bytes.clone()) {
-            return true;
-        }
-        false
+    fn more_bytes_needed(bytes: &[u8]) -> bool {
+        if let Err(_) = str::from_utf8(bytes) { true } else { false }
     }
 }
 
@@ -256,13 +254,13 @@ impl Terminal {
     }
 
     fn translate_bytes(bytes: Vec<u8>) -> Vec<Key> {
-        if bytes == [27, '[' as u8, 'A' as u8] { return vec![Up] };
-        if bytes == [27, '[' as u8, 'B' as u8] { return vec![Down] };
-        if bytes == [27, 'O' as u8, 'A' as u8] { return vec![Up] };
-        if bytes == [27, 'O' as u8, 'B' as u8] { return vec![Down] };
+        if bytes == [27, b'[', b'A'] { return vec![Up] };
+        if bytes == [27, b'[', b'B'] { return vec![Down] };
+        if bytes == [27, b'O', b'A'] { return vec![Up] };
+        if bytes == [27, b'O', b'B'] { return vec![Down] };
 
         let chars = String::from_utf8(bytes).unwrap().chars().collect::<Vec<char>>();
-        chars.into_iter().map(|c| Terminal::translate_char(c)).collect()
+        chars.into_iter().map(Terminal::translate_char).collect()
     }
 
     fn translate_char(c: char) -> Key {
@@ -282,12 +280,12 @@ impl Terminal {
     }
 
     fn write(&mut self, s: &[u8]) {
-        self.output.write_all(&s).unwrap();
+        self.output.write_all(s).unwrap();
     }
 
     fn writeln(&mut self, s: &str) {
         self.output.write(s.as_bytes()).unwrap();
-        self.output.write("\n".as_bytes()).unwrap();
+        self.output.write(b"\n").unwrap();
     }
 
     fn winsize(&self) -> Option<(u16, u16)> {
