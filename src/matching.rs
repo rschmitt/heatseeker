@@ -30,9 +30,9 @@ impl PartialOrd for ScoredChoice {
 
 pub fn compute_matches<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
     if choices.len() > 100 {
-        compute_matches_single_threaded(choices, query, filter_only)
-    } else {
         compute_matches_multi_threaded(choices, query, filter_only)
+    } else {
+        compute_matches_single_threaded(choices, query, filter_only)
     }
 }
 
@@ -51,20 +51,20 @@ pub fn compute_matches_single_threaded<'a>(choices: &[&'a str], query: &str, fil
 
 pub fn compute_matches_multi_threaded<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
     use std::sync::mpsc::channel;
-    let mut join_guards = Vec::new();
     let (tx, rx) = channel();
     let workers = num_cpus::get();
-    for current_worker in 0..workers {
-        let tx = tx.clone();
-        let join_guard = crossbeam::scope(|_| {
-            let (lower_bound, upper_bound) = get_slice_indices(choices.len(), workers, current_worker);
-            for i in lower_bound..upper_bound {
-                let score = if filter_only { filter(choices[i], query) } else { score(choices[i], query) };
-                tx.send(ScoredChoice{ idx: i, score: score }).unwrap()
-            }
-        });
-        join_guards.push(join_guard);
-    }
+    crossbeam::scope(|scope| {
+        for current_worker in 0..workers {
+            let tx = tx.clone();
+            scope.spawn(move || {
+                let (lower_bound, upper_bound) = get_slice_indices(choices.len(), workers, current_worker);
+                for i in lower_bound..upper_bound {
+                    let score = if filter_only { filter(choices[i], query) } else { score(choices[i], query) };
+                    tx.send(ScoredChoice{ idx: i, score: score }).unwrap()
+                }
+            });
+        }
+    });
 
     let mut ret = Vec::new();
     for _ in 0..choices.len() {
