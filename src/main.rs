@@ -66,7 +66,7 @@ fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_
         }
 
         let keys = screen.get_buffered_keys();
-        for key in keys.iter() {
+        for key in &keys {
             handle_key(&mut search, key, screen.visible_choices);
         }
     }
@@ -78,17 +78,17 @@ fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_
 fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
     match *key {
         Char(x) => search.append(x),
-        Backspace => search.backspace(),
+        Backspace |
         Control('h') => search.backspace(),
         Control('w') => search.delete_word(),
         Control('u') => search.clear_query(),
-        Control('c') => search.cancel(),
+        Control('c') |
         Control('g') => search.cancel(),
-        Control('p') => search.up(visible_choices),
         Control('t') => { search.toggle_selection(); search.down(visible_choices); },
-        Control('n') => search.down(visible_choices),
+        Control('p') |
         Up => search.up(visible_choices),
-        Down => search.down(visible_choices),
+        Control('n') |
+        Down |
         Tab => search.down(visible_choices),
         Enter => search.done(),
         _ => {}
@@ -182,7 +182,7 @@ impl<'a> Search<'a> {
     fn get_selections(&mut self) -> String {
         let mut ret = String::new();
         if self.state != Canceled {
-            for selection in self.selections.iter() {
+            for selection in &self.selections {
                 ret.push_str(selection);
                 ret.push_str(NEWLINE);
             }
@@ -233,15 +233,14 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
         print_match(&annotated_choice, &indices, max_width, &mut |s, highlight| {
             if i == index + 1 {
                 if highlight { screen.write_red_inverted(s); } else { screen.write_inverted(s); }
-            } else {
-                if highlight { screen.write_red(s); } else { screen.write(s); }
-            }
+            } else if highlight {
+                screen.write_red(s);
+            } else { screen.write(s); }
         });
         if i >= screen.visible_choices as usize {
             return;
-        } else {
-            screen.write(NEWLINE);
         }
+        screen.write(NEWLINE);
         i += 1;
     }
 }
@@ -258,12 +257,12 @@ fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut FnM
         if last_idx >= chars_to_draw {
             return;
         }
-        writer(&slice_chars(choice, last_idx, idx), false);
+        writer(slice_chars(choice, last_idx, idx), false);
         if idx == chars_to_draw { return }
-        writer(&slice_chars(choice, idx, idx + 1), true);
+        writer(slice_chars(choice, idx, idx + 1), true);
         last_idx = idx + 1;
     }
-    writer(&slice_chars(choice, last_idx, chars_to_draw), false);
+    writer(slice_chars(choice, last_idx, chars_to_draw), false);
 }
 
 fn read_choices() -> Vec<String> {
@@ -274,12 +273,9 @@ fn read_choices() -> Vec<String> {
     loop {
         let mut s = String::new();
         stdin.read_line(&mut s).unwrap();
-        if s.len() == 0 {
-            break;
-        } else {
-            trim(&mut s);
-            lines.push(s);
-        }
+        if s.is_empty() { break; }
+        trim(&mut s);
+        lines.push(s);
     }
 
     lines
