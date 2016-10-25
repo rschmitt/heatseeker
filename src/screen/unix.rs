@@ -254,13 +254,25 @@ impl Terminal {
     }
 
     fn translate_bytes(bytes: Vec<u8>) -> Vec<Key> {
-        if bytes == [27, b'[', b'A'] { return vec![Up] };
-        if bytes == [27, b'[', b'B'] { return vec![Down] };
-        if bytes == [27, b'O', b'A'] { return vec![Up] };
-        if bytes == [27, b'O', b'B'] { return vec![Down] };
+        const BEGIN_PASTE: &'static [u8] = b"\x1B[200~";
+        const END_PASTE: &'static [u8] = b"\x1B[201~";
 
-        let chars = String::from_utf8(bytes).unwrap().chars().collect::<Vec<char>>();
-        chars.into_iter().map(Terminal::translate_char).collect()
+        if bytes == b"\x1B[A" || bytes == b"\x1BOA" { return vec![Up] };
+        if bytes == b"\x1B[B" || bytes == b"\x1BOB" { return vec![Down] };
+
+        let bs = if bytes.starts_with(BEGIN_PASTE) && bytes.ends_with(END_PASTE) {
+            let start = BEGIN_PASTE.len();
+            let end = bytes.len() - END_PASTE.len();
+            bytes[start..end].to_vec()
+        } else {
+            bytes
+        };
+
+        String::from_utf8(bs)
+            .unwrap()
+            .chars()
+            .map(Terminal::translate_char)
+            .collect()
     }
 
     fn translate_char(c: char) -> Key {
