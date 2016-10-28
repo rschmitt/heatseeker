@@ -5,8 +5,8 @@ environment:
 platform:
   - x64
 install:
-  - ps: Start-FileDownload "http://static.rust-lang.org/dist/rust-1.10.0-${env:TARGET}.exe"
-  - rust-1.10.0-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
+  - ps: Start-FileDownload "http://static.rust-lang.org/dist/rust-1.12.1-${env:TARGET}.exe"
+  - rust-1.12.1-%TARGET%.exe /VERYSILENT /NORESTART /DIR="C:\Program Files (x86)\Rust"
   - SET PATH=%PATH%;C:\Program Files (x86)\Rust\bin
   - rustc --version
   - cargo --version
