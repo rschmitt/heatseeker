@@ -31,7 +31,7 @@ pub struct Screen {
     start_line: u16,
     original_console_mode: DWORD,
     original_colors: WORD,
-    input: Receiver<u16>,
+    input: Receiver<INPUT_RECORD>,
     conout: HANDLE,
 }
 
@@ -85,17 +85,17 @@ impl Screen {
     // We have to take the conin handle as a usize instead of a *mut c_void in order to avoid a
     // lecture from the compiler about how the latter type cannot be safely sent between threads.
     // I'm not sure if a better solution exists at this time.
-    fn spawn_input_thread(conin: usize) -> Receiver<u16> {
+    fn spawn_input_thread(conin: usize) -> Receiver<INPUT_RECORD> {
         let (tx, rx) = mpsc::channel();
 
         thread::spawn(move || {
             loop {
                 let conin = conin as *mut c_void;
-                let mut buf: Vec<u16> = repeat(0u16).take(0x1000).collect();
-                let mut chars_read: DWORD = 0;
-                win32!(ReadFile(conin, buf.as_mut_ptr() as LPVOID, 1, &mut chars_read as LPDWORD, ptr::null_mut()));
-                for i in 0..chars_read as usize {
-                    tx.send(buf[i]).unwrap();
+                let mut input_record = INPUT_RECORD{EventType: 0 as WORD, Event: [0, 0, 0, 0]};
+                let mut events_read: DWORD = 0;
+                win32!(ReadConsoleInputW(conin, &mut input_record as PINPUT_RECORD, 1, &mut events_read as LPDWORD));
+                if events_read > 0 {
+                    tx.send(input_record).unwrap();
                 }
             }
         });
@@ -175,17 +175,26 @@ impl Screen {
 
     pub fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut ret = Vec::new();
-        while let Ok(byte) = self.input.try_recv() {
-            ret.push(Screen::translate_byte(byte));
+        while let Ok(event) = self.input.try_recv() {
+            ret.push(Screen::translate_event(event));
         }
         if ret.is_empty() {
-            let byte = self.input.recv().unwrap();
-            ret.push(Screen::translate_byte(byte));
+            let event = self.input.recv().unwrap();
+            ret.push(Screen::translate_event(event));
         }
         ret
     }
 
-    fn translate_byte(byte: u16) -> Key {
+    fn translate_event(event: INPUT_RECORD) -> Key {
+        if event.EventType != KEY_EVENT {
+            return Nothing;
+        }
+
+        let key_event = unsafe { event.KeyEvent() };
+        if key_event.bKeyDown == FALSE {
+            return Nothing;
+        }
+        let byte = key_event.UnicodeChar;
         if byte == '\r' as u16 {
             Enter
         } else if byte == 9 {
