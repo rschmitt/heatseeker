@@ -86,7 +86,8 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
         Control('g') => search.cancel(),
         Control('t') => { search.toggle_selection(); search.down(visible_choices); },
         Control('p') |
-        Up => search.up(visible_choices),
+        Up |
+        ShiftTab => search.up(visible_choices),
         Control('n') |
         Down |
         Tab => search.down(visible_choices),

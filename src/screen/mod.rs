@@ -9,6 +9,7 @@ pub enum Key {
     Enter,
     Backspace,
     Tab,
+    ShiftTab,
     Nothing,
     Down,
     Up,

@@ -259,6 +259,7 @@ impl Terminal {
 
         if bytes == b"\x1B[A" || bytes == b"\x1BOA" { return vec![Up] };
         if bytes == b"\x1B[B" || bytes == b"\x1BOB" { return vec![Down] };
+        if bytes == b"\x1B[Z" { return vec![ShiftTab] };
 
         let bs = if bytes.starts_with(BEGIN_PASTE) && bytes.ends_with(END_PASTE) {
             let start = BEGIN_PASTE.len();
