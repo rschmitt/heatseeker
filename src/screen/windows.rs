@@ -140,17 +140,9 @@ impl Screen {
 
     fn write_to(conout: HANDLE, s: &str) {
         let mut chars_written: DWORD = 0;
-        let chars_to_write = s.chars().count() as DWORD;
-        win32!(WriteConsoleW(conout, Screen::to_wide_char(s), chars_to_write, &mut chars_written as LPDWORD, ptr::null_mut()));
-    }
-
-    fn to_wide_char(s: &str) -> PVOID {
-        let mut ret = Vec::with_capacity(5001);
-        unsafe {
-            let buf = ret.as_mut_ptr();
-            let _ = MultiByteToWideChar(CP_UTF8, 0, s.as_ptr() as *const i8, s.len() as i32, buf, 2500);
-        }
-        ret.as_ptr() as PVOID
+        let utf16 = s.encode_utf16().collect::<Vec<u16>>();
+        let chars_to_write = utf16.len() as DWORD;
+        win32!(WriteConsoleW(conout, utf16.as_ptr() as PVOID, chars_to_write, &mut chars_written as LPDWORD, ptr::null_mut()));
     }
 
     pub fn write_red_inverted(&mut self, s: &str) {
