@@ -34,6 +34,7 @@ pub struct Screen {
     input: Receiver<INPUT_RECORD>,
     conout: HANDLE,
     default_cursor_info: CONSOLE_CURSOR_INFO,
+    shifted: bool,
 }
 
 impl Screen {
@@ -83,6 +84,7 @@ impl Screen {
             input: rx,
             conout: conout,
             default_cursor_info: default_cursor_info,
+            shifted: false,
         }
     }
 
@@ -179,31 +181,39 @@ impl Screen {
     pub fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut ret = Vec::new();
         while let Ok(event) = self.input.try_recv() {
-            ret.push(Screen::translate_event(event));
+            ret.push(Screen::translate_event(event, &mut self.shifted));
         }
         if ret.is_empty() {
             let event = self.input.recv().unwrap();
-            ret.push(Screen::translate_event(event));
+            ret.push(Screen::translate_event(event, &mut self.shifted));
         }
         ret
     }
 
-    fn translate_event(event: INPUT_RECORD) -> Key {
+    fn translate_event(event: INPUT_RECORD, shifted: &mut bool) -> Key {
         if event.EventType != KEY_EVENT {
             return Nothing;
         }
 
         let key_event = unsafe { event.KeyEvent() };
+        let vk_code = key_event.wVirtualKeyCode as i32;
+
+        if vk_code == VK_SHIFT {
+            *shifted = key_event.bKeyDown == TRUE;
+
+            return Nothing;
+        }
+
         if key_event.bKeyDown == FALSE {
             return Nothing;
         }
-        let vk_code = key_event.wVirtualKeyCode as i32;
+
         if vk_code == VK_UP {
             Up
         } else if vk_code == VK_DOWN {
             Down
         } else if vk_code == VK_TAB {
-            Tab
+            if *shifted { ShiftTab } else { Tab }
         } else if vk_code == VK_BACK {
             Backspace
         } else if vk_code == VK_RETURN {
