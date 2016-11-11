@@ -197,6 +197,12 @@ impl Screen {
         if key_event.bKeyDown == FALSE {
             return Nothing;
         }
+        let vk_code = key_event.wVirtualKeyCode as i32;
+        if vk_code == VK_UP {
+            return Up;
+        } else if vk_code == VK_DOWN {
+            return Down;
+        }
         let byte = key_event.UnicodeChar;
         if byte == '\r' as u16 {
             Enter
