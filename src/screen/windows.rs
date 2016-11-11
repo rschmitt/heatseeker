@@ -199,21 +199,22 @@ impl Screen {
         }
         let vk_code = key_event.wVirtualKeyCode as i32;
         if vk_code == VK_UP {
-            return Up;
+            Up
         } else if vk_code == VK_DOWN {
-            return Down;
-        }
-        let byte = key_event.UnicodeChar;
-        if byte == '\r' as u16 {
-            Enter
-        } else if byte == 9 {
+            Down
+        } else if vk_code == VK_TAB {
             Tab
-        } else if byte == 127 {
+        } else if vk_code == VK_BACK {
             Backspace
-        } else if byte & 96 == 0 {
-            Control(((byte + 96u16) as u8) as char)
+        } else if vk_code == VK_RETURN {
+            Enter
         } else {
-            Char((byte as u8) as char)
+            let byte = key_event.UnicodeChar;
+            if byte & 96 == 0 {
+                Control(((byte + 96u16) as u8) as char)
+            } else {
+                Char((byte as u8) as char)
+            }
         }
     }
 
