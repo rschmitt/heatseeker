@@ -33,6 +33,7 @@ pub struct Screen {
     original_colors: WORD,
     input: Receiver<INPUT_RECORD>,
     conout: HANDLE,
+    default_cursor_info: CONSOLE_CURSOR_INFO,
 }
 
 impl Screen {
@@ -57,6 +58,8 @@ impl Screen {
         win32!(GetConsoleMode(conin, &mut orig_mode));
         let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
         win32!(SetConsoleMode(conin, new_mode));
+        let mut default_cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: TRUE };
+        win32!(GetConsoleCursorInfo(conout, &mut default_cursor_info as PCONSOLE_CURSOR_INFO));
 
         let rx = Screen::spawn_input_thread(conin as usize);
         let initial_pos = Screen::get_cursor_pos(conout);
@@ -79,6 +82,7 @@ impl Screen {
             original_colors: original_colors,
             input: rx,
             conout: conout,
+            default_cursor_info: default_cursor_info,
         }
     }
 
@@ -125,8 +129,7 @@ impl Screen {
     }
 
     pub fn show_cursor(&mut self) {
-        let cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: TRUE };
-        win32!(SetConsoleCursorInfo(self.conout, &cursor_info));
+        win32!(SetConsoleCursorInfo(self.conout, &self.default_cursor_info));
     }
 
     pub fn hide_cursor(&mut self) {
