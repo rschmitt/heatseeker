@@ -27,7 +27,6 @@ use self::libc::{sigaction, SIGWINCH, SA_SIGINFO, sighandler_t, c_int, c_ushort,
 pub struct Screen {
     tty: Terminal,
     original_stty_state: Vec<u8>,
-    pub height: u16,
     pub width: u16,
     pub visible_choices: u16,
     start_line: u16,
@@ -49,7 +48,6 @@ impl Screen {
         Screen {
             tty: tty,
             original_stty_state: current_stty_state,
-            height: rows,
             width: cols,
             visible_choices: visible_choices,
             start_line: start_line,

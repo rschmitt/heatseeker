@@ -25,7 +25,6 @@ macro_rules! win32 {
 }
 
 pub struct Screen {
-    pub height: u16,
     pub width: u16,
     pub visible_choices: u16,
     start_line: u16,
@@ -75,7 +74,6 @@ impl Screen {
             Self::write_to(conout, NEWLINE);
         }
         Screen {
-            height: rows,
             width: cols,
             visible_choices: visible_choices,
             start_line: start_line + Self::get_buffer_offset(conout),
