@@ -1,14 +1,12 @@
 class Heatseeker < Formula
   desc "A high-performance general purpose fuzzy finder, based on selecta"
   homepage "https://github.com/rschmitt/heatseeker"
-  url "https://github.com/rschmitt/heatseeker/archive/v1.4.0.tar.gz"
-  sha256 "0988b722d8e20a58af74cadc53254b9493e1329faef78a7f33cae1ca7d92f7b3"
-
-  depends_on "rust"
+  url "https://github.com/rschmitt/heatseeker/releases/download/v1.5.0/hs-mac"
+  sha256 "e23bca0931e16f01fad78e967692487b058f6c51e86a769acf1cd8e4a91f9de3"
 
   def install
-    system *%w(cargo build --release)
-    bin.install "target/release/hs"
+    system *%W(mv hs-mac hs)
+    bin.install "hs"
   end
 
   test do
