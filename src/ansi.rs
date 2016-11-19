@@ -3,7 +3,7 @@ const ESC: u8 = 27;
 pub fn escape(sequence: &str) -> Vec<u8> {
     let mut ret = Vec::new();
     ret.push(ESC);
-    ret.extend(b"[".iter().cloned());
+    ret.push(b'[');
     ret.extend(sequence.as_bytes().iter().cloned());
     ret
 }
