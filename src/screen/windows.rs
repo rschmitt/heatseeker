@@ -25,7 +25,6 @@ macro_rules! win32 {
 }
 
 pub struct Screen {
-    pub width: u16,
     pub visible_choices: u16,
     start_line: u16,
     original_console_mode: DWORD,
@@ -53,7 +52,7 @@ impl Screen {
             panic!("Unable to open console");
         }
 
-        let (cols, rows) = Screen::winsize(conout).unwrap();
+        let (_, rows) = Screen::winsize(conout).unwrap();
 
         win32!(GetConsoleMode(conin, &mut orig_mode));
         let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
@@ -74,7 +73,6 @@ impl Screen {
             Self::write_to(conout, NEWLINE);
         }
         Screen {
-            width: cols,
             visible_choices: visible_choices,
             start_line: start_line + Self::get_buffer_offset(conout),
             original_console_mode: orig_mode,
@@ -84,6 +82,11 @@ impl Screen {
             default_cursor_info: default_cursor_info,
             shifted: false,
         }
+    }
+
+    pub fn width(&self) -> u16 {
+        let (cols, _) = Screen::winsize(self.conout).unwrap();
+        cols
     }
 
     // We have to take the conin handle as a usize instead of a *mut c_void in order to avoid a
@@ -117,7 +120,7 @@ impl Screen {
     }
 
     pub fn blank_screen(&mut self) {
-        let blank_line = repeat(' ').take((self.width - 1) as usize).collect::<String>();
+        let blank_line = repeat(' ').take((self.width() - 1) as usize).collect::<String>();
         let start_line = self.start_line;
         self.move_cursor(start_line, 0);
         for _ in 0..self.visible_choices {

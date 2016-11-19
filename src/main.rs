@@ -221,7 +221,7 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
     let mut i = 1;
     for choice in matches.iter() {
         let indices = matching::visual_score(choice, query);
-        let max_width = screen.width;
+        let max_width = screen.width();
         let mut annotated_choice = choice.to_string();
         if selections.contains(&annotated_choice) {
             annotated_choice.push(' ');

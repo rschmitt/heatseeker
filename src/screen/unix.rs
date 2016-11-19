@@ -27,7 +27,6 @@ use self::libc::{sigaction, SIGWINCH, SA_SIGINFO, sighandler_t, c_int, c_ushort,
 pub struct Screen {
     tty: Terminal,
     original_stty_state: Vec<u8>,
-    pub width: u16,
     pub visible_choices: u16,
     start_line: u16,
 }
@@ -37,7 +36,7 @@ impl Screen {
         let mut tty = Terminal::open_terminal();
         let current_stty_state = tty.stty(&["-g"]);
         tty.initialize();
-        let (cols, rows) = tty.winsize().unwrap();
+        let (_, rows) = tty.winsize().unwrap();
         let visible_choices = min(desired_rows, rows - 1);
         let start_line = rows - visible_choices - 1;
         for _ in 0..visible_choices {
@@ -48,10 +47,14 @@ impl Screen {
         Screen {
             tty: tty,
             original_stty_state: current_stty_state,
-            width: cols,
             visible_choices: visible_choices,
             start_line: start_line,
         }
+    }
+
+    pub fn width(&self) -> u16 {
+        let (cols, _) = self.tty.winsize().unwrap();
+        cols
     }
 
     fn restore_tty(&mut self) {
@@ -80,7 +83,7 @@ impl Screen {
 
     pub fn blank_screen(&mut self) {
         self.reset_cursor();
-        let blank_line = repeat(' ').take(self.width as usize).collect::<String>();
+        let blank_line = repeat(' ').take(self.width() as usize).collect::<String>();
         for _ in 0..self.visible_choices + 1 {
             self.tty.write(blank_line.as_bytes());
         }
