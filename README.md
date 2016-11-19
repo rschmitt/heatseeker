@@ -27,13 +27,13 @@ brew install https://raw.githubusercontent.com/rschmitt/heatseeker/master/heatse
 To install on Linux, run:
 
 ```shell
-wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.4.0/hs-linux && sudo install hs /usr/local/bin/
+wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.5.0/hs-linux && sudo install hs /usr/local/bin/
 ```
 
 Or install it in your home directory instead by running:
 
 ```shell
-wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.4.0/hs-linux && install -D hs ~/bin/hs
+wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.5.0/hs-linux && install -D hs ~/bin/hs
 ```
 
 ## Use
