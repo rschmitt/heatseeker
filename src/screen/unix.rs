@@ -27,8 +27,8 @@ use self::libc::{sigaction, SIGWINCH, SA_SIGINFO, sighandler_t, c_int, c_ushort,
 pub struct Screen {
     tty: Terminal,
     original_stty_state: Vec<u8>,
-    pub visible_choices: u16,
     start_line: u16,
+    desired_rows: u16,
 }
 
 impl Screen {
@@ -47,9 +47,14 @@ impl Screen {
         Screen {
             tty: tty,
             original_stty_state: current_stty_state,
-            visible_choices: visible_choices,
             start_line: start_line,
+            desired_rows: desired_rows,
         }
+    }
+
+    pub fn visible_choices(&self) -> u16 {
+        let (_, rows) = self.tty.winsize().unwrap();
+        min(self.desired_rows, rows - 1)
     }
 
     pub fn width(&self) -> u16 {
@@ -73,7 +78,8 @@ impl Screen {
         // support).
         self.tty.write(b"\r");
 
-        self.tty.write(&ansi::cursor_up(self.visible_choices));
+        let num_lines = self.visible_choices();
+        self.tty.write(&ansi::cursor_up(num_lines));
     }
 
     pub fn move_cursor_to_prompt_line(&mut self, col: u16) {
@@ -84,10 +90,14 @@ impl Screen {
     pub fn blank_screen(&mut self) {
         self.reset_cursor();
         let blank_line = repeat(' ').take(self.width() as usize).collect::<String>();
-        for _ in 0..self.visible_choices + 1 {
+        for _ in 0..self.visible_choices() + 1 {
             self.tty.write(blank_line.as_bytes());
         }
         self.reset_cursor();
+    }
+
+    pub fn blank_entire_screen(&mut self){
+        self.tty.write(&ansi::blank_screen());
     }
 
     pub fn show_cursor(&mut self) {
@@ -129,8 +139,8 @@ impl Screen {
         }
         while ret.is_empty() {
             let bytes = self.tty.input.recv().unwrap();
-            if bytes.len() == 1 && bytes[0] == 0 {
-                self.tty.initialize();
+            if bytes == vec![0] { // SIGWINCH
+                self.blank_entire_screen();
                 return vec![Nothing];
             } else {
                 ret.extend(bytes);

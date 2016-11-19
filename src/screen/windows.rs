@@ -25,7 +25,7 @@ macro_rules! win32 {
 }
 
 pub struct Screen {
-    pub visible_choices: u16,
+    visible_choices: u16,
     start_line: u16,
     original_console_mode: DWORD,
     original_colors: WORD,
@@ -82,6 +82,10 @@ impl Screen {
             default_cursor_info: default_cursor_info,
             shifted: false,
         }
+    }
+
+    pub fn visible_choices(&self) -> u16 {
+        self.visible_choices
     }
 
     pub fn width(&self) -> u16 {

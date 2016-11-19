@@ -67,7 +67,7 @@ fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_
 
         let keys = screen.get_buffered_keys();
         for key in &keys {
-            handle_key(&mut search, key, screen.visible_choices);
+            handle_key(&mut search, key, screen.visible_choices());
         }
     }
 
@@ -238,7 +238,7 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
                 screen.write_red(s);
             } else { screen.write(s); }
         });
-        if i >= screen.visible_choices as usize {
+        if i >= screen.visible_choices() as usize {
             return;
         }
         screen.write(NEWLINE);

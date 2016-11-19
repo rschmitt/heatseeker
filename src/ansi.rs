@@ -43,3 +43,7 @@ pub fn red() -> Vec<u8> {
 pub fn reset() -> Vec<u8> {
     escape("0m")
 }
+
+pub fn blank_screen() -> Vec<u8> {
+    escape("2J")
+}
