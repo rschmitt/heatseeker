@@ -251,7 +251,10 @@ fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut FnM
     #[cfg(not(windows))] const MARGIN: u16 = 0;
     let max_width = max_width - MARGIN;
     let chars_in_choice = choice.chars().count();
-    let chars_to_draw = min(chars_in_choice, max_width as usize);
+    let mut chars_to_draw = min(chars_in_choice, max_width as usize);
+    while UnicodeWidthStr::width(slice_chars(choice, 0, chars_to_draw)) > max_width as usize {
+        chars_to_draw -= 1;
+    }
     let mut last_idx = 0;
     for &idx in indices {
         let idx = min(idx, chars_to_draw);
