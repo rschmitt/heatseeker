@@ -14,26 +14,25 @@ Compiled binaries for the latest version can be downloaded [from GitHub](https:/
 
 To install on Windows using [Chocolatey](https://chocolatey.org/), run:
 
-```shell
+```posh
 choco install heatseeker
 ```
 
 To install on OS X using [Homebrew](http://brew.sh/), run:
 
-```shell
-brew install https://raw.githubusercontent.com/rschmitt/heatseeker/master/heatseeker.rb
+```zsh
+brew tap rschmitt/heatseeker
+brew install heatseeker
 ```
 
 To install on Linux, run:
 
-```shell
-wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.5.0/hs-linux && sudo install hs /usr/local/bin/
-```
-
-Or install it in your home directory instead by running:
-
-```shell
-wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.5.0/hs-linux && install -D hs ~/bin/hs
+```zsh
+wget -q -O hs https://github.com/rschmitt/heatseeker/releases/download/v1.5.0/hs-linux
+# To install globally:
+sudo install hs /usr/local/bin/
+# To install in your home directory:
+install -D hs ~/bin/hs
 ```
 
 ## Use
