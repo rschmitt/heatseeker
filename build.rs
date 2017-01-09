@@ -28,8 +28,10 @@ fn get_head_commit() -> String {
 
 fn write(contents: &str, filename: &str) {
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    File::create(out_dir.join(filename))
-        .unwrap()
+    let file = out_dir.join(filename);
+    let debug_path = file.to_str().unwrap().to_string();
+    File::create(file)
+        .expect(&format!("Unable to create file {:?}", debug_path))
         .write_all(contents.as_bytes())
-        .unwrap();
+        .expect(&format!("Unable to write string '{}' to file {:?}", contents, debug_path));
 }
