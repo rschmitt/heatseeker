@@ -314,7 +314,7 @@ impl Terminal {
 
     fn winsize(&self) -> Option<(u16, u16)> {
         extern { fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int; }
-        #[cfg(any(target_os = "macos", target_os = "freebsd"))]
+        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "netbsd"))]
         const TIOCGWINSZ: c_ulong = 0x40087468;
 
         #[cfg(any(target_os = "linux", target_os = "android"))]
