@@ -5,6 +5,7 @@ extern crate kernel32;
 
 use self::kernel32::*;
 use self::winapi::*;
+use std::io;
 use std::ptr;
 use std::iter::repeat;
 use std::cmp::min;
@@ -19,7 +20,7 @@ use ::NEWLINE;
 macro_rules! win32 {
     ($funcall:expr) => (
         if unsafe { $funcall } == 0 {
-            panic!("Win32 call failed");
+            panic!("Win32 call failed: {}", io::Error::last_os_error());
         }
     );
 }
