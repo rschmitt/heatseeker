@@ -1,6 +1,7 @@
 extern crate time;
 
 use std::env;
+use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
@@ -10,7 +11,7 @@ use std::process::Command;
 fn main() {
     let version = env::var("CARGO_PKG_VERSION").unwrap();
     let timestamp = strftime("%F %H:%M:%S %z", &now()).unwrap();
-    let commit = get_head_commit();
+    let commit = get_head_commit().unwrap_or("".to_string());
     let target = env::var("TARGET").unwrap();
 
     write(&version, "version.txt");
@@ -19,11 +20,11 @@ fn main() {
     write(&commit, "commit.txt");
 }
 
-fn get_head_commit() -> String {
-    let output = Command::new("git").args(&["rev-parse", "--short", "HEAD"]).output().unwrap();
-    let mut rev = String::from_utf8(output.stdout).unwrap();
+fn get_head_commit() -> Result<String, Box<Error>> {
+    let output = Command::new("git").args(&["rev-parse", "--short", "HEAD"]).output()?;
+    let mut rev = String::from_utf8(output.stdout)?;
     rev.pop();
-    rev
+    Ok(rev)
 }
 
 fn write(contents: &str, filename: &str) {
