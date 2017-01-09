@@ -3,10 +3,8 @@ extern crate unicode_width;
 mod args;
 mod matching;
 mod screen;
-mod version;
 #[cfg(not(windows))] mod ansi;
 
-use version::*;
 use std::collections::HashSet;
 use std::process;
 use std::io::{stdin, BufRead};
@@ -19,6 +17,11 @@ use unicode_width::UnicodeWidthStr;
 
 #[cfg(windows)] pub const NEWLINE: &'static str = "\r\n";
 #[cfg(not(windows))] pub const NEWLINE: &'static str = "\n";
+
+const VERSION: &'static str = include_str!(concat!(env!("OUT_DIR"), "/version.txt"));
+const TIMESTAMP: &'static str = include_str!(concat!(env!("OUT_DIR"), "/timestamp.txt"));
+const TARGET: &'static str = include_str!(concat!(env!("OUT_DIR"), "/target.txt"));
+const COMMIT: &'static str = include_str!(concat!(env!("OUT_DIR"), "/commit.txt"));
 
 fn main() {
     let args = match args::parse_args() {

@@ -3,28 +3,20 @@ extern crate time;
 use std::env;
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+use std::path::PathBuf;
 use time::{strftime, now};
 use std::process::Command;
 
 fn main() {
-    let basedir = env::var("CARGO_MANIFEST_DIR").unwrap();
     let version = env::var("CARGO_PKG_VERSION").unwrap();
-    let dest_path = Path::new(&basedir).join("src/version.rs");
-    let mut f = File::create(&dest_path).unwrap();
-
     let timestamp = strftime("%F %H:%M:%S %z", &now()).unwrap();
     let commit = get_head_commit();
-
     let target = env::var("TARGET").unwrap();
 
-    let contents = format!(
-"pub const VERSION: &'static str = \"{}\";
-pub const TIMESTAMP: &'static str = \"{}\";
-pub const TARGET: &'static str = \"{}\";
-pub const COMMIT: &'static str = \"{}\";\n",
-        version, timestamp, target, commit);
-    f.write_all(contents.as_bytes()).unwrap();
+    write(&version, "version.txt");
+    write(&timestamp, "timestamp.txt");
+    write(&target, "target.txt");
+    write(&commit, "commit.txt");
 }
 
 fn get_head_commit() -> String {
@@ -32,4 +24,12 @@ fn get_head_commit() -> String {
     let mut rev = String::from_utf8(output.stdout).unwrap();
     rev.pop();
     rev
+}
+
+fn write(contents: &str, filename: &str) {
+    let out_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
+    File::create(out_dir.join(filename))
+        .unwrap()
+        .write_all(contents.as_bytes())
+        .unwrap();
 }
