@@ -102,6 +102,7 @@ impl Screen {
 
     pub fn show_cursor(&mut self) {
         self.tty.write(&ansi::show_cursor());
+        self.tty.flush();
     }
 
     pub fn hide_cursor(&mut self) {
@@ -164,6 +165,7 @@ struct Terminal {
     input: Receiver<Vec<u8>>,
     input_fd: i32,
     output: File,
+    output_buf: Vec<u8>,
 }
 
 static mut GLOBAL_TX: *const Arc<Mutex<Sender<Vec<u8>>>> = 0 as *const Arc<Mutex<Sender<Vec<u8>>>>;
@@ -222,6 +224,7 @@ impl Terminal {
             input: rx,
             input_fd: input_fd,
             output: output_file,
+            output_buf: Vec::new(),
         }
     }
 
@@ -304,12 +307,17 @@ impl Terminal {
     }
 
     fn write(&mut self, s: &[u8]) {
-        self.output.write_all(s).unwrap();
+        self.output_buf.extend_from_slice(s);
     }
 
     fn writeln(&mut self, s: &str) {
-        self.output.write(s.as_bytes()).unwrap();
-        self.output.write(b"\n").unwrap();
+        self.output_buf.extend_from_slice(s.as_bytes());
+        self.output_buf.push(b'\n');
+    }
+
+    fn flush(&mut self) {
+        self.output.write(&self.output_buf).unwrap();
+        self.output_buf.clear();
     }
 
     fn winsize(&self) -> Option<(u16, u16)> {
