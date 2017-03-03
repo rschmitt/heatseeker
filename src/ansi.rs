@@ -19,11 +19,11 @@ pub fn cursor_right(lines: u16) -> Vec<u8> {
 }
 
 pub fn save_cursor() -> Vec<u8> {
-    csi("s")
+    vec![ESC, b'7']
 }
 
 pub fn restore_cursor() -> Vec<u8> {
-    csi("u")
+    vec![ESC, b'8']
 }
 
 pub fn hide_cursor() -> Vec<u8> {
