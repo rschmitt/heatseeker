@@ -1,6 +1,8 @@
 const ESC: u8 = 27;
 
-pub fn escape(sequence: &str) -> Vec<u8> {
+// Prepend a Control Sequence Introducer to the
+// given string and return it as a Vec<u8>
+fn csi(sequence: &str) -> Vec<u8> {
     let mut ret = Vec::new();
     ret.push(ESC);
     ret.push(b'[');
@@ -9,41 +11,41 @@ pub fn escape(sequence: &str) -> Vec<u8> {
 }
 
 pub fn cursor_up(lines: u16) -> Vec<u8> {
-    escape(&format!("{}A", lines))
+    csi(&format!("{}A", lines))
 }
 
 pub fn cursor_right(lines: u16) -> Vec<u8> {
-    escape(&format!("{}C", lines))
+    csi(&format!("{}C", lines))
 }
 
 pub fn save_cursor() -> Vec<u8> {
-    escape("s")
+    csi("s")
 }
 
 pub fn restore_cursor() -> Vec<u8> {
-    escape("u")
+    csi("u")
 }
 
 pub fn hide_cursor() -> Vec<u8> {
-    escape("?25l")
+    csi("?25l")
 }
 
 pub fn show_cursor() -> Vec<u8> {
-    escape("?25h")
+    csi("?25h")
 }
 
 pub fn inverse() -> Vec<u8> {
-    escape("7m")
+    csi("7m")
 }
 
 pub fn red() -> Vec<u8> {
-    escape("31m")
+    csi("31m")
 }
 
 pub fn reset() -> Vec<u8> {
-    escape("0m")
+    csi("0m")
 }
 
 pub fn blank_screen() -> Vec<u8> {
-    escape("2J")
+    csi("2J")
 }
