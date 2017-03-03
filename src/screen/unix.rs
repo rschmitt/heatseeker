@@ -157,6 +157,7 @@ impl Screen {
 
 impl Drop for Screen {
     fn drop(&mut self) {
+        self.tty.flush();
         self.restore_tty();
     }
 }
