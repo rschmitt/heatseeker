@@ -52,11 +52,12 @@ fn main() {
         return;
     } else {
         let desired_rows = if args.full_screen { 999 } else { 20 };
-        event_loop(desired_rows, &choices, &initial_search, args.filter_only);
+        let selections = event_loop(desired_rows, &choices, &initial_search, args.filter_only);
+        print!("{}", selections);
     }
 }
 
-fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_only: bool) {
+fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_only: bool) -> String {
     let mut search = Search::new(choices, initial_search.to_string(), filter_only);
     let mut screen = Screen::open_screen(desired_rows);
 
@@ -75,7 +76,7 @@ fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_
     }
 
     screen.blank_screen();
-    print!("{}", search.get_selections());
+    search.get_selections()
 }
 
 fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
