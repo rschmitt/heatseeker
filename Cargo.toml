@@ -16,14 +16,14 @@ name = "hs"
 path = "src/main.rs"
 
 [dependencies]
-libc = "0.2.21"
-getopts = "0.2.14"
+libc = "0.2.31"
+getopts = "0.2.15"
 unicode-width = "0.1.4"
-num_cpus = "1.3.0"
-crossbeam = "0.2.10"
+num_cpus = "1.7.0"
+crossbeam = "0.3.0"
 
 [build-dependencies]
-time = "0.1.36"
+time = "0.1.38"
 
 [target.'cfg(windows)'.dependencies]
 winapi = "0.2.8"
