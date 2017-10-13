@@ -35,7 +35,6 @@ impl Screen {
     pub fn open_screen(desired_rows: u16) -> Screen {
         let mut tty = Terminal::open_terminal();
         let current_stty_state = tty.stty(&["-g"]);
-        tty.initialize();
         let (_, rows) = tty.winsize().unwrap();
         let visible_choices = min(desired_rows, rows - 1);
         let start_line = rows - visible_choices - 1;
@@ -210,6 +209,14 @@ impl Terminal {
 
         register_sigwinch_handler();
 
+        let mut ret = Terminal {
+            input: rx,
+            input_fd: input_fd,
+            output: output_file,
+            output_buf: Vec::new(),
+        };
+        ret.initialize();
+
         thread::spawn(move || {
             loop {
                 let mut buf = [0; 255];
@@ -221,12 +228,7 @@ impl Terminal {
                 }
             }
         });
-        Terminal {
-            input: rx,
-            input_fd: input_fd,
-            output: output_file,
-            output_buf: Vec::new(),
-        }
+        ret
     }
 
     fn initialize(&mut self) {
