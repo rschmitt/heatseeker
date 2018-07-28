@@ -1,4 +1,3 @@
-#[allow(unused_imports)]
 use std::cmp::*;
 
 extern crate num_cpus;
