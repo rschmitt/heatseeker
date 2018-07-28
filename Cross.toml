@@ -1,0 +1,10 @@
+[build.env]
+passthrough = [
+    "APPVEYOR",
+    "CARGO_PKG_VERSION",
+    "OUT_DIR",
+    "RUST_BACKTRACE",
+    "RUST_LOG",
+    "TARGET",
+    "TRAVIS",
+]

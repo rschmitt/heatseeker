@@ -2,12 +2,11 @@
 
 set -ex
 
-# This is the "test phase"
 main() {
     cross build --target $TARGET
     cross build --target $TARGET --release
 
-    if [ -n $DISABLE_TESTS ]; then
+    if [ ! -z $DISABLE_TESTS ]; then
         return
     fi
 

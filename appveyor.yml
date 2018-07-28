@@ -1,5 +1,5 @@
-# Based on the "trust" template v0.1.1
-# https://github.com/japaric/trust/tree/v0.1.1
+# Based on the "trust" template v0.1.2
+# https://github.com/japaric/trust/tree/v0.1.2
 
 environment:
   global:
@@ -36,7 +36,6 @@ install:
   - rustc -Vv
   - cargo -V
 
-# This is the "test phase"
 test_script:
   # we don't run the "test phase" when doing deploys
   - if [%APPVEYOR_REPO_TAG%]==[false] (

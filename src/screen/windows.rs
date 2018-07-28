@@ -295,7 +295,7 @@ mod tests {
     #[test]
     fn winsize_test() {
         // AppVeyor builds run without a console, making this test impossible.
-        if option_env!("APPVEYOR").is_some() {
+        if option_env!("APPVEYOR").is_some() || option_env!("TRAVIS").is_some() {
             // TODO: It should be made obvious from the output that this test was skipped
             return;
         }
