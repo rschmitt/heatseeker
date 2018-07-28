@@ -1,0 +1,12 @@
+VERIFICATION
+Verification is intended to assist the Chocolatey moderators and community in
+verifying that this package's contents are trustworthy.
+
+This package is published by heatseeker's author. The binaries vended are
+identical to those on the GitHub release page for the x86_64-pc-windows-msvc
+target.
+
+Heatseeker releases for all platforms are available from:
+
+    https://github.com/rschmitt/heatseeker/releases
+
