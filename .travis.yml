@@ -66,7 +66,7 @@ before_deploy:
 
 deploy:
   api_key:
-    secure: "HYOiQ8eposjU/AXo7qkgNsv4iNhrEL4ZSQH4HyC3kQUXEW6VbsYRcf7jtACorFAFfAGpKsxJL0WsfILKOX50FKrNr0Kk+VhA7vx8qnMJxmnbod/j3C2J08CgHoX5ucAvHWOm/nUlBJytQaJcHkhy5S1jOOs1DoXk5qFtxdrZR4Q="
+    secure: "UI0aBNDbs0X6uOZErimt1AvsWvrGzP/EVhmqdM5wnWXB9OXgP8W/mwXgem83h9DfcGM0D6PvXgMBFoQkSznGdaeow2B4bJpUdfGQibnnsztCi0m7eu02ZGdulAKwY34gDsbibfjzNmoncP/RrNRRiRQ4q1IAgb47HrLpc0pzKCM="
   file_glob: true
   file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
   on:
