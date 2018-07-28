@@ -55,7 +55,7 @@ before_deploy:
 deploy:
   artifact: /.*\.zip/
   auth_token:
-    secure: 4p7YV1sqLbetV5AFS+MdPz6o3vFc3DHQZWamEaUB7U3+ODSh8HDAERBxlSg1N1JJ
+    secure: 88hY4gA3B5cTr5bnRjmAGe0d3580hF6qUJRG4ac5UsQ5UIKgLCyEtwqXgZgUVLFc
   description: ''
   on:
     RUST_VERSION: stable
