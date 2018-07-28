@@ -1,5 +1,4 @@
 #[allow(unused_imports)]
-use std::ascii::AsciiExt;
 use std::cmp::*;
 
 extern crate num_cpus;

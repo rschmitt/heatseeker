@@ -314,7 +314,7 @@ mod tests {
         assert_eq!(5, get_start_line(100, 20, (0, 5)));
         assert_eq!(6, get_start_line(100, 20, (1, 5)));
         assert_eq!(79, get_start_line(100, 20, (0, 100)));
-        assert_eq!(0, get_start_line(15, 14, ((0, 5))));
+        assert_eq!(0, get_start_line(15, 14, (0, 5)));
         assert_eq!(79, get_start_line(100, 20, (50, 100)));
     }
 }
