@@ -1,6 +1,7 @@
 #![cfg(not(windows))]
 
 extern crate libc;
+extern crate signal_hook;
 
 use screen::Key;
 use screen::Key::*;
@@ -16,13 +17,13 @@ use std::cmp::min;
 use ansi;
 use ::NEWLINE;
 
-use std::{mem, ptr};
+use std::mem;
 use std::thread;
 use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
 use std::sync::{mpsc, Arc, Mutex};
 
-use self::libc::{sigaction, SIGWINCH, SA_SIGINFO, sighandler_t, c_int, c_ushort, c_ulong};
+use self::libc::{SIGWINCH, c_int, c_ushort, c_ulong};
 
 pub struct Screen {
     tty: Terminal,
@@ -187,19 +188,15 @@ fn get_global_tx() -> Sender<Vec<u8>> {
     tx.clone()
 }
 
-unsafe extern fn sigwinch_handler(signum: c_int) {
-    if signum == SIGWINCH {
-        get_global_tx().send([0].to_vec()).unwrap();
-    }
-}
-
-fn register_sigwinch_handler() {
-    unsafe {
-        let mut action: sigaction = mem::zeroed();
-        action.sa_flags = SA_SIGINFO;
-        action.sa_sigaction = sigwinch_handler as sighandler_t;
-        sigaction(SIGWINCH, &action, ptr::null_mut());
-    }
+fn start_sigwinch_handler() {
+    let signals = signal_hook::iterator::Signals::new(&[SIGWINCH]).unwrap();
+    thread::spawn(move || {
+        for signal in signals.forever() {
+            if signal == SIGWINCH {
+                get_global_tx().send([0].to_vec()).unwrap();
+            }
+        }
+    });
 }
 
 impl Terminal {
@@ -211,7 +208,7 @@ impl Terminal {
         let (tx, rx) = mpsc::channel();
         set_global_tx(tx);
 
-        register_sigwinch_handler();
+        start_sigwinch_handler();
 
         let mut ret = Terminal {
             input: rx,
