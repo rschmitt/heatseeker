@@ -32,6 +32,10 @@ pub struct Screen {
 }
 
 impl Screen {
+    pub fn is_cygwin() -> bool {
+        false
+    }
+
     pub fn open_screen(desired_rows: u16) -> Screen {
         let mut tty = Terminal::open_terminal();
         let current_stty_state = tty.stty(&["-g"]);

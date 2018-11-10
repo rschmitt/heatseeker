@@ -5,7 +5,12 @@ extern crate kernel32;
 
 use self::kernel32::*;
 use self::winapi::*;
+use self::winapi::fileapi::FILE_NAME_INFO;
+use self::winapi::minwinbase::FileNameInfo;
+use self::winapi::minwindef::MAX_PATH;
+use std::ffi::OsString;
 use std::io;
+use std::os::windows::prelude::*;
 use std::ptr;
 use std::iter::repeat;
 use std::cmp::min;
@@ -13,6 +18,7 @@ use screen::Key;
 use screen::Key::*;
 
 use std::thread;
+use std::slice::from_raw_parts;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc;
 use ::NEWLINE;
@@ -37,6 +43,30 @@ pub struct Screen {
 }
 
 impl Screen {
+    pub fn is_cygwin() -> bool {
+        let size = ::std::mem::size_of::<FILE_NAME_INFO>();
+        let mut name_info_bytes = vec![0u8; size + MAX_PATH];
+        let stdin: HANDLE = unsafe { GetStdHandle(STD_INPUT_HANDLE) };
+        if 0 == unsafe {
+            GetFileInformationByHandleEx(
+                stdin,
+                FileNameInfo,
+                &mut *name_info_bytes as *mut _ as *mut c_void,
+                name_info_bytes.len() as u32)
+        } {
+            // On Windows (but not Cygwin), the above call fails if stdin is interactive.
+            false
+        } else {
+            let name = unsafe {
+                let name_info = *(name_info_bytes[0..size].as_ptr() as *const FILE_NAME_INFO);
+                let name_bytes = &name_info_bytes[size..size + name_info.FileNameLength as usize];
+                let name_u16 = from_raw_parts(name_bytes.as_ptr() as *const u16, name_bytes.len() / 2);
+                OsString::from_wide(name_u16).as_os_str().to_string_lossy().into_owned()
+            };
+            name.contains("msys-") || name.contains("-pty") || name.contains("cygwin-")
+        }
+    }
+
     pub fn open_screen(desired_rows: u16) -> Screen {
         let mut orig_mode;
         let conin: HANDLE;

@@ -24,6 +24,11 @@ const TARGET: &'static str = include_str!(concat!(env!("OUT_DIR"), "/target.txt"
 const COMMIT: &'static str = include_str!(concat!(env!("OUT_DIR"), "/commit.txt"));
 
 fn main() {
+    if Screen::is_cygwin() {
+        println!("This executable does not support Cygwin.");
+        return;
+    }
+
     let args = match args::parse_args() {
         Some(args) => args,
         None => {
