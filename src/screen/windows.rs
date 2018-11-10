@@ -16,6 +16,7 @@ use std::iter::repeat;
 use std::cmp::min;
 use screen::Key;
 use screen::Key::*;
+use screen::Screen;
 
 use std::thread;
 use std::slice::from_raw_parts;
@@ -31,7 +32,7 @@ macro_rules! win32 {
     );
 }
 
-pub struct Screen {
+pub struct WindowsScreen {
     visible_choices: u16,
     start_line: u16,
     original_console_mode: DWORD,
@@ -42,7 +43,85 @@ pub struct Screen {
     shifted: bool,
 }
 
-impl Screen {
+impl Screen for WindowsScreen {
+    fn visible_choices(&self) -> u16 {
+        self.visible_choices
+    }
+
+    fn width(&self) -> u16 {
+        let (cols, _) = WindowsScreen::winsize(self.conout).unwrap();
+        cols
+    }
+
+    fn move_cursor_to_prompt_line(&mut self, col: u16) {
+        let start_line = self.start_line;
+        self.move_cursor(start_line, col);
+    }
+
+    fn blank_screen(&mut self) {
+        let blank_line = repeat(' ').take((self.width() - 1) as usize).collect::<String>();
+        let start_line = self.start_line;
+        self.move_cursor(start_line, 0);
+        for _ in 0..self.visible_choices {
+            self.write(&blank_line);
+            self.write(NEWLINE);
+        }
+        self.write(&blank_line);
+        self.move_cursor(start_line, 0);
+    }
+
+    fn show_cursor(&mut self) {
+        win32!(SetConsoleCursorInfo(self.conout, &self.default_cursor_info));
+    }
+
+    fn hide_cursor(&mut self) {
+        let cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: FALSE };
+        win32!(SetConsoleCursorInfo(self.conout, &cursor_info));
+    }
+
+    fn write(&mut self, s: &str) {
+        Self::write_to(self.conout, s);
+    }
+
+    fn write_red_inverted(&mut self, s: &str) {
+        let orig = self.original_colors;
+        const WHITE_ON_RED: WORD = BACKGROUND_RED as WORD;
+        self.set_colors(WHITE_ON_RED);
+        self.write(s);
+        self.set_colors(orig);
+    }
+
+    fn write_red(&mut self, s: &str) {
+        let orig = self.original_colors;
+        const RED_ON_BLACK: WORD = FOREGROUND_RED as WORD;
+        self.set_colors(RED_ON_BLACK);
+        self.write(s);
+        self.set_colors(orig);
+    }
+
+    fn write_inverted(&mut self, s: &str) {
+        let orig = self.original_colors;
+        const BLACK_ON_WHITE: WORD = (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE) as WORD;
+        self.set_colors(BLACK_ON_WHITE);
+        self.write(s);
+        self.set_colors(orig);
+    }
+
+    fn get_buffered_keys(&mut self) -> Vec<Key> {
+        let mut ret = Vec::new();
+        while let Ok(event) = self.input.try_recv() {
+            ret.push(WindowsScreen::translate_event(event, &mut self.shifted));
+        }
+        if ret.is_empty() {
+            let event = self.input.recv().unwrap();
+            ret.push(WindowsScreen::translate_event(event, &mut self.shifted));
+        }
+        ret
+    }
+
+}
+
+impl WindowsScreen {
     pub fn is_cygwin() -> bool {
         let size = ::std::mem::size_of::<FILE_NAME_INFO>();
         let mut name_info_bytes = vec![0u8; size + MAX_PATH];
@@ -67,7 +146,7 @@ impl Screen {
         }
     }
 
-    pub fn open_screen(desired_rows: u16) -> Screen {
+    pub fn open_screen(desired_rows: u16) -> WindowsScreen {
         let mut orig_mode;
         let conin: HANDLE;
         let conout: HANDLE;
@@ -83,7 +162,7 @@ impl Screen {
             panic!("Unable to open console");
         }
 
-        let (_, rows) = Screen::winsize(conout).unwrap();
+        let (_, rows) = WindowsScreen::winsize(conout).unwrap();
 
         win32!(GetConsoleMode(conin, &mut orig_mode));
         let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
@@ -91,11 +170,11 @@ impl Screen {
         let mut default_cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: TRUE };
         win32!(GetConsoleCursorInfo(conout, &mut default_cursor_info as PCONSOLE_CURSOR_INFO));
 
-        let rx = Screen::spawn_input_thread(conin as usize);
-        let initial_pos = Screen::get_cursor_pos(conout);
+        let rx = WindowsScreen::spawn_input_thread(conin as usize);
+        let initial_pos = WindowsScreen::get_cursor_pos(conout);
         let visible_choices = min(desired_rows, rows - 1);
         let start_line = get_start_line(rows, visible_choices, initial_pos);
-        let original_colors = Screen::get_original_colors(conout);
+        let original_colors = WindowsScreen::get_original_colors(conout);
         let (column, _) = initial_pos;
         if column > 0 {
             Self::write_to(conout, NEWLINE);
@@ -103,7 +182,7 @@ impl Screen {
         for _ in 0..visible_choices {
             Self::write_to(conout, NEWLINE);
         }
-        Screen {
+        WindowsScreen {
             visible_choices: visible_choices,
             start_line: start_line + Self::get_buffer_offset(conout),
             original_console_mode: orig_mode,
@@ -113,15 +192,6 @@ impl Screen {
             default_cursor_info: default_cursor_info,
             shifted: false,
         }
-    }
-
-    pub fn visible_choices(&self) -> u16 {
-        self.visible_choices
-    }
-
-    pub fn width(&self) -> u16 {
-        let (cols, _) = Screen::winsize(self.conout).unwrap();
-        cols
     }
 
     // We have to take the conin handle as a usize instead of a *mut c_void in order to avoid a
@@ -145,40 +215,6 @@ impl Screen {
         rx
     }
 
-    fn move_cursor(&mut self, line: u16, column: u16) {
-        win32!(SetConsoleCursorPosition(self.conout, COORD { X: column as i16, Y: line as i16}));
-    }
-
-    pub fn move_cursor_to_prompt_line(&mut self, col: u16) {
-        let start_line = self.start_line;
-        self.move_cursor(start_line, col);
-    }
-
-    pub fn blank_screen(&mut self) {
-        let blank_line = repeat(' ').take((self.width() - 1) as usize).collect::<String>();
-        let start_line = self.start_line;
-        self.move_cursor(start_line, 0);
-        for _ in 0..self.visible_choices {
-            self.write(&blank_line);
-            self.write(NEWLINE);
-        }
-        self.write(&blank_line);
-        self.move_cursor(start_line, 0);
-    }
-
-    pub fn show_cursor(&mut self) {
-        win32!(SetConsoleCursorInfo(self.conout, &self.default_cursor_info));
-    }
-
-    pub fn hide_cursor(&mut self) {
-        let cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: FALSE };
-        win32!(SetConsoleCursorInfo(self.conout, &cursor_info));
-    }
-
-    pub fn write(&mut self, s: &str) {
-        Self::write_to(self.conout, s);
-    }
-
     fn write_to(conout: HANDLE, s: &str) {
         let mut chars_written: DWORD = 0;
         let utf16 = s.encode_utf16().collect::<Vec<u16>>();
@@ -186,44 +222,12 @@ impl Screen {
         win32!(WriteConsoleW(conout, utf16.as_ptr() as PVOID, chars_to_write, &mut chars_written as LPDWORD, ptr::null_mut()));
     }
 
-    pub fn write_red_inverted(&mut self, s: &str) {
-        let orig = self.original_colors;
-        const WHITE_ON_RED: WORD = BACKGROUND_RED as WORD;
-        self.set_colors(WHITE_ON_RED);
-        self.write(s);
-        self.set_colors(orig);
-    }
-
-    pub fn write_red(&mut self, s: &str) {
-        let orig = self.original_colors;
-        const RED_ON_BLACK: WORD = FOREGROUND_RED as WORD;
-        self.set_colors(RED_ON_BLACK);
-        self.write(s);
-        self.set_colors(orig);
-    }
-
-    pub fn write_inverted(&mut self, s: &str) {
-        let orig = self.original_colors;
-        const BLACK_ON_WHITE: WORD = (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE) as WORD;
-        self.set_colors(BLACK_ON_WHITE);
-        self.write(s);
-        self.set_colors(orig);
+    fn move_cursor(&mut self, line: u16, column: u16) {
+        win32!(SetConsoleCursorPosition(self.conout, COORD { X: column as i16, Y: line as i16}));
     }
 
     fn set_colors(&mut self, colors: WORD) {
         win32!(SetConsoleTextAttribute(self.conout, colors));
-    }
-
-    pub fn get_buffered_keys(&mut self) -> Vec<Key> {
-        let mut ret = Vec::new();
-        while let Ok(event) = self.input.try_recv() {
-            ret.push(Screen::translate_event(event, &mut self.shifted));
-        }
-        if ret.is_empty() {
-            let event = self.input.recv().unwrap();
-            ret.push(Screen::translate_event(event, &mut self.shifted));
-        }
-        ret
     }
 
     fn translate_event(event: INPUT_RECORD, shifted: &mut bool) -> Key {
@@ -320,7 +324,7 @@ fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u
 mod tests {
     use super::kernel32;
     use super::winapi::STD_OUTPUT_HANDLE;
-    use super::{Screen, get_start_line};
+    use super::{WindowsScreen, get_start_line};
 
     #[test]
     fn winsize_test() {
@@ -330,7 +334,7 @@ mod tests {
             return;
         }
         let conout = unsafe { kernel32::GetStdHandle(STD_OUTPUT_HANDLE) };
-        let (cols, rows) = Screen::winsize(conout).expect("Failed to get window size!");
+        let (cols, rows) = WindowsScreen::winsize(conout).expect("Failed to get window size!");
         // We don't know the window size a priori, but we can at least
         // assert that it is within some kind of sensible range.
         assert!(cols > 40);

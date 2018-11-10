@@ -24,11 +24,6 @@ const TARGET: &'static str = include_str!(concat!(env!("OUT_DIR"), "/target.txt"
 const COMMIT: &'static str = include_str!(concat!(env!("OUT_DIR"), "/commit.txt"));
 
 fn main() {
-    if Screen::is_cygwin() {
-        println!("This executable does not support Cygwin.");
-        return;
-    }
-
     let args = match args::parse_args() {
         Some(args) => args,
         None => {
@@ -64,13 +59,13 @@ fn main() {
 
 fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_only: bool) -> String {
     let mut search = Search::new(choices, initial_search.to_string(), filter_only);
-    let mut screen = Screen::open_screen(desired_rows);
+    let mut screen = screen::new(desired_rows);
 
     loop {
         search.recompute_matches();
 
         match search.state {
-            InProgress => draw_screen(&mut screen, &search),
+            InProgress => draw_screen(screen.as_mut(), &search),
             _ => break,
         }
 

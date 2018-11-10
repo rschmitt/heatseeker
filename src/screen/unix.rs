@@ -24,20 +24,97 @@ use std::sync::mpsc::Receiver;
 use std::sync::{mpsc, Arc, Mutex};
 
 use self::libc::{SIGWINCH, c_int, c_ushort, c_ulong};
+use screen::Screen;
 
-pub struct Screen {
+pub struct UnixScreen {
     tty: Terminal,
     original_stty_state: Vec<u8>,
     start_line: u16,
     desired_rows: u16,
 }
 
-impl Screen {
+impl Screen for UnixScreen {
+    fn visible_choices(&self) -> u16 {
+        let (_, rows) = self.tty.winsize().unwrap();
+        min(self.desired_rows, rows - 1)
+    }
+
+    fn width(&self) -> u16 {
+        let (cols, _) = self.tty.winsize().unwrap();
+        cols
+    }
+
+    fn move_cursor_to_prompt_line(&mut self, col: u16) {
+        self.reset_cursor();
+        self.tty.write(&ansi::cursor_right(col));
+    }
+
+    fn blank_screen(&mut self) {
+        self.reset_cursor();
+        let blank_line = repeat(' ').take(self.width() as usize).collect::<String>();
+        for _ in 0..self.visible_choices() + 1 {
+            self.tty.write(blank_line.as_bytes());
+        }
+        self.reset_cursor();
+    }
+
+    fn show_cursor(&mut self) {
+        self.tty.write(&ansi::show_cursor());
+        self.tty.flush();
+    }
+
+    fn hide_cursor(&mut self) {
+        self.tty.write(&ansi::hide_cursor());
+    }
+
+    fn write(&mut self, s: &str) {
+        self.tty.write(s.as_bytes());
+    }
+
+    fn write_red_inverted(&mut self, s: &str) {
+        self.tty.write(&ansi::red());
+        self.tty.write(&ansi::inverse());
+        self.tty.write(s.as_bytes());
+        self.tty.write(&ansi::reset());
+    }
+
+    fn write_red(&mut self, s: &str) {
+        self.tty.write(&ansi::red());
+        self.tty.write(s.as_bytes());
+        self.tty.write(&ansi::reset());
+    }
+
+    fn write_inverted(&mut self, s: &str) {
+        self.tty.write(&ansi::inverse());
+        self.tty.write(s.as_bytes());
+        self.tty.write(&ansi::reset());
+    }
+
+    // Return all buffered keystrokes, or the next key if buffer is empty.
+    fn get_buffered_keys(&mut self) -> Vec<Key> {
+        let mut ret = Vec::new();
+        while let Ok(bytes) = self.tty.input.try_recv() {
+            ret.extend(bytes);
+        }
+        while ret.is_empty() {
+            let bytes = self.tty.input.recv().unwrap();
+            if bytes == vec![0] { // SIGWINCH
+                self.blank_entire_screen();
+                return vec![Nothing];
+            } else {
+                ret.extend(bytes);
+            }
+        }
+        Terminal::translate_bytes(ret.clone())
+    }
+}
+
+impl UnixScreen {
     pub fn is_cygwin() -> bool {
         false
     }
 
-    pub fn open_screen(desired_rows: u16) -> Screen {
+    pub fn open_screen(desired_rows: u16) -> UnixScreen {
         let mut tty = Terminal::open_terminal();
         let current_stty_state = tty.stty(&["-g"]);
         let (_, rows) = tty.winsize().unwrap();
@@ -48,22 +125,12 @@ impl Screen {
         }
         tty.write(&ansi::save_cursor());
 
-        Screen {
+        UnixScreen {
             tty: tty,
             original_stty_state: current_stty_state,
             start_line: start_line,
             desired_rows: desired_rows,
         }
-    }
-
-    pub fn visible_choices(&self) -> u16 {
-        let (_, rows) = self.tty.winsize().unwrap();
-        min(self.desired_rows, rows - 1)
-    }
-
-    pub fn width(&self) -> u16 {
-        let (cols, _) = self.tty.winsize().unwrap();
-        cols
     }
 
     fn restore_tty(&mut self) {
@@ -86,72 +153,8 @@ impl Screen {
         self.tty.write(&ansi::cursor_up(num_lines));
     }
 
-    pub fn move_cursor_to_prompt_line(&mut self, col: u16) {
-        self.reset_cursor();
-        self.tty.write(&ansi::cursor_right(col));
-    }
-
-    pub fn blank_screen(&mut self) {
-        self.reset_cursor();
-        let blank_line = repeat(' ').take(self.width() as usize).collect::<String>();
-        for _ in 0..self.visible_choices() + 1 {
-            self.tty.write(blank_line.as_bytes());
-        }
-        self.reset_cursor();
-    }
-
     pub fn blank_entire_screen(&mut self){
         self.tty.write(&ansi::blank_screen());
-    }
-
-    pub fn show_cursor(&mut self) {
-        self.tty.write(&ansi::show_cursor());
-        self.tty.flush();
-    }
-
-    pub fn hide_cursor(&mut self) {
-        self.tty.write(&ansi::hide_cursor());
-    }
-
-    pub fn write(&mut self, s: &str) {
-        self.tty.write(s.as_bytes());
-    }
-
-    pub fn write_red_inverted(&mut self, s: &str) {
-        self.tty.write(&ansi::red());
-        self.tty.write(&ansi::inverse());
-        self.tty.write(s.as_bytes());
-        self.tty.write(&ansi::reset());
-    }
-
-    pub fn write_red(&mut self, s: &str) {
-        self.tty.write(&ansi::red());
-        self.tty.write(s.as_bytes());
-        self.tty.write(&ansi::reset());
-    }
-
-    pub fn write_inverted(&mut self, s: &str) {
-        self.tty.write(&ansi::inverse());
-        self.tty.write(s.as_bytes());
-        self.tty.write(&ansi::reset());
-    }
-
-    // Return all buffered keystrokes, or the next key if buffer is empty.
-    pub fn get_buffered_keys(&mut self) -> Vec<Key> {
-        let mut ret = Vec::new();
-        while let Ok(bytes) = self.tty.input.try_recv() {
-            ret.extend(bytes);
-        }
-        while ret.is_empty() {
-            let bytes = self.tty.input.recv().unwrap();
-            if bytes == vec![0] { // SIGWINCH
-                self.blank_entire_screen();
-                return vec![Nothing];
-            } else {
-                ret.extend(bytes);
-            }
-        }
-        Terminal::translate_bytes(ret.clone())
     }
 
     fn more_bytes_needed(bytes: &[u8]) -> bool {
@@ -159,7 +162,7 @@ impl Screen {
     }
 }
 
-impl Drop for Screen {
+impl Drop for UnixScreen {
     fn drop(&mut self) {
         self.tty.flush();
         self.restore_tty();
