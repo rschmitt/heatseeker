@@ -338,7 +338,7 @@ fn slice_chars(s: &str, begin: usize, end: usize) -> &str {
     match (begin_byte, end_byte) {
         (None, _) => panic!("slice_chars: `begin` is beyond end of string"),
         (_, None) => panic!("slice_chars: `end` is beyond end of string"),
-        (Some(a), Some(b)) => unsafe { s.slice_unchecked(a, b) }
+        (Some(a), Some(b)) => unsafe { s.get_unchecked(a..b) }
     }
 }
 
