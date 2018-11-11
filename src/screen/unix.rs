@@ -7,7 +7,7 @@ use screen::Key;
 use screen::Key::*;
 use std::io::{Read, Write};
 use std::fs::{File, OpenOptions};
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::*;
 use std::path::*;
 use std::process::Command;
 use std::process::Stdio;
@@ -23,12 +23,11 @@ use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
 use std::sync::{mpsc, Arc, Mutex};
 
-use self::libc::{SIGWINCH, c_int, c_ushort, c_ulong};
+use self::libc::{dup, SIGWINCH, c_int, c_ushort, c_ulong};
 use screen::Screen;
 
 pub struct UnixScreen {
     tty: Terminal,
-    original_stty_state: Vec<u8>,
     start_line: u16,
     desired_rows: u16,
 }
@@ -116,7 +115,6 @@ impl UnixScreen {
 
     pub fn open_screen(desired_rows: u16) -> UnixScreen {
         let mut tty = Terminal::open_terminal();
-        let current_stty_state = tty.stty(&["-g"]);
         let (_, rows) = tty.winsize().unwrap();
         let visible_choices = min(desired_rows, rows - 1);
         let start_line = rows - visible_choices - 1;
@@ -127,14 +125,13 @@ impl UnixScreen {
 
         UnixScreen {
             tty: tty,
-            original_stty_state: current_stty_state,
             start_line: start_line,
             desired_rows: desired_rows,
         }
     }
 
     fn restore_tty(&mut self) {
-        self.tty.stty(&[&String::from_utf8(self.original_stty_state.clone()).unwrap()]);
+        self.tty.restore_tty();
     }
 
     fn reset_cursor(&mut self) {
@@ -162,18 +159,12 @@ impl UnixScreen {
     }
 }
 
-impl Drop for UnixScreen {
-    fn drop(&mut self) {
-        self.tty.flush();
-        self.restore_tty();
-    }
-}
-
 struct Terminal {
     input: Receiver<Vec<u8>>,
-    input_fd: i32,
+    input_fd: RawFd,
     output: File,
     output_buf: Vec<u8>,
+    original_stty_state: Vec<u8>,
 }
 
 static mut GLOBAL_TX: *const Arc<Mutex<Sender<Vec<u8>>>> = 0 as *const Arc<Mutex<Sender<Vec<u8>>>>;
@@ -218,7 +209,10 @@ impl Terminal {
             input_fd: input_fd,
             output: output_file,
             output_buf: Vec::new(),
+            original_stty_state: Vec::new(),
         };
+        let current_stty_state = ret.stty(&["-g"]);
+        ret.original_stty_state = current_stty_state;
         ret.initialize();
 
         thread::spawn(move || {
@@ -239,15 +233,16 @@ impl Terminal {
         self.stty(&["raw", "-echo", "cbreak", "opost", "onlcr"]);
     }
 
+    fn restore_tty(&mut self) {
+        let state = String::from_utf8(self.original_stty_state.clone()).unwrap();
+        self.stty(&[&state]);
+    }
+
     fn stty(&mut self, args: &[&str]) -> Vec<u8> {
-        extern { fn dup2(src: c_int, dst: c_int) -> c_int;  }
-        unsafe {
-            // This is a hack until a replacement for InheritFd from old_io is available.
-            dup2(self.input_fd, 0);
-        }
+        let tty_input = unsafe { Stdio::from_raw_fd(dup(self.input_fd)) };
         let mut process = match Command::new("stty")
             .args(args)
-            .stdin(Stdio::inherit())
+            .stdin(tty_input)
             .stdout(Stdio::piped())
             .spawn()
         {
@@ -349,6 +344,13 @@ impl Terminal {
         } else {
             None
         }
+    }
+}
+
+impl Drop for Terminal {
+    fn drop(&mut self) {
+        self.flush();
+        self.restore_tty();
     }
 }
 
