@@ -278,12 +278,27 @@ fn read_choices() -> Vec<String> {
     let mut lines = Vec::new();
 
     let mut stdin = stdin.lock();
+    let mut first_error = None;
+    let mut suppressed = 0;
     loop {
         let mut s = String::new();
-        stdin.read_line(&mut s).unwrap();
-        if s.is_empty() { break; }
-        trim(&mut s);
-        lines.push(s);
+        match stdin.read_line(&mut s) {
+            Ok(_) => {
+                if s.is_empty() { break; }
+                trim(&mut s);
+                lines.push(s);
+            },
+            Err(e) => {
+                if first_error.is_some() {
+                    suppressed = suppressed + 1;
+                } else {
+                    first_error = Some(e);
+                }
+            }
+        }
+    }
+    if first_error.is_some() {
+        eprintln!("Warning: Failed to parse one or more lines (\"{}\"); {} additional error(s) suppressed", first_error.unwrap(), suppressed);
     }
 
     lines
