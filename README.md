@@ -41,7 +41,7 @@ Heatseeker supports basically the same keys as Selecta, along with a few others 
 
 * ^T to select or deselect the currently highlighted match
 * Enter to select the currently highlighted match, *or* any matches previously highlighted with ^T
-* ^G or ^C to quit without selecting a match
+* ^G, ^C, or Escape to quit without selecting a match
 * Backspace to delete the last query character typed
 * ^U to delete the entire query
 * ^N, down arrow, or tab to highlight the next match

@@ -258,6 +258,8 @@ impl WindowsScreen {
             Backspace
         } else if vk_code == VK_RETURN {
             Enter
+        } else if vk_code == VK_ESCAPE {
+            Control('g')
         } else {
             let byte = key_event.UnicodeChar;
             if byte & 96 == 0 {

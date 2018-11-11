@@ -300,6 +300,8 @@ impl Terminal {
             Tab
         } else if numeric_char == 127 {
             Backspace
+        } else if numeric_char == 27 {
+            Control('g')
         } else if numeric_char & 96 == 0 && numeric_char <= 128u32 {
             let c = c as u8;
             Control((c + 96u8) as char)
