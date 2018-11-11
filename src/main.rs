@@ -34,11 +34,10 @@ fn main() {
     if args.help { return; }
 
     if args.version {
-        const THREADS: &'static str = "multi-threaded";
         if COMMIT == "" {
-            println!("heatseeker {} {} (built {} for {})", VERSION, THREADS, TIMESTAMP, TARGET);
+            println!("heatseeker {} (built {} for {})", VERSION, TIMESTAMP, TARGET);
         } else {
-            println!("heatseeker {} {} ({}) (built {} for {})", VERSION, THREADS, COMMIT, TIMESTAMP, TARGET);
+            println!("heatseeker {}-{} (built {} for {})", VERSION, COMMIT, TIMESTAMP, TARGET);
         }
         return;
     }

@@ -1,6 +1,6 @@
 [package]
 name = "heatseeker"
-version = "1.5.2"
+version = "1.6.0"
 authors = ["Ryan Schmitt <rschmitt@pobox.com>"]
 description = "A fast, robust, and portable fuzzy finder."
 license = "MIT"
