@@ -165,7 +165,7 @@ impl WindowsScreen {
         let (_, rows) = WindowsScreen::winsize(conout).unwrap();
 
         win32!(GetConsoleMode(conin, &mut orig_mode));
-        let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
+        let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
         win32!(SetConsoleMode(conin, new_mode));
         let mut default_cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: TRUE };
         win32!(GetConsoleCursorInfo(conout, &mut default_cursor_info as PCONSOLE_CURSOR_INFO));

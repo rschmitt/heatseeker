@@ -23,7 +23,7 @@ use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
 use std::sync::{mpsc, Arc, Mutex};
 
-use self::libc::{dup, SIGWINCH, c_int, c_ushort, c_ulong};
+use self::libc::{dup, SIGINT, SIGWINCH, c_int, c_ushort, c_ulong};
 use screen::Screen;
 
 pub struct UnixScreen {
@@ -97,9 +97,11 @@ impl Screen for UnixScreen {
         }
         while ret.is_empty() {
             let bytes = self.tty.input.recv().unwrap();
-            if bytes == vec![0] { // SIGWINCH
+            if bytes == vec![SIGWINCH as u8] {
                 self.blank_entire_screen();
                 return vec![Nothing];
+            } else if bytes == vec![SIGINT as u8] {
+                return vec![Control('g')];
             } else {
                 ret.extend(bytes);
             }
@@ -183,12 +185,10 @@ fn get_global_tx() -> Sender<Vec<u8>> {
 }
 
 fn start_sigwinch_handler() {
-    let signals = signal_hook::iterator::Signals::new(&[SIGWINCH]).unwrap();
+    let signals = signal_hook::iterator::Signals::new(&[SIGWINCH, SIGINT]).unwrap();
     thread::spawn(move || {
         for signal in signals.forever() {
-            if signal == SIGWINCH {
-                get_global_tx().send([0].to_vec()).unwrap();
-            }
+            get_global_tx().send(vec![signal as u8]).unwrap();
         }
     });
 }
