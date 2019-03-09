@@ -55,7 +55,7 @@ pub fn compute_matches_multi_threaded<'a>(choices: &[&'a str], query: &str, filt
     crossbeam::scope(|scope| {
         for current_worker in 0..workers {
             let tx = tx.clone();
-            scope.spawn(move || {
+            scope.spawn(move |_| {
                 let (lower_bound, upper_bound) = get_slice_indices(choices.len(), workers, current_worker);
                 for i in lower_bound..upper_bound {
                     let score = if filter_only { filter(choices[i], query) } else { score(choices[i], query) };
@@ -63,7 +63,7 @@ pub fn compute_matches_multi_threaded<'a>(choices: &[&'a str], query: &str, filt
                 }
             });
         }
-    });
+    }).unwrap();
 
     let mut ret = Vec::new();
     for _ in 0..choices.len() {

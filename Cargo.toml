@@ -16,13 +16,12 @@ name = "hs"
 path = "src/main.rs"
 
 [dependencies]
-crossbeam = "0.3.0"
+crossbeam = "0.7"
 getopts = "0.2.15"
 num_cpus = "1.7.0"
 unicode-width = "0.1.4"
 
 [target.'cfg(not(windows))'.dependencies]
-crossbeam-channel = "0.2"
 libc = "0.2.31"
 signal-hook = "0.1.3"
 
