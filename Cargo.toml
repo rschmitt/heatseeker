@@ -9,7 +9,7 @@ documentation = "https://github.com/rschmitt/heatseeker"
 homepage = "https://github.com/rschmitt/heatseeker"
 repository = "https://github.com/rschmitt/heatseeker"
 build = "build.rs"
-exclude = ["*.nuspec", "*.bat", "*.rb", "*.yml"]
+exclude = ["/ci/*", "/Cross.toml", "/VERIFICATION.txt", "*.nuspec", "*.bat", "*.rb", "*.yml"]
 
 [[bin]]
 name = "hs"
