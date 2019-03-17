@@ -38,6 +38,7 @@ pub struct WindowsScreen {
     original_console_mode: DWORD,
     original_colors: WORD,
     input: Receiver<INPUT_RECORD>,
+    conin: HANDLE,
     conout: HANDLE,
     default_cursor_info: CONSOLE_CURSOR_INFO,
     shifted: bool,
@@ -118,7 +119,12 @@ impl Screen for WindowsScreen {
         }
         ret
     }
+}
 
+impl Drop for WindowsScreen {
+    fn drop(&mut self) {
+        win32!(SetConsoleMode(self.conin, self.original_console_mode));
+    }
 }
 
 impl WindowsScreen {
@@ -188,6 +194,7 @@ impl WindowsScreen {
             original_console_mode: orig_mode,
             original_colors: original_colors,
             input: rx,
+            conin: conin,
             conout: conout,
             default_cursor_info: default_cursor_info,
             shifted: false,
