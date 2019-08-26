@@ -208,7 +208,7 @@ impl<'a> Search<'a> {
     }
 }
 
-fn draw_screen(screen: &mut Screen, search: &Search) {
+fn draw_screen(screen: &mut dyn Screen, search: &Search) {
     screen.hide_cursor();
     screen.blank_screen();
     screen.write(&format!("> {} ({}/{} choices){}", search.query, search.matches.len(), search.choices.len(), NEWLINE));
@@ -220,7 +220,7 @@ fn draw_screen(screen: &mut Screen, search: &Search) {
     screen.show_cursor();
 }
 
-fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usize, selections: &HashSet<String>) {
+fn print_matches(screen: &mut dyn Screen, matches: &[&str], query: &str, index: usize, selections: &HashSet<String>) {
     let mut i = 1;
     for choice in matches.iter() {
         let indices = matching::visual_score(choice, query);
@@ -249,7 +249,7 @@ fn print_matches(screen: &mut Screen, matches: &[&str], query: &str, index: usiz
     }
 }
 
-fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut FnMut(&str, bool)) {
+fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut dyn FnMut(&str, bool)) {
     #[cfg(windows)] const MARGIN: u16 = 1;
     #[cfg(not(windows))] const MARGIN: u16 = 0;
     let max_width = max_width - MARGIN;

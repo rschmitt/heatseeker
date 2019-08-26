@@ -20,7 +20,7 @@ fn main() {
     write(&commit, "commit.txt");
 }
 
-fn get_head_commit() -> Result<String, Box<Error>> {
+fn get_head_commit() -> Result<String, Box<dyn Error>> {
     let output = Command::new("git").args(&["rev-parse", "--short", "HEAD"]).output()?;
     let mut rev = String::from_utf8(output.stdout)?;
     rev.pop();

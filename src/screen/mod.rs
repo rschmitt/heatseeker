@@ -40,7 +40,7 @@ pub fn new(desired_rows: u16) -> Box<Screen> {
 }
 
 #[cfg(not(windows))]
-pub fn new(desired_rows: u16) -> Box<Screen> {
+pub fn new(desired_rows: u16) -> Box<dyn Screen> {
     Box::from(UnixScreen::open_screen(desired_rows))
 }
 
