@@ -23,7 +23,8 @@ matrix:
       os: osx
 
     # *BSD
-    - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
+    # https://travis-ci.org/rschmitt/heatseeker/jobs/590936014
+    # - env: TARGET=x86_64-unknown-freebsd DISABLE_TESTS=1
     # https://github.com/japaric/trust/issues/101
     # - env: TARGET=x86_64-unknown-netbsd DISABLE_TESTS=1
 
