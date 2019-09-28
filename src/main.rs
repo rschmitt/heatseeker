@@ -104,7 +104,7 @@ struct Search<'a> {
     query: String,
     matches: Vec<&'a str>,
     stale: bool,
-    index: usize,
+    cursor_index: usize,
     state: SearchState,
     selections: HashSet<String>,
     filter_only: bool,
@@ -125,7 +125,7 @@ impl<'a> Search<'a> {
             query: initial_search,
             matches: matches,
             stale: true,
-            index: 0,
+            cursor_index: 0,
             state: InProgress,
             selections: HashSet::new(),
             filter_only: filter_only,
@@ -134,18 +134,18 @@ impl<'a> Search<'a> {
 
     fn up(&mut self, visible_choices: u16) {
         let limit = min(visible_choices as usize - 1, self.matches.len() - 1);
-        self.index = if self.index == 0 { limit } else { self.index - 1 };
+        self.cursor_index = if self.cursor_index == 0 { limit } else { self.cursor_index - 1 };
     }
 
     fn down(&mut self, visible_choices: u16) {
         let limit = min(visible_choices as usize - 1, self.matches.len() - 1);
-        self.index = if self.index == limit { 0 } else { self.index + 1 }
+        self.cursor_index = if self.cursor_index == limit { 0 } else { self.cursor_index + 1 }
     }
 
     fn backspace(&mut self) {
         self.query.pop();
         self.stale = true;
-        self.index = 0;
+        self.cursor_index = 0;
         self.matches = self.choices.to_vec();
     }
 
@@ -158,7 +158,7 @@ impl<'a> Search<'a> {
     fn append(&mut self, c: char) {
         self.query.push(c);
         self.stale = true;
-        self.index = 0;
+        self.cursor_index = 0;
     }
 
     fn clear_query(&mut self) {
@@ -175,7 +175,7 @@ impl<'a> Search<'a> {
 
     fn toggle_selection(&mut self) {
         self.recompute_matches();
-        let selection = self.matches.get(self.index).unwrap_or(&"").to_string();
+        let selection = self.matches.get(self.cursor_index).unwrap_or(&"").to_string();
         if self.selections.contains(&selection) {
             self.selections.remove(&selection);
         } else {
@@ -192,7 +192,7 @@ impl<'a> Search<'a> {
             }
             if ret.is_empty() {
                 self.recompute_matches();
-                let selection = self.matches.get(self.index).unwrap_or(&"").to_string();
+                let selection = self.matches.get(self.cursor_index).unwrap_or(&"").to_string();
                 ret.push_str(&selection);
             }
         }
@@ -213,14 +213,14 @@ fn draw_screen(screen: &mut dyn Screen, search: &Search) {
     screen.blank_screen();
     screen.write(&format!("> {} ({}/{} choices){}", search.query, search.matches.len(), search.choices.len(), NEWLINE));
 
-    print_matches(screen, &search.matches, &search.query, search.index, &search.selections);
+    print_matches(screen, &search.matches, &search.query, search.cursor_index, &search.selections);
 
     let query_str: &str = &search.query;
     screen.move_cursor_to_prompt_line(2 + UnicodeWidthStr::width(query_str) as u16);
     screen.show_cursor();
 }
 
-fn print_matches(screen: &mut dyn Screen, matches: &[&str], query: &str, index: usize, selections: &HashSet<String>) {
+fn print_matches(screen: &mut dyn Screen, matches: &[&str], query: &str, cursor_index: usize, selections: &HashSet<String>) {
     let mut i = 1;
     for choice in matches.iter() {
         let indices = matching::visual_score(choice, query);
@@ -235,7 +235,7 @@ fn print_matches(screen: &mut dyn Screen, matches: &[&str], query: &str, index: 
             }
         }
         print_match(&annotated_choice, &indices, max_width, &mut |s, highlight| {
-            if i == index + 1 {
+            if i == cursor_index + 1 {
                 if highlight { screen.write_red_inverted(s); } else { screen.write_inverted(s); }
             } else if highlight {
                 screen.write_red(s);
