@@ -41,6 +41,7 @@ matrix:
 before_install:
   - set -e
   - rustup self update
+  - uname -a
 
 install:
   - sh ci/install.sh
