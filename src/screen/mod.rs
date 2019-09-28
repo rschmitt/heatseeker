@@ -30,7 +30,7 @@ pub trait Screen {
 }
 
 #[cfg(windows)]
-pub fn new(desired_rows: u16) -> Box<Screen> {
+pub fn new(desired_rows: u16) -> Box<dyn Screen> {
     if WindowsScreen::is_cygwin() {
 //        UnixScreen::open_screen(desired_rows)
         panic!("This executable does not support Cygwin.");
