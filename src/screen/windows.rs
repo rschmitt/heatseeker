@@ -259,6 +259,14 @@ impl WindowsScreen {
             Up
         } else if vk_code == VK_DOWN {
             Down
+        } else if vk_code == VK_PRIOR {
+            PgUp
+        } else if vk_code == VK_NEXT {
+            PgDown
+        } else if vk_code == VK_HOME {
+            Home
+        } else if vk_code == VK_END {
+            End
         } else if vk_code == VK_TAB {
             if *shifted { ShiftTab } else { Tab }
         } else if vk_code == VK_BACK {

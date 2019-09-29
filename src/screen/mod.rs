@@ -13,6 +13,10 @@ pub enum Key {
     Nothing,
     Down,
     Up,
+    Home,
+    End,
+    PgDown,
+    PgUp,
 }
 
 pub trait Screen {
