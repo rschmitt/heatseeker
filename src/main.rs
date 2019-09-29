@@ -94,6 +94,8 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
         Control('n') |
         Down |
         Tab => search.down(visible_choices),
+        Home => search.home(),
+        End => search.end(visible_choices),
         Enter => search.done(),
         _ => {}
     }
@@ -168,6 +170,16 @@ impl<'a> Search<'a> {
         } else {
             self.cursor_index += 1;
         }
+    }
+
+    fn home(&mut self) {
+        self.cursor_index = 0;
+        self.scroll_offset = 0;
+    }
+
+    fn end(&mut self, visible_choices: u16) {
+        self.home();
+        self.up(visible_choices);
     }
 
     fn backspace(&mut self) {
