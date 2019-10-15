@@ -97,7 +97,9 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
         Home => search.home(),
         End => search.end(visible_choices),
         Enter => search.done(),
-        _ => {}
+        PgUp => search.pgup(visible_choices),
+        PgDown => search.pgdown(visible_choices),
+        _ => {},
     }
 }
 
@@ -180,6 +182,24 @@ impl<'a> Search<'a> {
     fn end(&mut self, visible_choices: u16) {
         self.home();
         self.up(visible_choices);
+    }
+
+    fn pgup(&mut self, visible_choices: u16) {
+        for _ in 0..visible_choices {
+            if self.scroll_offset == 0 && self.cursor_index == 0 {
+                return;
+            }
+            self.up(visible_choices);
+        }
+    }
+
+    fn pgdown(&mut self, visible_choices: u16) {
+        for _ in 0..visible_choices {
+            if self.scroll_offset + self.cursor_index == self.matches.len() - 1 {
+                return;
+            }
+            self.down(visible_choices);
+        }
     }
 
     fn backspace(&mut self) {
