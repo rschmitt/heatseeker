@@ -88,7 +88,7 @@ dependencies = [
 
 [[package]]
 name = "heatseeker"
-version = "1.6.1"
+version = "1.7.0"
 dependencies = [
  "crossbeam 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "getopts 0.2.21 (registry+https://github.com/rust-lang/crates.io-index)",
