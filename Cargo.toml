@@ -31,3 +31,6 @@ winapi = "0.2.8"
 
 [build-dependencies]
 time = "0.1.38"
+
+[profile.release]
+debug = true
