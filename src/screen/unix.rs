@@ -240,7 +240,7 @@ impl Terminal {
 
     fn stty(&mut self, args: &[&str]) -> Vec<u8> {
         let tty_input = unsafe { Stdio::from_raw_fd(dup(self.input_fd)) };
-        let mut process = match Command::new("stty")
+        let mut process = match Command::new("/bin/stty")
             .args(args)
             .stdin(tty_input)
             .stdout(Stdio::piped())
