@@ -87,6 +87,7 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
         Control('h') => search.backspace(),
         Control('w') => search.delete_word(),
         Control('u') => search.clear_query(),
+        Control('r') => std::panic!("This is a test backtrace"),
         Control('c') |
         Control('g') => search.cancel(),
         Control('t') => { search.toggle_selection(); search.down(visible_choices); },
