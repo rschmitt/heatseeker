@@ -11,9 +11,9 @@ copy README.md chocolatey\tools\README || exit /b 1
 
 mkdir chocolatey\tools\bin || exit /b 1
 
-wget -q https://github.com/rschmitt/heatseeker/releases/download/v1.7.0/heatseeker-v1.7.0-x86_64-pc-windows-msvc.zip || exit /b 1
-7z x heatseeker-v1.7.0-x86_64-pc-windows-msvc.zip || exit /b 1
-del heatseeker-v1.7.0-x86_64-pc-windows-msvc.zip
+wget -q https://github.com/rschmitt/heatseeker/releases/download/v1.7.1/heatseeker-v1.7.1-x86_64-pc-windows-msvc.zip || exit /b 1
+7z x heatseeker-v1.7.1-x86_64-pc-windows-msvc.zip || exit /b 1
+del heatseeker-v1.7.1-x86_64-pc-windows-msvc.zip
 move hs.exe chocolatey\tools\bin || exit /b 1
 
 choco pack chocolatey\heatseeker.nuspec || exit /b 1
