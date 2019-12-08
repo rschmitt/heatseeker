@@ -5,10 +5,11 @@ mod matching;
 mod screen;
 #[cfg(not(windows))] mod ansi;
 
-use std::collections::HashSet;
-use std::process;
-use std::io::{stdin, BufRead};
 use std::cmp::min;
+use std::collections::HashSet;
+use std::env;
+use std::io::{stdin, BufRead};
+use std::process;
 use screen::Screen;
 use screen::Key;
 use screen::Key::*;
@@ -24,6 +25,7 @@ const TARGET: &'static str = include_str!(concat!(env!("OUT_DIR"), "/target.txt"
 const COMMIT: &'static str = include_str!(concat!(env!("OUT_DIR"), "/commit.txt"));
 
 fn main() {
+    env::set_var("RUST_BACKTRACE", "1");
     let args = match args::parse_args() {
         Some(args) => args,
         None => {
