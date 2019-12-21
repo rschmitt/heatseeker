@@ -393,29 +393,8 @@ fn delete_last_word(s: &mut String) {
     }
 }
 
-// This is technically a standard library function, but it's plastered with
-// stability warnings and therefore only available on the nightly channel.
 fn slice_chars(s: &str, begin: usize, end: usize) -> &str {
-    assert!(begin <= end);
-    let mut count = 0;
-    let mut begin_byte = None;
-    let mut end_byte = None;
-
-    // This could be even more efficient by not decoding,
-    // only finding the char boundaries
-    for (idx, _) in s.char_indices() {
-        if count == begin { begin_byte = Some(idx); }
-        if count == end { end_byte = Some(idx); break; }
-        count += 1;
-    }
-    if begin_byte.is_none() && count == begin { begin_byte = Some(s.len()) }
-    if end_byte.is_none() && count == end { end_byte = Some(s.len()) }
-
-    match (begin_byte, end_byte) {
-        (None, _) => panic!("slice_chars: `begin` is beyond end of string"),
-        (_, None) => panic!("slice_chars: `end` is beyond end of string"),
-        (Some(a), Some(b)) => unsafe { s.get_unchecked(a..b) }
-    }
+    s.get(begin..end).unwrap()
 }
 
 #[cfg(test)]
