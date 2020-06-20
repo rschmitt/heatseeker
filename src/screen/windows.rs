@@ -189,14 +189,14 @@ impl WindowsScreen {
             Self::write_to(conout, NEWLINE);
         }
         WindowsScreen {
-            visible_choices: visible_choices,
+            visible_choices,
             start_line: start_line + Self::get_buffer_offset(conout),
             original_console_mode: orig_mode,
-            original_colors: original_colors,
+            original_colors,
             input: rx,
-            conin: conin,
-            conout: conout,
-            default_cursor_info: default_cursor_info,
+            conin,
+            conout,
+            default_cursor_info,
             shifted: false,
         }
     }

@@ -46,11 +46,11 @@ pub fn parse_args() -> Option<Args> {
     let full_screen = matches.opt_present("full-screen");
 
     Some(Args {
-        initial_search: initial_search,
-        help: help,
+        initial_search,
+        help,
         use_first: matches.opt_present("first"),
-        version: version,
-        full_screen: full_screen,
+        version,
+        full_screen,
         filter_only: matches.opt_present("filter-only"),
     })
 }

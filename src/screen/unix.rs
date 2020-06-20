@@ -126,9 +126,9 @@ impl UnixScreen {
         tty.write(&ansi::save_cursor());
 
         UnixScreen {
-            tty: tty,
-            start_line: start_line,
-            desired_rows: desired_rows,
+            tty,
+            start_line,
+            desired_rows,
         }
     }
 
@@ -206,7 +206,7 @@ impl Terminal {
 
         let mut ret = Terminal {
             input: rx,
-            input_fd: input_fd,
+            input_fd,
             output: output_file,
             output_buf: Vec::new(),
             original_stty_state: Vec::new(),

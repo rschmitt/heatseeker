@@ -129,9 +129,9 @@ impl<'a> Search<'a> {
     fn new(choices: &'a [&'a str], initial_search: String, filter_only: bool) -> Search<'a> {
         let matches = choices.to_vec();
         Search {
-            choices: choices,
+            choices,
             query: initial_search,
-            matches: matches,
+            matches,
             stale: true,
             scroll_offset: 0,
             cursor_index: 0,
