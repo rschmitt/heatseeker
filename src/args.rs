@@ -1,5 +1,3 @@
-extern crate getopts;
-
 use std::env;
 
 pub struct Args {

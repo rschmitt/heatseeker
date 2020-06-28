@@ -1,5 +1,3 @@
-extern crate time;
-
 use std::env;
 use std::error::Error;
 use std::fs::File;

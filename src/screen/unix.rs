@@ -1,10 +1,7 @@
 #![cfg(not(windows))]
 
-extern crate libc;
-extern crate signal_hook;
-
-use screen::Key;
-use screen::Key::*;
+use super::Key;
+use super::Key::*;
 use std::io::{Read, Write};
 use std::fs::{File, OpenOptions};
 use std::os::unix::io::*;
@@ -14,8 +11,8 @@ use std::process::Stdio;
 use std::str;
 use std::iter::repeat;
 use std::cmp::min;
-use ansi;
-use ::NEWLINE;
+use crate::ansi;
+use crate::NEWLINE;
 
 use std::mem;
 use std::thread;
@@ -23,8 +20,8 @@ use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
 use std::sync::{mpsc, Arc, Mutex};
 
-use self::libc::{dup, SIGINT, SIGWINCH, c_int, c_ushort, c_ulong};
-use screen::Screen;
+use ::libc::{dup, SIGINT, SIGWINCH, c_int, c_ushort, c_ulong};
+use crate::screen::Screen;
 
 pub struct UnixScreen {
     tty: Terminal,
@@ -260,7 +257,7 @@ impl Terminal {
             // The output from `stty -g` may include a newline, which we have to strip off. Otherwise,
             // when we go to restore the tty, stty (on some platforms) will fail with an "invalid
             // argument" error.
-            ::trim(&mut str);
+            crate::trim(&mut str);
 
             str.into_bytes()
         } else {

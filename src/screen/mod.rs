@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-#[cfg(not(windows))] use screen::unix::UnixScreen;
-#[cfg(windows)] pub use screen::windows::WindowsScreen;
+#[cfg(not(windows))] use unix::UnixScreen;
+#[cfg(windows)] pub use windows::WindowsScreen;
 
 pub enum Key {
     Char(char),

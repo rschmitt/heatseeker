@@ -1,28 +1,25 @@
 #![cfg(windows)]
 
-extern crate winapi;
-extern crate kernel32;
-
-use self::kernel32::*;
-use self::winapi::*;
-use self::winapi::fileapi::FILE_NAME_INFO;
-use self::winapi::minwinbase::FileNameInfo;
-use self::winapi::minwindef::MAX_PATH;
+use::kernel32::*;
+use::winapi::*;
+use::winapi::fileapi::FILE_NAME_INFO;
+use::winapi::minwinbase::FileNameInfo;
+use::winapi::minwindef::MAX_PATH;
 use std::ffi::OsString;
 use std::io;
 use std::os::windows::prelude::*;
 use std::ptr;
 use std::iter::repeat;
 use std::cmp::min;
-use screen::Key;
-use screen::Key::*;
-use screen::Screen;
+use super::Key;
+use super::Key::*;
+use super::Screen;
 
 use std::thread;
 use std::slice::from_raw_parts;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc;
-use ::NEWLINE;
+use crate::NEWLINE;
 
 macro_rules! win32 {
     ($funcall:expr) => (
@@ -339,8 +336,8 @@ fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u
 
 #[cfg(test)]
 mod tests {
-    use super::kernel32;
-    use super::winapi::STD_OUTPUT_HANDLE;
+    use ::kernel32;
+    use ::winapi::STD_OUTPUT_HANDLE;
     use super::{WindowsScreen, get_start_line};
 
     #[test]

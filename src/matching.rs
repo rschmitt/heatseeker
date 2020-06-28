@@ -1,8 +1,5 @@
 use std::cmp::*;
 
-extern crate num_cpus;
-extern crate crossbeam;
-
 macro_rules! chars {
     ($str:expr) => (
         &$str.chars().collect::<Vec<char>>()

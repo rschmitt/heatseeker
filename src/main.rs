@@ -1,5 +1,3 @@
-extern crate unicode_width;
-
 mod args;
 mod matching;
 mod screen;
