@@ -391,8 +391,6 @@ fn delete_last_word(s: &mut String) {
     }
 }
 
-// This is technically a standard library function, but it's plastered with
-// stability warnings and therefore only available on the nightly channel.
 fn slice_chars(s: &str, begin: usize, end: usize) -> &str {
     assert!(begin <= end);
     let mut count = 0;
