@@ -262,7 +262,7 @@ impl Terminal {
             str.into_bytes()
         } else {
             process.stderr.as_mut().unwrap().read_to_end(&mut buf).unwrap();
-            panic!(String::from_utf8(buf).unwrap());
+            panic!("stty invocation failed: {}", String::from_utf8(buf).unwrap());
         }
     }
 
