@@ -94,10 +94,10 @@ impl Screen for UnixScreen {
         }
         while ret.is_empty() {
             let bytes = self.tty.input.recv().unwrap();
-            if bytes == vec![SIGWINCH as u8] {
+            if bytes == vec![128 + SIGWINCH as u8] {
                 self.blank_entire_screen();
                 return vec![Nothing];
-            } else if bytes == vec![SIGINT as u8] {
+            } else if bytes == vec![128 + SIGINT as u8] {
                 return vec![Control('g')];
             } else {
                 ret.extend(bytes);
@@ -185,7 +185,7 @@ fn start_sigwinch_handler() {
     let signals = signal_hook::iterator::Signals::new(&[SIGWINCH, SIGINT]).unwrap();
     thread::spawn(move || {
         for signal in signals.forever() {
-            get_global_tx().send(vec![signal as u8]).unwrap();
+            get_global_tx().send(vec![128 + signal as u8]).unwrap();
         }
     });
 }
