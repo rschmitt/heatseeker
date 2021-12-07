@@ -98,7 +98,9 @@ fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
         Home => search.home(),
         End => search.end(visible_choices),
         Enter => search.done(),
+        Control('b') |
         PgUp => search.pgup(visible_choices),
+        Control('f') |
         PgDown => search.pgdown(visible_choices),
         _ => {},
     }
