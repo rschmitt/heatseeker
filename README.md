@@ -28,7 +28,7 @@ brew install heatseeker
 To install on Linux, run:
 
 ```zsh
-wget -q -O - https://github.com/rschmitt/heatseeker/releases/download/v1.7.2/heatseeker-v1.7.2-x86_64-unknown-linux-musl.tar.gz | tar -zxf -
+wget -q -O - https://github.com/rschmitt/heatseeker/releases/download/v1.7.2/heatseeker-v1.7.2-x86_64-unknown-linux-musl.tar.gz | tar -zxf - hs
 # To install globally:
 sudo install hs /usr/local/bin/
 # To install in your home directory:
