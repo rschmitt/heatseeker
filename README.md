@@ -1,4 +1,4 @@
-[![Linux Build Status](https://travis-ci.org/rschmitt/heatseeker.svg)](https://travis-ci.org/rschmitt/heatseeker)
+[![Linux Build Status](https://app.travis-ci.com/rschmitt/heatseeker.svg?branch=master)](https://app.travis-ci.com/rschmitt/heatseeker)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/rschmitt/heatseeker?svg=true)](https://ci.appveyor.com/project/rschmitt/heatseeker)
 
 Heatseeker is a rewrite of Gary Bernhardt's
