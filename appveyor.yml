@@ -48,7 +48,7 @@ test_script:
     )
 
 before_deploy:
-  - cargo rustc --target %TARGET% --release --bin hs -- -C lto
+  - cargo rustc --target %TARGET% --release --bin hs
   - ps: ci\before_deploy.ps1
 
 deploy:
