@@ -58,14 +58,15 @@ before_deploy:
 
 deploy:
   api_key:
-    secure: "UI0aBNDbs0X6uOZErimt1AvsWvrGzP/EVhmqdM5wnWXB9OXgP8W/mwXgem83h9DfcGM0D6PvXgMBFoQkSznGdaeow2B4bJpUdfGQibnnsztCi0m7eu02ZGdulAKwY34gDsbibfjzNmoncP/RrNRRiRQ4q1IAgb47HrLpc0pzKCM="
+    secure: "HbZrrylL/u0eADXH4I2+l9coJORFPIML43q0knn4FA5ICXnbGPEAEMxEfwEayhrbB1oul7K7nutp/we4whyz2dbN2yNdeIgFIDl6RMKPklpHpQetWT6Qh3AnSF501r1t1aHiugitRnNiUr+53F5PkyUpZ+OF5ovOc2ZkVJNLpek="
   file_glob: true
   file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
   on:
+    repo: rschmitt/heatseeker
     condition: $TRAVIS_RUST_VERSION = stable
     tags: true
   provider: releases
-  skip_cleanup: true
+  skip_cleanup: 'true'
 
 cache: cargo
 before_cache:
