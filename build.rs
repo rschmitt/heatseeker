@@ -3,12 +3,12 @@ use std::error::Error;
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
-use time::{strftime, now};
 use std::process::Command;
+use chrono::Utc;
 
 fn main() {
     let version = env::var("CARGO_PKG_VERSION").unwrap();
-    let timestamp = strftime("%F %H:%M:%S %z", &now()).unwrap();
+    let timestamp = Utc::now().format("%F %H:%M:%S %z").to_string();
     let commit = get_head_commit().unwrap_or("".to_string());
     let target = env::var("TARGET").unwrap();
 
