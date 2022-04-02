@@ -10,7 +10,7 @@ main() {
         linux)
             stage=$(mktemp -d)
             ;;
-        osx)
+        osx | freebsd)
             stage=$(mktemp -d -t tmp)
             ;;
     esac
