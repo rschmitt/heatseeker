@@ -27,8 +27,7 @@ libc = "0.2.31"
 signal-hook = "0.1.3"
 
 [target.'cfg(windows)'.dependencies]
-kernel32-sys = "0.2.2"
-winapi = "0.2.8"
+winapi = { version = "0.3", features = ["everything", "impl-default"] }
 
 [build-dependencies]
 time = "0.1.38"

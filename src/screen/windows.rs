@@ -1,13 +1,20 @@
 #![cfg(windows)]
 
-use::kernel32::*;
-use::winapi::*;
-use::winapi::fileapi::FILE_NAME_INFO;
-use::winapi::minwinbase::FileNameInfo;
-use::winapi::minwindef::MAX_PATH;
+use winapi::ctypes::{c_void};
+use winapi::shared::minwindef::{TRUE, FALSE, WORD, DWORD, LPDWORD, MAX_PATH};
+use winapi::shared::ntdef::{HANDLE, PVOID};
+use winapi::um::consoleapi::{GetConsoleMode, SetConsoleMode, ReadConsoleInputW, WriteConsoleW};
+use winapi::um::fileapi::{FILE_NAME_INFO, CreateFileA};
+use winapi::um::handleapi::INVALID_HANDLE_VALUE;
+use winapi::um::minwinbase::FileNameInfo;
+use winapi::um::processenv::GetStdHandle;
+use winapi::um::winbase::{STD_INPUT_HANDLE, GetFileInformationByHandleEx};
+use winapi::um::wincon::*;
+use winapi::um::wincontypes::{INPUT_RECORD, PINPUT_RECORD, COORD, KEY_EVENT};
+use winapi::um::winnt::{GENERIC_READ, GENERIC_WRITE, FILE_SHARE_READ};
 use std::ffi::OsString;
 use std::io;
-use std::os::windows::prelude::*;
+use std::os::windows::ffi::OsStringExt;
 use std::ptr;
 use std::iter::repeat;
 use std::cmp::min;
@@ -150,7 +157,7 @@ impl WindowsScreen {
     }
 
     pub fn open_screen(desired_rows: u16) -> WindowsScreen {
-        let mut orig_mode;
+        let mut orig_mode = Default::default();
         let conin: HANDLE;
         let conout: HANDLE;
         unsafe {
@@ -158,7 +165,6 @@ impl WindowsScreen {
             let rw_access = GENERIC_READ | GENERIC_WRITE;
             conin = CreateFileA("CONIN$\0".as_ptr() as *const i8, rw_access, FILE_SHARE_READ, ptr::null_mut(), OPEN_EXISTING, 0, ptr::null_mut());
             conout = CreateFileA("CONOUT$\0".as_ptr() as *const i8, rw_access, FILE_SHARE_READ, ptr::null_mut(), OPEN_EXISTING, 0, ptr::null_mut());
-            orig_mode = ::std::mem::uninitialized();
         }
 
         if conin == INVALID_HANDLE_VALUE || conout == INVALID_HANDLE_VALUE {
@@ -207,7 +213,7 @@ impl WindowsScreen {
         thread::spawn(move || {
             loop {
                 let conin = conin as *mut c_void;
-                let mut input_record = INPUT_RECORD{EventType: 0 as WORD, Event: [0, 0, 0, 0]};
+                let mut input_record = INPUT_RECORD::default();
                 let mut events_read: DWORD = 0;
                 win32!(ReadConsoleInputW(conin, &mut input_record as PINPUT_RECORD, 1, &mut events_read as LPDWORD));
                 if events_read > 0 {
@@ -235,11 +241,12 @@ impl WindowsScreen {
     }
 
     fn translate_event(event: INPUT_RECORD, shifted: &mut bool) -> Key {
+        use winapi::um::winuser::*;
         if event.EventType != KEY_EVENT {
             return Nothing;
         }
 
-        let key_event = unsafe { event.KeyEvent() };
+        let key_event = unsafe { event.Event.KeyEvent() };
         let vk_code = key_event.wVirtualKeyCode as i32;
 
         if vk_code == VK_SHIFT {
@@ -273,7 +280,7 @@ impl WindowsScreen {
         } else if vk_code == VK_ESCAPE {
             Control('g')
         } else {
-            let byte = key_event.UnicodeChar;
+            let byte = unsafe { *key_event.uChar.UnicodeChar() };
             if byte & 96 == 0 {
                 Control(((byte + 96u16) as u8) as char)
             } else {
@@ -283,20 +290,20 @@ impl WindowsScreen {
     }
 
     fn get_cursor_pos(handle: HANDLE) -> (u16, u16) {
-        let mut buffer_info = unsafe { ::std::mem::uninitialized() };
+        let mut buffer_info = Default::default();
         win32!(GetConsoleScreenBufferInfo(handle, &mut buffer_info));
         let cursor_pos = buffer_info.dwCursorPosition;
         (cursor_pos.X as u16, cursor_pos.Y as u16)
     }
 
     fn get_original_colors(handle: HANDLE) -> WORD {
-        let mut buffer_info = unsafe { ::std::mem::uninitialized() };
+        let mut buffer_info = Default::default();
         win32!(GetConsoleScreenBufferInfo(handle, &mut buffer_info));
         buffer_info.wAttributes
     }
 
     fn winsize(conout: HANDLE) -> Option<(u16, u16)> {
-        let mut buffer_info = unsafe { ::std::mem::uninitialized() };
+        let mut buffer_info = Default::default();
         let result = unsafe { GetConsoleScreenBufferInfo(conout, &mut buffer_info) };
         if result != 0 {
             // This code specifically computes the size of the window,
@@ -317,7 +324,7 @@ impl WindowsScreen {
     }
 
     fn get_buffer_offset(conout: HANDLE) -> u16 {
-        let mut buffer_info = unsafe { ::std::mem::uninitialized() };
+        let mut buffer_info = Default::default();
         win32!(GetConsoleScreenBufferInfo(conout, &mut buffer_info));
         buffer_info.srWindow.Top as u16
     }
@@ -336,8 +343,8 @@ fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u
 
 #[cfg(test)]
 mod tests {
-    use ::kernel32;
-    use ::winapi::STD_OUTPUT_HANDLE;
+    use winapi::um::processenv::GetStdHandle;
+    use winapi::um::winbase::STD_OUTPUT_HANDLE;
     use super::{WindowsScreen, get_start_line};
 
     #[test]
@@ -347,7 +354,7 @@ mod tests {
             // TODO: It should be made obvious from the output that this test was skipped
             return;
         }
-        let conout = unsafe { kernel32::GetStdHandle(STD_OUTPUT_HANDLE) };
+        let conout = unsafe { GetStdHandle(STD_OUTPUT_HANDLE) };
         let (cols, rows) = WindowsScreen::winsize(conout).expect("Failed to get window size!");
         // We don't know the window size a priori, but we can at least
         // assert that it is within some kind of sensible range.
