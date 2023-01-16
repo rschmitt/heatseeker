@@ -137,7 +137,7 @@ impl<'a> Search<'a> {
             cursor_index: 0,
             state: InProgress,
             selections: HashSet::new(),
-            filter_only: filter_only,
+            filter_only,
         }
     }
 

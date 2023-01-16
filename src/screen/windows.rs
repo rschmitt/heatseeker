@@ -1,6 +1,6 @@
 #![cfg(windows)]
 
-use winapi::ctypes::{c_void};
+use winapi::ctypes::c_void;
 use winapi::shared::minwindef::{TRUE, FALSE, WORD, DWORD, LPDWORD, MAX_PATH};
 use winapi::shared::ntdef::{HANDLE, PVOID};
 use winapi::um::consoleapi::{GetConsoleMode, SetConsoleMode, ReadConsoleInputW, WriteConsoleW};

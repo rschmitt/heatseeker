@@ -37,7 +37,7 @@ pub fn compute_matches_single_threaded<'a>(choices: &[&'a str], query: &str, fil
     for (i, choice) in choices.iter().enumerate() {
         let score = if filter_only { filter(choice, query) } else { score(choice, query) };
         if score > 0_f64 {
-            ret.push(ScoredChoice{ idx: i, score: score });
+            ret.push(ScoredChoice{ idx: i, score });
         }
     }
 
@@ -56,7 +56,7 @@ pub fn compute_matches_multi_threaded<'a>(choices: &[&'a str], query: &str, filt
                 let (lower_bound, upper_bound) = get_slice_indices(choices.len(), workers, current_worker);
                 for i in lower_bound..upper_bound {
                     let score = if filter_only { filter(choices[i], query) } else { score(choices[i], query) };
-                    tx.send(ScoredChoice{ idx: i, score: score }).unwrap()
+                    tx.send(ScoredChoice{ idx: i, score }).unwrap()
                 }
             });
         }
