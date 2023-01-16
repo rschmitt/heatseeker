@@ -9,7 +9,6 @@ use std::path::*;
 use std::process::Command;
 use std::process::Stdio;
 use std::str;
-use std::iter::repeat;
 use std::cmp::min;
 use crate::ansi;
 use crate::NEWLINE;
@@ -47,7 +46,7 @@ impl Screen for UnixScreen {
 
     fn blank_screen(&mut self) {
         self.reset_cursor();
-        let blank_line = repeat(' ').take(self.width() as usize).collect::<String>();
+        let blank_line = " ".repeat(self.width() as usize);
         for _ in 0..self.visible_choices() + 1 {
             self.tty.write(blank_line.as_bytes());
         }
@@ -154,7 +153,7 @@ impl UnixScreen {
     }
 
     fn more_bytes_needed(bytes: &[u8]) -> bool {
-        if let Err(_) = str::from_utf8(bytes) { true } else { false }
+        matches!(str::from_utf8(bytes), Err(_))
     }
 }
 
@@ -182,7 +181,7 @@ fn get_global_tx() -> Sender<Vec<u8>> {
 }
 
 fn start_sigwinch_handler() {
-    let mut signals = signal_hook::iterator::Signals::new(&[SIGWINCH, SIGINT]).unwrap();
+    let mut signals = signal_hook::iterator::Signals::new([SIGWINCH, SIGINT]).unwrap();
     thread::spawn(move || {
         for signal in signals.forever() {
             get_global_tx().send(vec![128 + signal as u8]).unwrap();
@@ -193,8 +192,8 @@ fn start_sigwinch_handler() {
 impl Terminal {
     fn open_terminal() -> Terminal {
         let term_path = Path::new("/dev/tty");
-        let mut input_file = File::open(&term_path).unwrap();
-        let output_file = OpenOptions::new().write(true).open(&term_path).unwrap();
+        let mut input_file = File::open(term_path).unwrap();
+        let output_file = OpenOptions::new().write(true).open(term_path).unwrap();
         let input_fd = input_file.as_raw_fd();
         let (tx, rx) = mpsc::channel();
         set_global_tx(tx);
@@ -267,8 +266,8 @@ impl Terminal {
     }
 
     fn translate_bytes(bytes: Vec<u8>) -> Vec<Key> {
-        const BEGIN_PASTE: &'static [u8] = b"\x1B[200~";
-        const END_PASTE: &'static [u8] = b"\x1B[201~";
+        const BEGIN_PASTE: &[u8] = b"\x1B[200~";
+        const END_PASTE: &[u8] = b"\x1B[201~";
 
         if bytes == b"\x1B[A" || bytes == b"\x1BOA" { return vec![Up] };
         if bytes == b"\x1B[B" || bytes == b"\x1BOB" { return vec![Down] };
@@ -321,7 +320,7 @@ impl Terminal {
     }
 
     fn flush(&mut self) {
-        self.output.write(&self.output_buf).unwrap();
+        self.output.write_all(&self.output_buf).unwrap();
         self.output_buf.clear();
     }
 
@@ -343,7 +342,7 @@ impl Terminal {
 
         let size = TermSize { rows: 0, cols: 0, x: 0, y: 0 };
         if unsafe { ioctl(self.output.as_raw_fd(), TIOCGWINSZ, &size) } == 0 {
-            Some((size.cols as u16, size.rows as u16))
+            Some((size.cols, size.rows))
         } else {
             None
         }

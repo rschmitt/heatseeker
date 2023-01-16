@@ -54,8 +54,8 @@ pub fn compute_matches_multi_threaded<'a>(choices: &[&'a str], query: &str, filt
             let tx = tx.clone();
             scope.spawn(move |_| {
                 let (lower_bound, upper_bound) = get_slice_indices(choices.len(), workers, current_worker);
-                for i in lower_bound..upper_bound {
-                    let score = if filter_only { filter(choices[i], query) } else { score(choices[i], query) };
+                for (i, choice) in choices.iter().enumerate().take(upper_bound).skip(lower_bound) {
+                    let score = if filter_only { filter(choice, query) } else { score(choice, query) };
                     tx.send(ScoredChoice{ idx: i, score }).unwrap()
                 }
             });
@@ -95,7 +95,7 @@ fn score(choice: &str, query: &str) -> f64 {
         None => 0.0,
         Some(match_length) => {
             let score = query.len() as f64 / match_length as f64;
-            score as f64 / choice.len() as f64
+            score / choice.len() as f64
         }
     }
 }
@@ -176,11 +176,7 @@ fn find_char_in_string(string: &[char], char: char) -> Vec<usize> {
 }
 
 fn find_end_of_match(string: &[char], rest_of_query: &[char], first_index: usize) -> Option<usize> {
-    if let Some(indices) = get_match_indices(string, rest_of_query, first_index) {
-        Some(indices[indices.len() - 1])
-    } else {
-        None
-    }
+    get_match_indices(string, rest_of_query, first_index).map(|indices| indices[indices.len() - 1])
 }
 
 fn get_match_indices(string: &[char], rest_of_query: &[char], first_index: usize) -> Option<Vec<usize>> {
@@ -196,8 +192,8 @@ fn get_match_indices(string: &[char], rest_of_query: &[char], first_index: usize
                 break;
             }
         }
-        if index.is_some() {
-            last_index += index.unwrap() + 1;
+        if let Some(idx) = index {
+            last_index += idx + 1;
             ret.push(last_index - 1);
         } else {
             return None;

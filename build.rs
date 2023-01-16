@@ -9,7 +9,7 @@ use chrono::Utc;
 fn main() {
     let version = env::var("CARGO_PKG_VERSION").unwrap();
     let timestamp = Utc::now().format("%F %H:%M:%S %z").to_string();
-    let commit = get_head_commit().unwrap_or("".to_string());
+    let commit = get_head_commit().unwrap_or_else(|_| "".to_string());
     let target = env::var("TARGET").unwrap();
 
     write(&version, "version.txt");
@@ -19,7 +19,7 @@ fn main() {
 }
 
 fn get_head_commit() -> Result<String, Box<dyn Error>> {
-    let output = Command::new("git").args(&["rev-parse", "--short", "HEAD"]).output()?;
+    let output = Command::new("git").args(["rev-parse", "--short", "HEAD"]).output()?;
     let mut rev = String::from_utf8(output.stdout)?;
     rev.pop();
     Ok(rev)
@@ -30,7 +30,7 @@ fn write(contents: &str, filename: &str) {
     let file = out_dir.join(filename);
     let debug_path = file.to_str().unwrap().to_string();
     File::create(file)
-        .expect(&format!("Unable to create file {:?}", debug_path))
+        .unwrap_or_else(|_| panic!("Unable to create file {:?}", debug_path))
         .write_all(contents.as_bytes())
-        .expect(&format!("Unable to write string '{}' to file {:?}", contents, debug_path));
+        .unwrap_or_else(|_| panic!("Unable to write string '{}' to file {:?}", contents, debug_path));
 }

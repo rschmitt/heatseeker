@@ -15,12 +15,12 @@ use self::SearchState::*;
 use unicode_width::UnicodeWidthStr;
 
 #[cfg(windows)] pub const NEWLINE: &'static str = "\r\n";
-#[cfg(not(windows))] pub const NEWLINE: &'static str = "\n";
+#[cfg(not(windows))] pub const NEWLINE: &str = "\n";
 
-const VERSION: &'static str = include_str!(concat!(env!("OUT_DIR"), "/version.txt"));
-const TIMESTAMP: &'static str = include_str!(concat!(env!("OUT_DIR"), "/timestamp.txt"));
-const TARGET: &'static str = include_str!(concat!(env!("OUT_DIR"), "/target.txt"));
-const COMMIT: &'static str = include_str!(concat!(env!("OUT_DIR"), "/commit.txt"));
+const VERSION: &str = include_str!(concat!(env!("OUT_DIR"), "/version.txt"));
+const TIMESTAMP: &str = include_str!(concat!(env!("OUT_DIR"), "/timestamp.txt"));
+const TARGET: &str = include_str!(concat!(env!("OUT_DIR"), "/target.txt"));
+const COMMIT: &str = include_str!(concat!(env!("OUT_DIR"), "/commit.txt"));
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
@@ -34,7 +34,7 @@ fn main() {
     if args.help { return; }
 
     if args.version {
-        if COMMIT == "" {
+        if COMMIT.is_empty() {
             println!("heatseeker {} (built {} for {})", VERSION, TIMESTAMP, TARGET);
         } else {
             println!("heatseeker {}-{} (built {} for {})", VERSION, COMMIT, TIMESTAMP, TARGET);
@@ -47,8 +47,7 @@ fn main() {
     let choices = choices.iter().map(|x| &x[..]).collect::<Vec<&str>>();
     if args.use_first {
         let matches = matching::compute_matches(&choices, &initial_search, args.filter_only);
-        println!("{}", matches.get(0).unwrap_or(&""));
-        return;
+        println!("{}", matches.first().unwrap_or(&""));
     } else {
         let desired_rows = if args.full_screen { 999 } else { 20 };
         let selections = event_loop(desired_rows, &choices, &initial_search, args.filter_only);
@@ -356,7 +355,7 @@ fn read_choices() -> Vec<String> {
             },
             Err(e) => {
                 if first_error.is_some() {
-                    suppressed = suppressed + 1;
+                    suppressed += 1;
                 } else {
                     first_error = Some(e);
                 }

@@ -31,7 +31,7 @@ pub fn parse_args() -> Option<Args> {
     };
 
     let initial_search = match matches.opt_str("search") {
-        Some(x) => x.clone(),
+        Some(x) => x,
         None => "".to_string(),
     };
 
