@@ -182,7 +182,7 @@ fn get_global_tx() -> Sender<Vec<u8>> {
 }
 
 fn start_sigwinch_handler() {
-    let signals = signal_hook::iterator::Signals::new(&[SIGWINCH, SIGINT]).unwrap();
+    let mut signals = signal_hook::iterator::Signals::new(&[SIGWINCH, SIGINT]).unwrap();
     thread::spawn(move || {
         for signal in signals.forever() {
             get_global_tx().send(vec![128 + signal as u8]).unwrap();
