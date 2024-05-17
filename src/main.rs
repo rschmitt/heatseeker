@@ -17,10 +17,9 @@ use unicode_width::UnicodeWidthStr;
 #[cfg(windows)] pub const NEWLINE: &'static str = "\r\n";
 #[cfg(not(windows))] pub const NEWLINE: &str = "\n";
 
-const VERSION: &str = include_str!(concat!(env!("OUT_DIR"), "/version.txt"));
-const TIMESTAMP: &str = include_str!(concat!(env!("OUT_DIR"), "/timestamp.txt"));
-const TARGET: &str = include_str!(concat!(env!("OUT_DIR"), "/target.txt"));
-const COMMIT: &str = include_str!(concat!(env!("OUT_DIR"), "/commit.txt"));
+mod built_info {
+    include!(concat!(env!("OUT_DIR"), "/built.rs"));
+}
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
@@ -34,11 +33,11 @@ fn main() {
     if args.help { return; }
 
     if args.version {
-        if COMMIT.is_empty() {
-            println!("heatseeker {} (built {} for {})", VERSION, TIMESTAMP, TARGET);
-        } else {
-            println!("heatseeker {}-{} (built {} for {})", VERSION, COMMIT, TIMESTAMP, TARGET);
-        }
+        if let Some(hash) = built_info::GIT_COMMIT_HASH_SHORT {
+            println!("heatseeker {}-{} (built {} for {})", built_info::PKG_VERSION, hash, built_info::BUILT_TIME_UTC, built_info::TARGET);
+	} else {
+            println!("heatseeker {} (built {} for {})", built_info::PKG_VERSION, built_info::BUILT_TIME_UTC, built_info::TARGET);
+	}
         return;
     }
 
