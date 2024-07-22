@@ -35,9 +35,9 @@ fn main() {
     if args.version {
         if let Some(hash) = built_info::GIT_COMMIT_HASH_SHORT {
             println!("heatseeker {}-{} (built {} for {})", built_info::PKG_VERSION, hash, built_info::BUILT_TIME_UTC, built_info::TARGET);
-	} else {
+        } else {
             println!("heatseeker {} (built {} for {})", built_info::PKG_VERSION, built_info::BUILT_TIME_UTC, built_info::TARGET);
-	}
+        }
         return;
     }
 
