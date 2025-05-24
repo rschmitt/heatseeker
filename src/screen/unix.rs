@@ -325,7 +325,7 @@ impl Terminal {
     }
 
     fn winsize(&self) -> Option<(u16, u16)> {
-        extern { fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int; }
+        extern "C" { fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int; }
         #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
         const TIOCGWINSZ: c_ulong = 0x40087468;
 
@@ -340,8 +340,8 @@ impl Terminal {
             y: c_ushort,
         }
 
-        let size = TermSize { rows: 0, cols: 0, x: 0, y: 0 };
-        if unsafe { ioctl(self.output.as_raw_fd(), TIOCGWINSZ, &size) } == 0 {
+        let mut size = TermSize { rows: 0, cols: 0, x: 0, y: 0 };
+        if unsafe { ioctl(self.output.as_raw_fd(), TIOCGWINSZ, &mut size) } == 0 {
             Some((size.cols, size.rows))
         } else {
             None
