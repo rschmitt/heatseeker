@@ -3,7 +3,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>heatseeker</id>
-    <version>1.7.2</version>
+    <version>1.7.3</version>
     <title>Heatseeker</title>
     <authors>Ryan Schmitt</authors>
     <owners>Ryan Schmitt</owners>
