@@ -18,10 +18,6 @@ matrix:
     - env: TARGET=x86_64-unknown-linux-musl
     - env: TARGET=aarch64-unknown-linux-gnu
 
-    # OSX
-    - env: TARGET=x86_64-apple-darwin
-      os: osx
-
     # *BSD
     - env: TARGET=x86_64-unknown-freebsd
       os: freebsd
