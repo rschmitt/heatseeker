@@ -10,7 +10,11 @@ The purpose of the rewrite is to combine the simplicity and generality of Select
 
 ## Installation
 
-Compiled binaries for the latest version can be downloaded [from GitHub](https://github.com/rschmitt/heatseeker/releases/latest).
+The recommended way to install is through Cargo:
+
+```zsh
+cargo install heatseeker
+```
 
 To install on Windows using [Chocolatey](https://chocolatey.org/), run:
 
@@ -23,16 +27,6 @@ To install on OS X using [Homebrew](http://brew.sh/), run:
 ```zsh
 brew tap rschmitt/heatseeker
 brew install heatseeker
-```
-
-To install on Linux, run:
-
-```zsh
-wget -q -O - https://github.com/rschmitt/heatseeker/releases/download/v1.7.3/heatseeker-v1.7.3-x86_64-unknown-linux-musl.tar.gz | tar -zxf - hs
-# To install globally:
-sudo install hs /usr/local/bin/
-# To install in your home directory:
-install -D hs ~/bin/hs
 ```
 
 ## Use
