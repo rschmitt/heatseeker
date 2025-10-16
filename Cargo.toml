@@ -17,11 +17,10 @@ name = "hs"
 path = "src/main.rs"
 
 [dependencies]
-crossbeam = "0.8"
 indexmap = "2"
-num_cpus = "1"
 unicode-width = "0.2"
 clap = { version = "4", features = ["derive"] }
+rayon = "1"
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"

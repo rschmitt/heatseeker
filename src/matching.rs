@@ -1,3 +1,4 @@
+use rayon::prelude::*;
 use std::cmp::*;
 
 macro_rules! chars {
@@ -24,60 +25,38 @@ impl PartialOrd for ScoredChoice {
     }
 }
 
-pub fn compute_matches<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
-    if choices.len() > 100 {
-        compute_matches_multi_threaded(choices, query, filter_only)
-    } else {
-        compute_matches_single_threaded(choices, query, filter_only)
-    }
-}
+pub fn compute_matches<'a>(
+    choices: &[&'a str],
+    query: &str,
+    filter_only: bool,
+) -> Vec<&'a str> {
+    let par_choices = choices.par_iter().with_min_len(100);
 
-pub fn compute_matches_single_threaded<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
-    let mut ret = Vec::new();
-    for (i, choice) in choices.iter().enumerate() {
-        let score = if filter_only { filter(choice, query) } else { score(choice, query) };
-        if score > 0_f64 {
-            ret.push(ScoredChoice{ idx: i, score });
-        }
-    }
-
-    ret.sort_by(|x, y| x.partial_cmp(y).unwrap());
-    ret.iter().map(|x| choices[x.idx]).collect()
-}
-
-pub fn compute_matches_multi_threaded<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
-    use std::sync::mpsc::channel;
-    let (tx, rx) = channel();
-    let workers = num_cpus::get();
-    crossbeam::scope(|scope| {
-        for current_worker in 0..workers {
-            let tx = tx.clone();
-            scope.spawn(move |_| {
-                let (lower_bound, upper_bound) = get_slice_indices(choices.len(), workers, current_worker);
-                for (i, choice) in choices.iter().enumerate().take(upper_bound).skip(lower_bound) {
-                    let score = if filter_only { filter(choice, query) } else { score(choice, query) };
-                    tx.send(ScoredChoice{ idx: i, score }).unwrap()
+    if filter_only {
+        return par_choices
+            .filter_map(|choice| {
+                let choice = *choice;
+                if filter(choice, query) > 0.0 {
+                    Some(choice)
+                } else {
+                    None
                 }
-            });
-        }
-    }).unwrap();
-
-    let mut ret = Vec::new();
-    for _ in 0..choices.len() {
-        let scored_choice = rx.recv().unwrap();
-        if scored_choice.score > 0_f64 {
-            ret.push(scored_choice);
-        }
+            })
+            .collect();
     }
 
-    ret.sort_by(|x, y| x.partial_cmp(y).unwrap());
-    ret.iter().map(|x| choices[x.idx]).collect()
-}
+    let mut scored: Vec<_> = par_choices
+        .enumerate()
+        .map(|(i, choice)| {
+            let choice = *choice;
+            let score = score(choice, query);
+            ScoredChoice { idx: i, score }
+        })
+        .filter(|scored_choice| scored_choice.score > 0.0)
+        .collect();
 
-fn get_slice_indices(length: usize, workers: usize, idx: usize) -> (usize, usize) {
-    let lb = (length as f64 / workers as f64) * idx as f64;
-    let ub = (length as f64 / workers as f64) * (idx + 1) as f64;
-    (lb as usize, ub as usize)
+    scored.sort_by(|x, y| x.partial_cmp(y).unwrap());
+    scored.into_iter().map(|x| choices[x.idx]).collect()
 }
 
 fn score(choice: &str, query: &str) -> f64 {
@@ -208,7 +187,7 @@ fn chars_equal(q: &char, c: &char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{chars_equal, find_end_of_match, get_match_indices, get_slice_indices, score};
+    use super::{chars_equal, compute_matches, find_end_of_match, get_match_indices, score};
 
     #[test]
     fn chars_equal_test() {
@@ -291,25 +270,18 @@ mod tests {
     }
 
     #[test]
-    fn get_slice_indices_test() {
-        assert_eq!(get_slice_indices(100, 1, 0), (0, 100));
+    fn compute_matches_filter_only_preserves_order() {
+        let choices = vec!["barbarbar", "bar", "baz"];
+        let references = choices.iter().map(|s| *s).collect::<Vec<_>>();
+        let result = compute_matches(&references, "bar", true);
+        assert_eq!(result, vec!["barbarbar", "bar"]);
+    }
 
-        assert_eq!(get_slice_indices(100, 2, 1), (50, 100));
-        assert_eq!(get_slice_indices(100, 2, 0), (0, 50));
-
-        assert_eq!(get_slice_indices(100, 3, 0), (0, 33));
-        assert_eq!(get_slice_indices(100, 3, 1), (33, 66));
-        assert_eq!(get_slice_indices(100, 3, 2), (66, 100));
-
-        assert_eq!(get_slice_indices(100, 4, 0), (0, 25));
-        assert_eq!(get_slice_indices(100, 4, 1), (25, 50));
-        assert_eq!(get_slice_indices(100, 4, 2), (50, 75));
-        assert_eq!(get_slice_indices(100, 4, 3), (75, 100));
-
-        assert_eq!(get_slice_indices(12, 12, 11), (11, 12));
-        assert_eq!(get_slice_indices(12, 12, 0), (0, 1));
-
-        assert_eq!(get_slice_indices(1, 2, 0), (0, 0));
-        assert_eq!(get_slice_indices(1, 2, 1), (0, 1));
+    #[test]
+    fn compute_matches_ranks_by_score() {
+        let choices = vec!["barbarbar", "bar", "baz"];
+        let references = choices.iter().map(|s| *s).collect::<Vec<_>>();
+        let result = compute_matches(&references, "bar", false);
+        assert_eq!(result, vec!["bar", "barbarbar"]);
     }
 }
