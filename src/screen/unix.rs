@@ -359,12 +359,13 @@ impl Drop for Terminal {
 #[cfg(test)]
 mod tests {
     use super::Terminal;
+    use libc::{isatty, STDIN_FILENO, STDOUT_FILENO};
 
     #[test]
     fn winsize_test() {
-        // Travis-CI builds run without a tty, making this test impossible.
-        if option_env!("TRAVIS").is_some() {
-            // TODO: It should be made obvious from the output that this test was skipped
+        let has_tty = unsafe { isatty(STDIN_FILENO) != 0 || isatty(STDOUT_FILENO) != 0 };
+        if !has_tty {
+            // Skip when no interactive tty is available (e.g., CI sandboxes).
             return;
         }
         let term = Terminal::open_terminal();
