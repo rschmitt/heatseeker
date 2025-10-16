@@ -33,6 +33,3 @@ winapi = { version = "0.3", features = ["everything", "impl-default"] }
 [build-dependencies]
 chrono = "0.4"
 built = { version = "0.8", features = ["git2", "chrono"] }
-
-[profile.release]
-debug = true
