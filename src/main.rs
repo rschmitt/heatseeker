@@ -1,13 +1,12 @@
-mod args;
 mod matching;
 mod screen;
 #[cfg(not(windows))] mod ansi;
 
+use clap::Parser;
 use std::cmp::min;
 use indexmap::IndexSet;
 use std::env;
 use std::io::{stdin, BufRead};
-use std::process;
 use screen::Screen;
 use screen::Key;
 use screen::Key::*;
@@ -21,16 +20,39 @@ mod built_info {
     include!(concat!(env!("OUT_DIR"), "/built.rs"));
 }
 
+#[derive(Debug, Parser)]
+#[command(
+    name = "heatseeker",
+    about = "A fast, robust, and portable fuzzy finder.",
+    disable_version_flag = true
+)]
+pub struct Args {
+    #[arg(short = 's', long = "search", value_name = "SEARCH")]
+    pub initial_search: Option<String>,
+    #[arg(
+        short = 'f',
+        long = "first",
+        help = "Automatically select the first match"
+    )]
+    pub use_first: bool,
+    #[arg(short = 'v', long = "version", help = "Show version")]
+    pub version: bool,
+    #[arg(
+        short = 'F',
+        long = "full-screen",
+        help = "Use the entire screen in order to display as many choices as possible"
+    )]
+    pub full_screen: bool,
+    #[arg(
+        long = "filter-only",
+        help = "Just filter choices without ranking them"
+    )]
+    pub filter_only: bool,
+}
+
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
-    let args = match args::parse_args() {
-        Some(args) => args,
-        None => {
-            process::exit(1);
-        },
-    };
-
-    if args.help { return; }
+    let args = Args::parse();
 
     if args.version {
         if let Some(hash) = built_info::GIT_COMMIT_HASH_SHORT {
@@ -42,7 +64,7 @@ fn main() {
     }
 
     let choices = read_choices();
-    let initial_search = args.initial_search.clone();
+    let initial_search = args.initial_search.clone().unwrap_or_default();
     let choices = choices.iter().map(|x| &x[..]).collect::<Vec<&str>>();
     if args.use_first {
         let matches = matching::compute_matches(&choices, &initial_search, args.filter_only);
