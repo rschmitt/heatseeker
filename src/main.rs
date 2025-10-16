@@ -4,7 +4,7 @@ mod screen;
 #[cfg(not(windows))] mod ansi;
 
 use std::cmp::min;
-use std::collections::HashSet;
+use indexmap::IndexSet;
 use std::env;
 use std::io::{stdin, BufRead};
 use std::process;
@@ -112,7 +112,7 @@ struct Search<'a> {
     scroll_offset: usize,
     cursor_index: usize,
     state: SearchState,
-    selections: HashSet<String>,
+    selections: IndexSet<String>,
     filter_only: bool,
 }
 
@@ -134,7 +134,7 @@ impl<'a> Search<'a> {
             scroll_offset: 0,
             cursor_index: 0,
             state: InProgress,
-            selections: HashSet::new(),
+            selections: IndexSet::new(),
             filter_only,
         }
     }
@@ -242,7 +242,7 @@ impl<'a> Search<'a> {
         self.recompute_matches();
         let selection = self.matches.get(self.scroll_offset + self.cursor_index).unwrap_or(&"").to_string();
         if self.selections.contains(&selection) {
-            self.selections.remove(&selection);
+            self.selections.shift_remove(&selection);
         } else {
             self.selections.insert(selection);
         }
@@ -285,7 +285,7 @@ fn draw_screen(screen: &mut dyn Screen, search: &Search) {
     screen.show_cursor();
 }
 
-fn print_matches(screen: &mut dyn Screen, matches: &[&str], query: &str, scroll_offset: usize, cursor_index: usize, selections: &HashSet<String>) {
+fn print_matches(screen: &mut dyn Screen, matches: &[&str], query: &str, scroll_offset: usize, cursor_index: usize, selections: &IndexSet<String>) {
     let mut i = 1;
     for choice in matches[scroll_offset..].iter() {
         let indices = matching::visual_score(choice, query);
