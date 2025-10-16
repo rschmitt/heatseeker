@@ -286,7 +286,7 @@ impl Terminal {
         };
 
         String::from_utf8(bs)
-            .unwrap()
+            .unwrap_or("".to_owned())
             .chars()
             .map(Terminal::translate_char)
             .collect()
