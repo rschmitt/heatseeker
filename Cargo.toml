@@ -10,7 +10,7 @@ homepage = "https://github.com/rschmitt/heatseeker"
 repository = "https://github.com/rschmitt/heatseeker"
 build = "build.rs"
 exclude = ["/ci/*", "/Cross.toml", "/VERIFICATION.txt", "*.nuspec", "*.bat", "*.rb", "*.yml"]
-edition = "2021"
+edition = "2024"
 
 [[bin]]
 name = "hs"

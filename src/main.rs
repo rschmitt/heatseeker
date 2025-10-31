@@ -51,7 +51,9 @@ pub struct Args {
 }
 
 fn main() {
-    env::set_var("RUST_BACKTRACE", "1");
+    unsafe {
+        env::set_var("RUST_BACKTRACE", "1");
+    }
     let args = Args::parse();
 
     if args.version {
