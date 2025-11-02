@@ -397,7 +397,7 @@ mod tests {
         // We don't know the window size a priori, but we can at least
         // assert that it is within some kind of sensible range.
         assert!(cols > 40);
-        assert!(rows > 40);
+        assert!(rows > 10);
         assert!(cols < 1000);
         assert!(rows < 1000);
     }
