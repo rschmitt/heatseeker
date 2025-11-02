@@ -3,6 +3,7 @@
 #[cfg(not(windows))] use unix::UnixScreen;
 #[cfg(windows)] pub use windows::WindowsScreen;
 
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Key {
     Char(char),
     Control(char),

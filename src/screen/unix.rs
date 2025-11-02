@@ -266,30 +266,53 @@ impl Terminal {
     }
 
     fn translate_bytes(bytes: Vec<u8>) -> Vec<Key> {
-        const BEGIN_PASTE: &[u8] = b"\x1B[200~";
-        const END_PASTE: &[u8] = b"\x1B[201~";
+        const SEQUENCES: &[(&[u8], Option<Key>)] = &[
+            (b"\x1B[5~", Some(PgUp)),
+            (b"\x1B[6~", Some(PgDown)),
+            (b"\x1B[H", Some(Home)),
+            (b"\x1B[F", Some(End)),
+            (b"\x1B[Z", Some(ShiftTab)),
 
-        if bytes == b"\x1B[A" || bytes == b"\x1BOA" { return vec![Up] };
-        if bytes == b"\x1B[B" || bytes == b"\x1BOB" { return vec![Down] };
-        if bytes == b"\x1B[5~" { return vec![PgUp] }
-        if bytes == b"\x1B[6~" { return vec![PgDown] }
-        if bytes == b"\x1B[H" { return vec![Home] }
-        if bytes == b"\x1B[F" { return vec![End] }
-        if bytes == b"\x1B[Z" { return vec![ShiftTab] };
+            // Arrow keys
+            (b"\x1B[A", Some(Up)),
+            (b"\x1BOA", Some(Up)),
+            (b"\x1B[B", Some(Down)),
+            (b"\x1BOB", Some(Down)),
+            (b"\x1B[C", None),
+            (b"\x1BOC", None),
+            (b"\x1B[D", None),
+            (b"\x1BOD", None),
 
-        let bs = if bytes.starts_with(BEGIN_PASTE) && bytes.ends_with(END_PASTE) {
-            let start = BEGIN_PASTE.len();
-            let end = bytes.len() - END_PASTE.len();
-            bytes[start..end].to_vec()
-        } else {
-            bytes
-        };
+            // Paste markers
+            (b"\x1B[200~", None),
+            (b"\x1B[201~", None),
+        ];
 
-        String::from_utf8(bs)
-            .unwrap_or("".to_owned())
-            .chars()
-            .map(Terminal::translate_char)
-            .collect()
+        let mut result = Vec::new();
+        let mut i = 0;
+
+        while i < bytes.len() {
+            let current = &bytes[i..];
+            let mut matched = false;
+
+            for &(seq, key) in SEQUENCES {
+                if current.starts_with(seq) {
+                    if let Some(k) = key {
+                        result.push(k);
+                    }
+                    i += seq.len();
+                    matched = true;
+                    break;
+                }
+            }
+
+            if !matched {
+                result.push(Terminal::translate_char(bytes[i] as char));
+                i += 1;
+            }
+        }
+
+        result
     }
 
     fn translate_char(c: char) -> Key {
@@ -359,6 +382,7 @@ impl Drop for Terminal {
 #[cfg(test)]
 mod tests {
     use super::Terminal;
+    use super::Key::*;
     use libc::{isatty, STDIN_FILENO, STDOUT_FILENO};
 
     #[test]
@@ -376,5 +400,53 @@ mod tests {
         assert!(rows > 40);
         assert!(cols < 1000);
         assert!(rows < 1000);
+    }
+
+    #[test]
+    fn translate_bytes_escape() {
+        assert_eq!(Terminal::translate_bytes(vec![27u8]), vec![Control('g')]);
+    }
+
+    #[test]
+    fn translate_bytes_down_arrow() {
+        assert_eq!(Terminal::translate_bytes(b"\x1B[A".to_vec()), vec![Up]);
+    }
+
+    #[test]
+    fn translate_bytes_down_arrows() {
+        assert_eq!(Terminal::translate_bytes(b"\x1B[A\x1B[A".to_vec()), vec![Up, Up]);
+    }
+
+    #[test]
+    fn translate_bytes_mixed() {
+        assert_eq!(Terminal::translate_bytes(b"\x1BOAa\x1BOA".to_vec()), vec![Up, Char('a'), Up]);
+        assert_eq!(Terminal::translate_bytes(b"\x1B[Aa\x1B[A".to_vec()), vec![Up, Char('a'), Up]);
+        assert_eq!(Terminal::translate_bytes(b"\x1BOAa\x1B[A".to_vec()), vec![Up, Char('a'), Up]);
+        assert_eq!(Terminal::translate_bytes(b"\x1B[Aa\x1BOA".to_vec()), vec![Up, Char('a'), Up]);
+        assert_eq!(Terminal::translate_bytes(b"a\x1BOAb".to_vec()), vec![Char('a'), Up, Char('b')]);
+        assert_eq!(Terminal::translate_bytes(b"ab\x1BOA".to_vec()), vec![Char('a'), Char('b'), Up]);
+    }
+
+    #[test]
+    fn translate_bytes_chars() {
+        assert_eq!(Terminal::translate_bytes(b"Ab".to_vec()), vec![Char('A'), Char('b')]);
+    }
+
+    #[test]
+    fn translate_bytes_paste() {
+        const BEGIN_PASTE: &[u8] = b"\x1B[200~";
+        const END_PASTE: &[u8] = b"\x1B[201~";
+
+        let input = [BEGIN_PASTE, b"a", END_PASTE].concat();
+        assert_eq!(Terminal::translate_bytes(input), vec![Char('a')]);
+
+        let input = [b"a", BEGIN_PASTE, b"b", END_PASTE, b"c"].concat();
+        assert_eq!(Terminal::translate_bytes(input), vec![Char('a'), Char('b'), Char('c')]);
+
+        assert_eq!(Terminal::translate_bytes(BEGIN_PASTE.to_vec()), vec![]);
+        assert_eq!(Terminal::translate_bytes(END_PASTE.to_vec()), vec![]);
+
+        let input = [b"a", BEGIN_PASTE, b"b"].concat();
+        assert_eq!(Terminal::translate_bytes(input), vec![Char('a'), Char('b')]);
     }
 }
