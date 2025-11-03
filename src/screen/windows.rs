@@ -22,10 +22,7 @@ use super::Key;
 use super::Key::*;
 use super::Screen;
 
-use std::thread;
 use std::slice::from_raw_parts;
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc;
 use crate::NEWLINE;
 
 macro_rules! win32 {
@@ -41,7 +38,6 @@ pub struct WindowsScreen {
     start_line: u16,
     original_console_mode: DWORD,
     original_colors: WORD,
-    input: Receiver<INPUT_RECORD>,
     conin: HANDLE,
     conout: HANDLE,
     default_cursor_info: CONSOLE_CURSOR_INFO,
@@ -114,12 +110,12 @@ impl Screen for WindowsScreen {
 
     fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut ret = Vec::new();
-        while let Ok(event) = self.input.try_recv() {
-            ret.push(WindowsScreen::translate_event(event, &mut self.shifted));
-        }
-        if ret.is_empty() {
-            let event = self.input.recv().unwrap();
-            ret.push(WindowsScreen::translate_event(event, &mut self.shifted));
+
+        let mut input_record = [INPUT_RECORD::default(); 100];
+        let mut events_read: DWORD = 0;
+        win32!(ReadConsoleInputW(self.conin, &mut input_record[0] as PINPUT_RECORD, 100, &mut events_read as LPDWORD));
+        for i in 0..events_read {
+            ret.push(WindowsScreen::translate_event(input_record[i as usize], &mut self.shifted));
         }
         ret
     }
@@ -179,7 +175,6 @@ impl WindowsScreen {
         let mut default_cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: TRUE };
         win32!(GetConsoleCursorInfo(conout, &mut default_cursor_info as PCONSOLE_CURSOR_INFO));
 
-        let rx = WindowsScreen::spawn_input_thread(conin as usize);
         let initial_pos = WindowsScreen::get_cursor_pos(conout);
         let visible_choices = min(desired_rows, rows - 1);
         let start_line = get_start_line(rows, visible_choices, initial_pos);
@@ -196,33 +191,11 @@ impl WindowsScreen {
             start_line: start_line + Self::get_buffer_offset(conout),
             original_console_mode: orig_mode,
             original_colors,
-            input: rx,
             conin,
             conout,
             default_cursor_info,
             shifted: false,
         }
-    }
-
-    // We have to take the conin handle as a usize instead of a *mut c_void in order to avoid a
-    // lecture from the compiler about how the latter type cannot be safely sent between threads.
-    // I'm not sure if a better solution exists at this time.
-    fn spawn_input_thread(conin: usize) -> Receiver<INPUT_RECORD> {
-        let (tx, rx) = mpsc::channel();
-
-        thread::spawn(move || {
-            loop {
-                let conin = conin as *mut c_void;
-                let mut input_record = INPUT_RECORD::default();
-                let mut events_read: DWORD = 0;
-                win32!(ReadConsoleInputW(conin, &mut input_record as PINPUT_RECORD, 1, &mut events_read as LPDWORD));
-                if events_read > 0 {
-                    tx.send(input_record).unwrap();
-                }
-            }
-        });
-
-        rx
     }
 
     fn write_to(conout: HANDLE, s: &str) {
