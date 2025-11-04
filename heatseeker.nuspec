@@ -10,6 +10,7 @@
     <summary>A high-performance general purpose fuzzy finder, based on selecta</summary>
     <description>A high-performance general purpose fuzzy finder, based on selecta</description>
     <projectUrl>https://github.com/rschmitt/heatseeker</projectUrl>
+    <packageSourceUrl>https://github.com/rschmitt/heatseeker</packageSourceUrl>
     <licenseUrl>https://github.com/rschmitt/heatseeker/blob/master/LICENSE</licenseUrl>
     <tags>heatseeker selecta utilities tools vim editor search fuzzy finder</tags>
     <copyright></copyright>
