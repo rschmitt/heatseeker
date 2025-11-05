@@ -1,43 +1,52 @@
 #![cfg(windows)]
 
-use winapi::ctypes::c_void;
-use winapi::shared::minwindef::{TRUE, FALSE, WORD, DWORD, LPDWORD, MAX_PATH};
-use winapi::shared::ntdef::{HANDLE, PVOID};
-use winapi::um::consoleapi::{GetConsoleMode, SetConsoleMode, ReadConsoleInputW, WriteConsoleW};
-use winapi::um::fileapi::{FILE_NAME_INFO, CreateFileA};
-use winapi::um::handleapi::INVALID_HANDLE_VALUE;
-use winapi::um::minwinbase::FileNameInfo;
-use winapi::um::processenv::GetStdHandle;
-use winapi::um::winbase::{STD_INPUT_HANDLE, GetFileInformationByHandleEx};
-use winapi::um::wincon::*;
-use winapi::um::wincontypes::{INPUT_RECORD, PINPUT_RECORD, COORD, KEY_EVENT};
-use winapi::um::winnt::{GENERIC_READ, GENERIC_WRITE, FILE_SHARE_READ};
-use std::ffi::OsString;
-use std::io;
-use std::os::windows::ffi::OsStringExt;
-use std::ptr;
-use std::iter::repeat;
 use std::cmp::min;
+use std::ffi::OsString;
+use std::iter::repeat;
+use std::mem::{size_of};
+use std::os::windows::ffi::OsStringExt;
+use std::slice::from_raw_parts;
+
+use windows::core::w;
+use windows::Win32::Foundation::{HANDLE, INVALID_HANDLE_VALUE};
+use windows::Win32::Storage::FileSystem::{
+    CreateFileW, GetFileInformationByHandleEx, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_READ,
+    FILE_GENERIC_WRITE, FILE_SHARE_READ, FILE_SHARE_WRITE, FILE_NAME_INFO,
+    FileNameInfo, OPEN_EXISTING,
+};
+use windows::Win32::System::Console::{
+    GetConsoleCursorInfo, GetConsoleMode, GetConsoleScreenBufferInfo, ReadConsoleInputW,
+    SetConsoleCursorInfo, SetConsoleCursorPosition, SetConsoleMode, SetConsoleTextAttribute,
+    WriteConsoleW, CONSOLE_CURSOR_INFO, CONSOLE_SCREEN_BUFFER_INFO, COORD, ENABLE_ECHO_INPUT,
+    ENABLE_LINE_INPUT, ENABLE_PROCESSED_INPUT, INPUT_RECORD, KEY_EVENT, CONSOLE_MODE,
+    CONSOLE_CHARACTER_ATTRIBUTES, BACKGROUND_RED, BACKGROUND_BLUE, BACKGROUND_GREEN,
+    FOREGROUND_RED
+};
+use windows::Win32::System::Console::{GetStdHandle, STD_INPUT_HANDLE};
+use windows::Win32::UI::Input::KeyboardAndMouse::{
+    VK_BACK, VK_DOWN, VK_END, VK_ESCAPE, VK_HOME, VK_NEXT, VK_PRIOR, VK_RETURN, VK_SHIFT, VK_TAB,
+    VK_UP,
+};
+
 use super::Key;
 use super::Key::*;
 use super::Screen;
-
-use std::slice::from_raw_parts;
 use crate::NEWLINE;
 
 macro_rules! win32 {
-    ($funcall:expr) => (
-        if unsafe { $funcall } == 0 {
-            panic!("Win32 call failed: {}", io::Error::last_os_error());
+    ($expr:expr) => {{
+        let result = unsafe { $expr };
+        if result.is_err() {
+            panic!("win32 call failed: {}", std::io::Error::last_os_error());
         }
-    );
+    }};
 }
 
 pub struct WindowsScreen {
     visible_choices: u16,
     start_line: u16,
-    original_console_mode: DWORD,
-    original_colors: WORD,
+    original_console_mode: CONSOLE_MODE,
+    original_colors: CONSOLE_CHARACTER_ATTRIBUTES,
     conin: HANDLE,
     conout: HANDLE,
     default_cursor_info: CONSOLE_CURSOR_INFO,
@@ -76,7 +85,7 @@ impl Screen for WindowsScreen {
     }
 
     fn hide_cursor(&mut self) {
-        let cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: FALSE };
+        let cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: false.into() };
         win32!(SetConsoleCursorInfo(self.conout, &cursor_info));
     }
 
@@ -86,7 +95,7 @@ impl Screen for WindowsScreen {
 
     fn write_red_inverted(&mut self, s: &str) {
         let orig = self.original_colors;
-        const WHITE_ON_RED: WORD = BACKGROUND_RED as WORD;
+        const WHITE_ON_RED: CONSOLE_CHARACTER_ATTRIBUTES = BACKGROUND_RED;
         self.set_colors(WHITE_ON_RED);
         self.write(s);
         self.set_colors(orig);
@@ -94,7 +103,7 @@ impl Screen for WindowsScreen {
 
     fn write_red(&mut self, s: &str) {
         let orig = self.original_colors;
-        const RED_ON_BLACK: WORD = FOREGROUND_RED as WORD;
+        const RED_ON_BLACK: CONSOLE_CHARACTER_ATTRIBUTES = FOREGROUND_RED;
         self.set_colors(RED_ON_BLACK);
         self.write(s);
         self.set_colors(orig);
@@ -102,20 +111,20 @@ impl Screen for WindowsScreen {
 
     fn write_inverted(&mut self, s: &str) {
         let orig = self.original_colors;
-        const BLACK_ON_WHITE: WORD = (BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE) as WORD;
-        self.set_colors(BLACK_ON_WHITE);
+        let black_on_white: CONSOLE_CHARACTER_ATTRIBUTES = BACKGROUND_RED
+            | BACKGROUND_GREEN | BACKGROUND_BLUE;
+        self.set_colors(black_on_white);
         self.write(s);
         self.set_colors(orig);
     }
 
     fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut ret = Vec::new();
-
         let mut input_record = [INPUT_RECORD::default(); 100];
-        let mut events_read: DWORD = 0;
-        win32!(ReadConsoleInputW(self.conin, &mut input_record[0] as PINPUT_RECORD, 100, &mut events_read as LPDWORD));
-        for i in 0..events_read {
-            ret.push(WindowsScreen::translate_event(input_record[i as usize], &mut self.shifted));
+        let mut events_read: u32 = 0;
+        win32!(ReadConsoleInputW(self.conin, &mut input_record, &mut events_read));
+        for i in 0..events_read as usize {
+            ret.push(WindowsScreen::translate_event(input_record[i], &mut self.shifted));
         }
         ret
     }
@@ -129,38 +138,45 @@ impl Drop for WindowsScreen {
 
 impl WindowsScreen {
     pub fn is_cygwin() -> bool {
-        let size = ::std::mem::size_of::<FILE_NAME_INFO>();
-        let mut name_info_bytes = vec![0u8; size + MAX_PATH];
-        let stdin: HANDLE = unsafe { GetStdHandle(STD_INPUT_HANDLE) };
-        if 0 == unsafe {
+        let size = size_of::<FILE_NAME_INFO>();
+        let mut name_info_bytes = vec![0u8; size + windows::Win32::Foundation::MAX_PATH as usize];
+        let stdin: HANDLE = unsafe { GetStdHandle(STD_INPUT_HANDLE).unwrap() };
+        let ok = unsafe {
             GetFileInformationByHandleEx(
                 stdin,
                 FileNameInfo,
-                &mut *name_info_bytes as *mut _ as *mut c_void,
-                name_info_bytes.len() as u32)
-        } {
-            // On Windows (but not Cygwin), the above call fails if stdin is interactive.
+                name_info_bytes.as_mut_ptr() as *mut _,
+                name_info_bytes.len() as u32,
+            )
+        };
+        if ok.is_err() {
+            // on native windows this typically fails for interactive stdin; treat as not cygwin/msys
             false
         } else {
-            let name = unsafe {
-                let name_info = *(name_info_bytes[0..size].as_ptr() as *const FILE_NAME_INFO);
-                let name_bytes = &name_info_bytes[size..size + name_info.FileNameLength as usize];
-                let name_u16 = from_raw_parts(name_bytes.as_ptr() as *const u16, name_bytes.len() / 2);
-                OsString::from_wide(name_u16).as_os_str().to_string_lossy().into_owned()
-            };
+            // interpret FILE_NAME_INFO { FileNameLength, FileName[...] }
+            let file_name_len_bytes =
+                unsafe { *(name_info_bytes.as_ptr() as *const FILE_NAME_INFO) }.FileNameLength
+                    as usize;
+            let name_bytes = &name_info_bytes[size..size + file_name_len_bytes];
+            let name_u16 =
+                unsafe { from_raw_parts(name_bytes.as_ptr() as *const u16, name_bytes.len() / 2) };
+            let name = OsString::from_wide(name_u16)
+                .as_os_str()
+                .to_string_lossy()
+                .into_owned();
             name.contains("msys-") || name.contains("-pty") || name.contains("cygwin-")
         }
     }
 
     pub fn open_screen(desired_rows: u16) -> WindowsScreen {
-        let mut orig_mode = Default::default();
+        let mut orig_mode: CONSOLE_MODE = Default::default();
         let conin: HANDLE;
         let conout: HANDLE;
+
         unsafe {
-            const OPEN_EXISTING: DWORD = 3;
-            let rw_access = GENERIC_READ | GENERIC_WRITE;
-            conin = CreateFileA("CONIN$\0".as_ptr() as *const i8, rw_access, FILE_SHARE_READ, ptr::null_mut(), OPEN_EXISTING, 0, ptr::null_mut());
-            conout = CreateFileA("CONOUT$\0".as_ptr() as *const i8, rw_access, FILE_SHARE_READ, ptr::null_mut(), OPEN_EXISTING, 0, ptr::null_mut());
+            let rw_access = FILE_GENERIC_READ | FILE_GENERIC_WRITE;
+            conin = CreateFileW(w!("CONIN$"), rw_access.0, FILE_SHARE_READ | FILE_SHARE_WRITE, None, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, None).unwrap();
+            conout = CreateFileW(w!("CONOUT$"), rw_access.0, FILE_SHARE_READ | FILE_SHARE_WRITE, None, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, None).unwrap();
         }
 
         if conin == INVALID_HANDLE_VALUE || conout == INVALID_HANDLE_VALUE {
@@ -172,8 +188,9 @@ impl WindowsScreen {
         win32!(GetConsoleMode(conin, &mut orig_mode));
         let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
         win32!(SetConsoleMode(conin, new_mode));
-        let mut default_cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: TRUE };
-        win32!(GetConsoleCursorInfo(conout, &mut default_cursor_info as PCONSOLE_CURSOR_INFO));
+
+        let mut default_cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: true.into() };
+        win32!(GetConsoleCursorInfo(conout, &mut default_cursor_info));
 
         let initial_pos = WindowsScreen::get_cursor_pos(conout);
         let visible_choices = min(desired_rows, rows - 1);
@@ -199,86 +216,87 @@ impl WindowsScreen {
     }
 
     fn write_to(conout: HANDLE, s: &str) {
-        let mut chars_written: DWORD = 0;
-        let utf16 = s.encode_utf16().collect::<Vec<u16>>();
-        let chars_to_write = utf16.len() as DWORD;
-        win32!(WriteConsoleW(conout, utf16.as_ptr() as PVOID, chars_to_write, &mut chars_written as LPDWORD, ptr::null_mut()));
+        let utf16: Vec<u16> = s.encode_utf16().collect();
+        let mut chars_written: u32 = 0;
+        win32!(WriteConsoleW(conout, &utf16, Some(&mut chars_written), None));
     }
 
     fn move_cursor(&mut self, line: u16, column: u16) {
         win32!(SetConsoleCursorPosition(self.conout, COORD { X: column as i16, Y: line as i16}));
     }
 
-    fn set_colors(&mut self, colors: WORD) {
+    fn set_colors(&mut self, colors: CONSOLE_CHARACTER_ATTRIBUTES) {
         win32!(SetConsoleTextAttribute(self.conout, colors));
     }
 
     fn translate_event(event: INPUT_RECORD, shifted: &mut bool) -> Key {
-        use winapi::um::winuser::*;
-        if event.EventType != KEY_EVENT {
+        if u32::from(event.EventType) != KEY_EVENT {
             return Nothing;
         }
 
-        let key_event = unsafe { event.Event.KeyEvent() };
-        let vk_code = key_event.wVirtualKeyCode as i32;
+        let key_event = unsafe { event.Event.KeyEvent };
+        let vk_code = key_event.wVirtualKeyCode;
 
-        if vk_code == VK_SHIFT {
-            *shifted = key_event.bKeyDown == TRUE;
-
+        if vk_code == VK_SHIFT.0 {
+            *shifted = key_event.bKeyDown.as_bool();
             return Nothing;
         }
 
-        if key_event.bKeyDown == FALSE {
+        if !key_event.bKeyDown.as_bool() {
             return Nothing;
         }
 
-        if vk_code == VK_UP {
+        if vk_code == VK_UP.0 {
             Up
-        } else if vk_code == VK_DOWN {
+        } else if vk_code == VK_DOWN.0 {
             Down
-        } else if vk_code == VK_PRIOR {
+        } else if vk_code == VK_PRIOR.0 {
             PgUp
-        } else if vk_code == VK_NEXT {
+        } else if vk_code == VK_NEXT.0 {
             PgDown
-        } else if vk_code == VK_HOME {
+        } else if vk_code == VK_HOME.0 {
             Home
-        } else if vk_code == VK_END {
+        } else if vk_code == VK_END.0 {
             End
-        } else if vk_code == VK_TAB {
-            if *shifted { ShiftTab } else { Tab }
-        } else if vk_code == VK_BACK {
+        } else if vk_code == VK_TAB.0 {
+            if *shifted {
+                ShiftTab
+            } else {
+                Tab
+            }
+        } else if vk_code == VK_BACK.0 {
             Backspace
-        } else if vk_code == VK_RETURN {
+        } else if vk_code == VK_RETURN.0 {
             Enter
-        } else if vk_code == VK_ESCAPE {
+        } else if vk_code == VK_ESCAPE.0 {
             Control('g')
         } else {
-            let byte = unsafe { *key_event.uChar.UnicodeChar() };
-            if byte & 96 == 0 {
-                Control(((byte + 96u16) as u8) as char)
+            let ch = unsafe { key_event.uChar.UnicodeChar };
+            if ch & 96 == 0 {
+                Control(((ch + 96u16) as u8) as char)
             } else {
-                Char((byte as u8) as char)
+                Char((ch as u8) as char)
             }
         }
     }
 
     fn get_cursor_pos(handle: HANDLE) -> (u16, u16) {
-        let mut buffer_info = Default::default();
+        let mut buffer_info = CONSOLE_SCREEN_BUFFER_INFO::default();
         win32!(GetConsoleScreenBufferInfo(handle, &mut buffer_info));
         let cursor_pos = buffer_info.dwCursorPosition;
         (cursor_pos.X as u16, cursor_pos.Y as u16)
     }
 
-    fn get_original_colors(handle: HANDLE) -> WORD {
-        let mut buffer_info = Default::default();
+    fn get_original_colors(handle: HANDLE) -> CONSOLE_CHARACTER_ATTRIBUTES {
+        let mut buffer_info = CONSOLE_SCREEN_BUFFER_INFO::default();
         win32!(GetConsoleScreenBufferInfo(handle, &mut buffer_info));
         buffer_info.wAttributes
     }
 
     fn winsize(conout: HANDLE) -> Option<(u16, u16)> {
-        let mut buffer_info = Default::default();
-        let result = unsafe { GetConsoleScreenBufferInfo(conout, &mut buffer_info) };
-        if result != 0 {
+        let mut buffer_info = CONSOLE_SCREEN_BUFFER_INFO::default();
+        let ok = unsafe { GetConsoleScreenBufferInfo(conout, &mut buffer_info) };
+        if !ok.is_err() {
             // This code specifically computes the size of the window,
             // *not* the size of the buffer (which is easily available
             // from dwSize). I got the algorithm from:
@@ -297,7 +315,7 @@ impl WindowsScreen {
     }
 
     fn get_buffer_offset(conout: HANDLE) -> u16 {
-        let mut buffer_info = Default::default();
+        let mut buffer_info = CONSOLE_SCREEN_BUFFER_INFO::default();
         win32!(GetConsoleScreenBufferInfo(conout, &mut buffer_info));
         buffer_info.srWindow.Top as u16
     }
@@ -316,25 +334,19 @@ fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u
 
 #[cfg(test)]
 mod tests {
-    use winapi::um::processenv::GetStdHandle;
-    use winapi::um::winbase::STD_OUTPUT_HANDLE;
-    use super::{WindowsScreen, get_start_line};
+    use super::{get_start_line, WindowsScreen};
+    use windows::Win32::System::Console::{GetStdHandle, STD_OUTPUT_HANDLE};
 
     #[test]
     fn winsize_test() {
-        // AppVeyor builds run without a console, making this test impossible.
+        // Skip on ci without a console
         if option_env!("APPVEYOR").is_some() || option_env!("TRAVIS").is_some() {
-            // TODO: It should be made obvious from the output that this test was skipped
             return;
         }
-        let conout = unsafe { GetStdHandle(STD_OUTPUT_HANDLE) };
-        let (cols, rows) = WindowsScreen::winsize(conout).expect("Failed to get window size!");
-        // We don't know the window size a priori, but we can at least
-        // assert that it is within some kind of sensible range.
-        assert!(cols > 40);
-        assert!(rows > 10);
-        assert!(cols < 1000);
-        assert!(rows < 1000);
+        let conout = unsafe { GetStdHandle(STD_OUTPUT_HANDLE).unwrap() };
+        let (cols, rows) = WindowsScreen::winsize(conout).expect("failed to get window size");
+        assert!(cols > 40 && cols < 1000);
+        assert!(rows > 10 && rows < 1000);
     }
 
     #[test]
