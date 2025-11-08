@@ -1,8 +1,5 @@
-#![cfg(windows)]
-
 use std::cmp::min;
 use std::ffi::OsString;
-use std::iter::repeat;
 use std::mem::size_of;
 use std::os::windows::ffi::OsStringExt;
 use std::slice::from_raw_parts;
@@ -68,9 +65,7 @@ impl Screen for WindowsScreen {
     }
 
     fn blank_screen(&mut self) {
-        let blank_line = repeat(' ')
-            .take((self.width() - 1) as usize)
-            .collect::<String>();
+        let blank_line = " ".repeat((self.width() - 1) as usize);
         let start_line = self.start_line;
         self.move_cursor(start_line, 0);
         for _ in 0..self.visible_choices {
@@ -131,9 +126,9 @@ impl Screen for WindowsScreen {
             &mut input_record,
             &mut events_read
         ));
-        for i in 0..events_read as usize {
+        for rec in input_record {
             ret.push(WindowsScreen::translate_event(
-                input_record[i],
+                rec,
                 &mut self.shifted,
             ));
         }
@@ -335,8 +330,8 @@ impl WindowsScreen {
 
     fn winsize(conout: HANDLE) -> Option<(u16, u16)> {
         let mut buffer_info = CONSOLE_SCREEN_BUFFER_INFO::default();
-        let ok = unsafe { GetConsoleScreenBufferInfo(conout, &mut buffer_info) };
-        if !ok.is_err() {
+        let result = unsafe { GetConsoleScreenBufferInfo(conout, &mut buffer_info) };
+        if result.is_ok() {
             // This code specifically computes the size of the window,
             // *not* the size of the buffer (which is easily available
             // from dwSize). I got the algorithm from:

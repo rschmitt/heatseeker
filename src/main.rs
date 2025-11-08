@@ -15,7 +15,7 @@ use std::io::{BufRead, stdin};
 use unicode_width::UnicodeWidthStr;
 
 #[cfg(windows)]
-pub const NEWLINE: &'static str = "\r\n";
+pub const NEWLINE: &str = "\r\n";
 #[cfg(not(windows))]
 pub const NEWLINE: &str = "\n";
 
