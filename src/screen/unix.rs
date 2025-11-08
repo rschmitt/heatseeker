@@ -13,11 +13,10 @@ use std::cmp::min;
 use crate::ansi;
 use crate::NEWLINE;
 
-use std::mem;
 use std::thread;
 use std::sync::mpsc::Sender;
 use std::sync::mpsc::Receiver;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::mpsc;
 
 use ::libc::{dup, SIGINT, SIGWINCH, c_int, c_ushort, c_ulong};
 use crate::screen::Screen;
@@ -151,10 +150,6 @@ impl UnixScreen {
     pub fn blank_entire_screen(&mut self){
         self.tty.write(&ansi::blank_screen());
     }
-
-    fn more_bytes_needed(bytes: &[u8]) -> bool {
-        matches!(str::from_utf8(bytes), Err(_))
-    }
 }
 
 struct Terminal {
@@ -165,26 +160,11 @@ struct Terminal {
     original_stty_state: Vec<u8>,
 }
 
-static mut GLOBAL_TX: *const Arc<Mutex<Sender<Vec<u8>>>> = 0 as *const Arc<Mutex<Sender<Vec<u8>>>>;
-
-fn set_global_tx(tx: Sender<Vec<u8>>) {
-    unsafe {
-        let singleton = Arc::new(Mutex::new(tx));
-        GLOBAL_TX = mem::transmute(Box::new(singleton));
-    }
-}
-
-fn get_global_tx() -> Sender<Vec<u8>> {
-    let singleton = unsafe { (*GLOBAL_TX).clone() };
-    let tx = singleton.lock().unwrap();
-    tx.clone()
-}
-
-fn start_sigwinch_handler() {
+fn start_sigwinch_handler(tx: Sender<Vec<u8>>) {
     let mut signals = signal_hook::iterator::Signals::new([SIGWINCH, SIGINT]).unwrap();
     thread::spawn(move || {
         for signal in signals.forever() {
-            get_global_tx().send(vec![128 + signal as u8]).unwrap();
+            tx.send(vec![128 + signal as u8]).unwrap();
         }
     });
 }
@@ -196,9 +176,8 @@ impl Terminal {
         let output_file = OpenOptions::new().write(true).open(term_path).unwrap();
         let input_fd = input_file.as_raw_fd();
         let (tx, rx) = mpsc::channel();
-        set_global_tx(tx);
 
-        start_sigwinch_handler();
+        start_sigwinch_handler(tx.clone());
 
         let mut ret = Terminal {
             input: rx,
@@ -214,7 +193,6 @@ impl Terminal {
         thread::spawn(move || {
             loop {
                 let mut buf = [0; 255];
-                let tx = get_global_tx();
                 if let Ok(length) = input_file.read(&mut buf) {
                     tx.send(buf[0..length].to_vec()).unwrap();
                 } else {
