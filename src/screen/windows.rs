@@ -3,30 +3,29 @@
 use std::cmp::min;
 use std::ffi::OsString;
 use std::iter::repeat;
-use std::mem::{size_of};
+use std::mem::size_of;
 use std::os::windows::ffi::OsStringExt;
 use std::slice::from_raw_parts;
 
-use windows::core::w;
 use windows::Win32::Foundation::{HANDLE, INVALID_HANDLE_VALUE};
 use windows::Win32::Storage::FileSystem::{
-    CreateFileW, GetFileInformationByHandleEx, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_READ,
-    FILE_GENERIC_WRITE, FILE_SHARE_READ, FILE_SHARE_WRITE, FILE_NAME_INFO,
-    FileNameInfo, OPEN_EXISTING,
+    CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_READ, FILE_GENERIC_WRITE, FILE_NAME_INFO,
+    FILE_SHARE_READ, FILE_SHARE_WRITE, FileNameInfo, GetFileInformationByHandleEx, OPEN_EXISTING,
 };
 use windows::Win32::System::Console::{
-    GetConsoleCursorInfo, GetConsoleMode, GetConsoleScreenBufferInfo, ReadConsoleInputW,
+    BACKGROUND_BLUE, BACKGROUND_GREEN, BACKGROUND_RED, CONSOLE_CHARACTER_ATTRIBUTES,
+    CONSOLE_CURSOR_INFO, CONSOLE_MODE, CONSOLE_SCREEN_BUFFER_INFO, COORD, ENABLE_ECHO_INPUT,
+    ENABLE_LINE_INPUT, ENABLE_PROCESSED_INPUT, FOREGROUND_RED, GetConsoleCursorInfo,
+    GetConsoleMode, GetConsoleScreenBufferInfo, INPUT_RECORD, KEY_EVENT, ReadConsoleInputW,
     SetConsoleCursorInfo, SetConsoleCursorPosition, SetConsoleMode, SetConsoleTextAttribute,
-    WriteConsoleW, CONSOLE_CURSOR_INFO, CONSOLE_SCREEN_BUFFER_INFO, COORD, ENABLE_ECHO_INPUT,
-    ENABLE_LINE_INPUT, ENABLE_PROCESSED_INPUT, INPUT_RECORD, KEY_EVENT, CONSOLE_MODE,
-    CONSOLE_CHARACTER_ATTRIBUTES, BACKGROUND_RED, BACKGROUND_BLUE, BACKGROUND_GREEN,
-    FOREGROUND_RED
+    WriteConsoleW,
 };
 use windows::Win32::System::Console::{GetStdHandle, STD_INPUT_HANDLE};
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     VK_BACK, VK_DOWN, VK_END, VK_ESCAPE, VK_HOME, VK_NEXT, VK_PRIOR, VK_RETURN, VK_SHIFT, VK_TAB,
     VK_UP,
 };
+use windows::core::w;
 
 use super::Key;
 use super::Key::*;
@@ -69,7 +68,9 @@ impl Screen for WindowsScreen {
     }
 
     fn blank_screen(&mut self) {
-        let blank_line = repeat(' ').take((self.width() - 1) as usize).collect::<String>();
+        let blank_line = repeat(' ')
+            .take((self.width() - 1) as usize)
+            .collect::<String>();
         let start_line = self.start_line;
         self.move_cursor(start_line, 0);
         for _ in 0..self.visible_choices {
@@ -85,7 +86,10 @@ impl Screen for WindowsScreen {
     }
 
     fn hide_cursor(&mut self) {
-        let cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: false.into() };
+        let cursor_info = CONSOLE_CURSOR_INFO {
+            dwSize: 100,
+            bVisible: false.into(),
+        };
         win32!(SetConsoleCursorInfo(self.conout, &cursor_info));
     }
 
@@ -111,8 +115,8 @@ impl Screen for WindowsScreen {
 
     fn write_inverted(&mut self, s: &str) {
         let orig = self.original_colors;
-        let black_on_white: CONSOLE_CHARACTER_ATTRIBUTES = BACKGROUND_RED
-            | BACKGROUND_GREEN | BACKGROUND_BLUE;
+        let black_on_white: CONSOLE_CHARACTER_ATTRIBUTES =
+            BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE;
         self.set_colors(black_on_white);
         self.write(s);
         self.set_colors(orig);
@@ -122,9 +126,16 @@ impl Screen for WindowsScreen {
         let mut ret = Vec::new();
         let mut input_record = [INPUT_RECORD::default(); 100];
         let mut events_read: u32 = 0;
-        win32!(ReadConsoleInputW(self.conin, &mut input_record, &mut events_read));
+        win32!(ReadConsoleInputW(
+            self.conin,
+            &mut input_record,
+            &mut events_read
+        ));
         for i in 0..events_read as usize {
-            ret.push(WindowsScreen::translate_event(input_record[i], &mut self.shifted));
+            ret.push(WindowsScreen::translate_event(
+                input_record[i],
+                &mut self.shifted,
+            ));
         }
         ret
     }
@@ -175,8 +186,26 @@ impl WindowsScreen {
 
         unsafe {
             let rw_access = FILE_GENERIC_READ | FILE_GENERIC_WRITE;
-            conin = CreateFileW(w!("CONIN$"), rw_access.0, FILE_SHARE_READ | FILE_SHARE_WRITE, None, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, None).unwrap();
-            conout = CreateFileW(w!("CONOUT$"), rw_access.0, FILE_SHARE_READ | FILE_SHARE_WRITE, None, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, None).unwrap();
+            conin = CreateFileW(
+                w!("CONIN$"),
+                rw_access.0,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                None,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                None,
+            )
+            .unwrap();
+            conout = CreateFileW(
+                w!("CONOUT$"),
+                rw_access.0,
+                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                None,
+                OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL,
+                None,
+            )
+            .unwrap();
         }
 
         if conin == INVALID_HANDLE_VALUE || conout == INVALID_HANDLE_VALUE {
@@ -186,10 +215,14 @@ impl WindowsScreen {
         let (_, rows) = WindowsScreen::winsize(conout).unwrap();
 
         win32!(GetConsoleMode(conin, &mut orig_mode));
-        let new_mode = orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
+        let new_mode =
+            orig_mode & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT | ENABLE_PROCESSED_INPUT);
         win32!(SetConsoleMode(conin, new_mode));
 
-        let mut default_cursor_info = CONSOLE_CURSOR_INFO { dwSize: 100, bVisible: true.into() };
+        let mut default_cursor_info = CONSOLE_CURSOR_INFO {
+            dwSize: 100,
+            bVisible: true.into(),
+        };
         win32!(GetConsoleCursorInfo(conout, &mut default_cursor_info));
 
         let initial_pos = WindowsScreen::get_cursor_pos(conout);
@@ -218,11 +251,22 @@ impl WindowsScreen {
     fn write_to(conout: HANDLE, s: &str) {
         let utf16: Vec<u16> = s.encode_utf16().collect();
         let mut chars_written: u32 = 0;
-        win32!(WriteConsoleW(conout, &utf16, Some(&mut chars_written), None));
+        win32!(WriteConsoleW(
+            conout,
+            &utf16,
+            Some(&mut chars_written),
+            None
+        ));
     }
 
     fn move_cursor(&mut self, line: u16, column: u16) {
-        win32!(SetConsoleCursorPosition(self.conout, COORD { X: column as i16, Y: line as i16}));
+        win32!(SetConsoleCursorPosition(
+            self.conout,
+            COORD {
+                X: column as i16,
+                Y: line as i16
+            }
+        ));
     }
 
     fn set_colors(&mut self, colors: CONSOLE_CHARACTER_ATTRIBUTES) {
@@ -259,11 +303,7 @@ impl WindowsScreen {
         } else if vk_code == VK_END.0 {
             End
         } else if vk_code == VK_TAB.0 {
-            if *shifted {
-                ShiftTab
-            } else {
-                Tab
-            }
+            if *shifted { ShiftTab } else { Tab }
         } else if vk_code == VK_BACK.0 {
             Backspace
         } else if vk_code == VK_RETURN.0 {
@@ -324,7 +364,11 @@ impl WindowsScreen {
 fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u16 {
     let bottom_most_line = rows - visible_choices - 1;
     let (initial_x, initial_y) = initial_pos;
-    let line_under_cursor = if initial_x == 0 { initial_y } else { initial_y + 1 };
+    let line_under_cursor = if initial_x == 0 {
+        initial_y
+    } else {
+        initial_y + 1
+    };
     if line_under_cursor + 1 + visible_choices > rows {
         bottom_most_line
     } else {
@@ -334,7 +378,7 @@ fn get_start_line(rows: u16, visible_choices: u16, initial_pos: (u16, u16)) -> u
 
 #[cfg(test)]
 mod tests {
-    use super::{get_start_line, WindowsScreen};
+    use super::{WindowsScreen, get_start_line};
     use windows::Win32::System::Console::{GetStdHandle, STD_OUTPUT_HANDLE};
 
     #[test]

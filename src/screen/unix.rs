@@ -2,24 +2,24 @@
 
 use super::Key;
 use super::Key::*;
-use std::io::{Read, Write};
+use crate::NEWLINE;
+use crate::ansi;
+use std::cmp::min;
 use std::fs::{File, OpenOptions};
+use std::io::{Read, Write};
 use std::os::unix::io::*;
 use std::path::*;
 use std::process::Command;
 use std::process::Stdio;
 use std::str;
-use std::cmp::min;
-use crate::ansi;
-use crate::NEWLINE;
 
-use std::thread;
-use std::sync::mpsc::Sender;
-use std::sync::mpsc::Receiver;
 use std::sync::mpsc;
+use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
+use std::thread;
 
-use ::libc::{dup, SIGINT, SIGWINCH, c_int, c_ushort, c_ulong};
 use crate::screen::Screen;
+use ::libc::{SIGINT, SIGWINCH, c_int, c_ulong, c_ushort, dup};
 
 pub struct UnixScreen {
     tty: Terminal,
@@ -147,7 +147,7 @@ impl UnixScreen {
         self.tty.write(&ansi::cursor_up(num_lines));
     }
 
-    pub fn blank_entire_screen(&mut self){
+    pub fn blank_entire_screen(&mut self) {
         self.tty.write(&ansi::blank_screen());
     }
 }
@@ -228,7 +228,12 @@ impl Terminal {
 
         let mut buf = Vec::new();
         if exit.unwrap().success() {
-            process.stdout.as_mut().unwrap().read_to_end(&mut buf).unwrap();
+            process
+                .stdout
+                .as_mut()
+                .unwrap()
+                .read_to_end(&mut buf)
+                .unwrap();
             let mut str = String::from_utf8(buf).unwrap();
 
             // The output from `stty -g` may include a newline, which we have to strip off. Otherwise,
@@ -238,8 +243,16 @@ impl Terminal {
 
             str.into_bytes()
         } else {
-            process.stderr.as_mut().unwrap().read_to_end(&mut buf).unwrap();
-            panic!("stty invocation failed: {}", String::from_utf8(buf).unwrap());
+            process
+                .stderr
+                .as_mut()
+                .unwrap()
+                .read_to_end(&mut buf)
+                .unwrap();
+            panic!(
+                "stty invocation failed: {}",
+                String::from_utf8(buf).unwrap()
+            );
         }
     }
 
@@ -250,7 +263,6 @@ impl Terminal {
             (b"\x1B[H", Some(Home)),
             (b"\x1B[F", Some(End)),
             (b"\x1B[Z", Some(ShiftTab)),
-
             // Arrow keys
             (b"\x1B[A", Some(Up)),
             (b"\x1BOA", Some(Up)),
@@ -260,7 +272,6 @@ impl Terminal {
             (b"\x1BOC", None),
             (b"\x1B[D", None),
             (b"\x1BOD", None),
-
             // Paste markers
             (b"\x1B[200~", None),
             (b"\x1B[201~", None),
@@ -326,8 +337,15 @@ impl Terminal {
     }
 
     fn winsize(&self) -> Option<(u16, u16)> {
-        unsafe extern "C" { fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int; }
-        #[cfg(any(target_os = "macos", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        unsafe extern "C" {
+            fn ioctl(fd: c_int, request: c_ulong, ...) -> c_int;
+        }
+        #[cfg(any(
+            target_os = "macos",
+            target_os = "freebsd",
+            target_os = "netbsd",
+            target_os = "openbsd"
+        ))]
         const TIOCGWINSZ: c_ulong = 0x40087468;
 
         #[cfg(any(target_os = "linux", target_os = "android"))]
@@ -341,7 +359,12 @@ impl Terminal {
             y: c_ushort,
         }
 
-        let mut size = TermSize { rows: 0, cols: 0, x: 0, y: 0 };
+        let mut size = TermSize {
+            rows: 0,
+            cols: 0,
+            x: 0,
+            y: 0,
+        };
         if unsafe { ioctl(self.output.as_raw_fd(), TIOCGWINSZ, &mut size) } == 0 {
             Some((size.cols, size.rows))
         } else {
@@ -359,9 +382,9 @@ impl Drop for Terminal {
 
 #[cfg(test)]
 mod tests {
-    use super::Terminal;
     use super::Key::*;
-    use libc::{isatty, STDIN_FILENO, STDOUT_FILENO};
+    use super::Terminal;
+    use libc::{STDIN_FILENO, STDOUT_FILENO, isatty};
 
     #[test]
     fn winsize_test() {
@@ -392,22 +415,46 @@ mod tests {
 
     #[test]
     fn translate_bytes_down_arrows() {
-        assert_eq!(Terminal::translate_bytes(b"\x1B[A\x1B[A".to_vec()), vec![Up, Up]);
+        assert_eq!(
+            Terminal::translate_bytes(b"\x1B[A\x1B[A".to_vec()),
+            vec![Up, Up]
+        );
     }
 
     #[test]
     fn translate_bytes_mixed() {
-        assert_eq!(Terminal::translate_bytes(b"\x1BOAa\x1BOA".to_vec()), vec![Up, Char('a'), Up]);
-        assert_eq!(Terminal::translate_bytes(b"\x1B[Aa\x1B[A".to_vec()), vec![Up, Char('a'), Up]);
-        assert_eq!(Terminal::translate_bytes(b"\x1BOAa\x1B[A".to_vec()), vec![Up, Char('a'), Up]);
-        assert_eq!(Terminal::translate_bytes(b"\x1B[Aa\x1BOA".to_vec()), vec![Up, Char('a'), Up]);
-        assert_eq!(Terminal::translate_bytes(b"a\x1BOAb".to_vec()), vec![Char('a'), Up, Char('b')]);
-        assert_eq!(Terminal::translate_bytes(b"ab\x1BOA".to_vec()), vec![Char('a'), Char('b'), Up]);
+        assert_eq!(
+            Terminal::translate_bytes(b"\x1BOAa\x1BOA".to_vec()),
+            vec![Up, Char('a'), Up]
+        );
+        assert_eq!(
+            Terminal::translate_bytes(b"\x1B[Aa\x1B[A".to_vec()),
+            vec![Up, Char('a'), Up]
+        );
+        assert_eq!(
+            Terminal::translate_bytes(b"\x1BOAa\x1B[A".to_vec()),
+            vec![Up, Char('a'), Up]
+        );
+        assert_eq!(
+            Terminal::translate_bytes(b"\x1B[Aa\x1BOA".to_vec()),
+            vec![Up, Char('a'), Up]
+        );
+        assert_eq!(
+            Terminal::translate_bytes(b"a\x1BOAb".to_vec()),
+            vec![Char('a'), Up, Char('b')]
+        );
+        assert_eq!(
+            Terminal::translate_bytes(b"ab\x1BOA".to_vec()),
+            vec![Char('a'), Char('b'), Up]
+        );
     }
 
     #[test]
     fn translate_bytes_chars() {
-        assert_eq!(Terminal::translate_bytes(b"Ab".to_vec()), vec![Char('A'), Char('b')]);
+        assert_eq!(
+            Terminal::translate_bytes(b"Ab".to_vec()),
+            vec![Char('A'), Char('b')]
+        );
     }
 
     #[test]
@@ -419,7 +466,10 @@ mod tests {
         assert_eq!(Terminal::translate_bytes(input), vec![Char('a')]);
 
         let input = [b"a", BEGIN_PASTE, b"b", END_PASTE, b"c"].concat();
-        assert_eq!(Terminal::translate_bytes(input), vec![Char('a'), Char('b'), Char('c')]);
+        assert_eq!(
+            Terminal::translate_bytes(input),
+            vec![Char('a'), Char('b'), Char('c')]
+        );
 
         assert_eq!(Terminal::translate_bytes(BEGIN_PASTE.to_vec()), vec![]);
         assert_eq!(Terminal::translate_bytes(END_PASTE.to_vec()), vec![]);

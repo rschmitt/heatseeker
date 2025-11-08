@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 
-#[cfg(not(windows))] use unix::UnixScreen;
-#[cfg(windows)] pub use windows::WindowsScreen;
+#[cfg(not(windows))]
+use unix::UnixScreen;
+#[cfg(windows)]
+pub use windows::WindowsScreen;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Key {
@@ -37,7 +39,7 @@ pub trait Screen {
 #[cfg(windows)]
 pub fn new(desired_rows: u16) -> Box<dyn Screen> {
     if WindowsScreen::is_cygwin() {
-//        UnixScreen::open_screen(desired_rows)
+        //        UnixScreen::open_screen(desired_rows)
         panic!("This executable does not support Cygwin.");
     } else {
         Box::from(WindowsScreen::open_screen(desired_rows))
@@ -49,5 +51,7 @@ pub fn new(desired_rows: u16) -> Box<dyn Screen> {
     Box::from(UnixScreen::open_screen(desired_rows))
 }
 
-#[cfg(not(windows))] mod unix;
-#[cfg(windows)] mod windows;
+#[cfg(not(windows))]
+mod unix;
+#[cfg(windows)]
+mod windows;

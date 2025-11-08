@@ -1,20 +1,23 @@
+#[cfg(not(windows))]
+mod ansi;
 mod matching;
 mod screen;
-#[cfg(not(windows))] mod ansi;
 
+use self::SearchState::*;
 use clap::Parser;
-use std::cmp::min;
 use indexmap::IndexSet;
-use std::env;
-use std::io::{stdin, BufRead};
-use screen::Screen;
 use screen::Key;
 use screen::Key::*;
-use self::SearchState::*;
+use screen::Screen;
+use std::cmp::min;
+use std::env;
+use std::io::{BufRead, stdin};
 use unicode_width::UnicodeWidthStr;
 
-#[cfg(windows)] pub const NEWLINE: &'static str = "\r\n";
-#[cfg(not(windows))] pub const NEWLINE: &str = "\n";
+#[cfg(windows)]
+pub const NEWLINE: &'static str = "\r\n";
+#[cfg(not(windows))]
+pub const NEWLINE: &str = "\n";
 
 mod built_info {
     include!(concat!(env!("OUT_DIR"), "/built.rs"));
@@ -58,9 +61,20 @@ fn main() {
 
     if args.version {
         if let Some(hash) = built_info::GIT_COMMIT_HASH_SHORT {
-            println!("heatseeker {}-{} (built {} for {})", built_info::PKG_VERSION, hash, built_info::BUILT_TIME_UTC, built_info::TARGET);
+            println!(
+                "heatseeker {}-{} (built {} for {})",
+                built_info::PKG_VERSION,
+                hash,
+                built_info::BUILT_TIME_UTC,
+                built_info::TARGET
+            );
         } else {
-            println!("heatseeker {} (built {} for {})", built_info::PKG_VERSION, built_info::BUILT_TIME_UTC, built_info::TARGET);
+            println!(
+                "heatseeker {} (built {} for {})",
+                built_info::PKG_VERSION,
+                built_info::BUILT_TIME_UTC,
+                built_info::TARGET
+            );
         }
         return;
     }
@@ -78,7 +92,12 @@ fn main() {
     }
 }
 
-fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_only: bool) -> String {
+fn event_loop(
+    desired_rows: u16,
+    choices: &[&str],
+    initial_search: &str,
+    filter_only: bool,
+) -> String {
     let mut search = Search::new(choices, initial_search.to_string(), filter_only);
     let mut screen = screen::new(desired_rows);
 
@@ -103,28 +122,23 @@ fn event_loop(desired_rows: u16, choices: &[&str], initial_search: &str, filter_
 fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
     match *key {
         Char(x) => search.append(x),
-        Backspace |
-        Control('h') => search.backspace(),
+        Backspace | Control('h') => search.backspace(),
         Control('w') => search.delete_word(),
         Control('u') => search.clear_query(),
         Control('r') => std::panic!("This is a test backtrace"),
-        Control('c') |
-        Control('g') => search.cancel(),
-        Control('t') => { search.toggle_selection(); search.down(visible_choices); },
-        Control('p') |
-        Up |
-        ShiftTab => search.up(visible_choices),
-        Control('n') |
-        Down |
-        Tab => search.down(visible_choices),
+        Control('c') | Control('g') => search.cancel(),
+        Control('t') => {
+            search.toggle_selection();
+            search.down(visible_choices);
+        }
+        Control('p') | Up | ShiftTab => search.up(visible_choices),
+        Control('n') | Down | Tab => search.down(visible_choices),
         Home => search.home(),
         End => search.end(visible_choices),
         Enter => search.done(),
-        Control('b') |
-        PgUp => search.pgup(visible_choices),
-        Control('f') |
-        PgDown => search.pgdown(visible_choices),
-        _ => {},
+        Control('b') | PgUp => search.pgup(visible_choices),
+        Control('f') | PgDown => search.pgdown(visible_choices),
+        _ => {}
     }
 }
 
@@ -264,7 +278,11 @@ impl<'a> Search<'a> {
 
     fn toggle_selection(&mut self) {
         self.recompute_matches();
-        let selection = self.matches.get(self.scroll_offset + self.cursor_index).unwrap_or(&"").to_string();
+        let selection = self
+            .matches
+            .get(self.scroll_offset + self.cursor_index)
+            .unwrap_or(&"")
+            .to_string();
         if self.selections.contains(&selection) {
             self.selections.shift_remove(&selection);
         } else {
@@ -281,7 +299,11 @@ impl<'a> Search<'a> {
             }
             if ret.is_empty() {
                 self.recompute_matches();
-                let selection = self.matches.get(self.scroll_offset + self.cursor_index).unwrap_or(&"").to_string();
+                let selection = self
+                    .matches
+                    .get(self.scroll_offset + self.cursor_index)
+                    .unwrap_or(&"")
+                    .to_string();
                 ret.push_str(&selection);
             }
         }
@@ -300,16 +322,36 @@ impl<'a> Search<'a> {
 fn draw_screen(screen: &mut dyn Screen, search: &Search) {
     screen.hide_cursor();
     screen.blank_screen();
-    screen.write(&format!("> {} ({}/{} choices){}", search.query, search.matches.len(), search.choices.len(), NEWLINE));
+    screen.write(&format!(
+        "> {} ({}/{} choices){}",
+        search.query,
+        search.matches.len(),
+        search.choices.len(),
+        NEWLINE
+    ));
 
-    print_matches(screen, &search.matches, &search.query, search.scroll_offset, search.cursor_index, &search.selections);
+    print_matches(
+        screen,
+        &search.matches,
+        &search.query,
+        search.scroll_offset,
+        search.cursor_index,
+        &search.selections,
+    );
 
     let query_str: &str = &search.query;
     screen.move_cursor_to_prompt_line(2 + UnicodeWidthStr::width(query_str) as u16);
     screen.show_cursor();
 }
 
-fn print_matches(screen: &mut dyn Screen, matches: &[&str], query: &str, scroll_offset: usize, cursor_index: usize, selections: &IndexSet<String>) {
+fn print_matches(
+    screen: &mut dyn Screen,
+    matches: &[&str],
+    query: &str,
+    scroll_offset: usize,
+    cursor_index: usize,
+    selections: &IndexSet<String>,
+) {
     let mut i = 1;
     for choice in matches[scroll_offset..].iter() {
         let indices = matching::visual_score(choice, query);
@@ -323,13 +365,24 @@ fn print_matches(screen: &mut dyn Screen, matches: &[&str], query: &str, scroll_
                 annotated_choice.push('✓');
             }
         }
-        print_match(&annotated_choice, &indices, max_width, &mut |s, highlight| {
-            if i == cursor_index + 1 {
-                if highlight { screen.write_red_inverted(s); } else { screen.write_inverted(s); }
-            } else if highlight {
-                screen.write_red(s);
-            } else { screen.write(s); }
-        });
+        print_match(
+            &annotated_choice,
+            &indices,
+            max_width,
+            &mut |s, highlight| {
+                if i == cursor_index + 1 {
+                    if highlight {
+                        screen.write_red_inverted(s);
+                    } else {
+                        screen.write_inverted(s);
+                    }
+                } else if highlight {
+                    screen.write_red(s);
+                } else {
+                    screen.write(s);
+                }
+            },
+        );
         if i >= screen.visible_choices() as usize {
             return;
         }
@@ -338,9 +391,16 @@ fn print_matches(screen: &mut dyn Screen, matches: &[&str], query: &str, scroll_
     }
 }
 
-fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut dyn FnMut(&str, bool)) {
-    #[cfg(windows)] const MARGIN: u16 = 1;
-    #[cfg(not(windows))] const MARGIN: u16 = 0;
+fn print_match(
+    choice: &str,
+    indices: &[usize],
+    max_width: u16,
+    writer: &mut dyn FnMut(&str, bool),
+) {
+    #[cfg(windows)]
+    const MARGIN: u16 = 1;
+    #[cfg(not(windows))]
+    const MARGIN: u16 = 0;
     let max_width = max_width - MARGIN;
     let chars_in_choice = choice.chars().count();
     let mut chars_to_draw = min(chars_in_choice, max_width as usize);
@@ -354,7 +414,9 @@ fn print_match(choice: &str, indices: &[usize], max_width: u16, writer: &mut dyn
             return;
         }
         writer(slice_chars(choice, last_idx, idx), false);
-        if idx == chars_to_draw { return }
+        if idx == chars_to_draw {
+            return;
+        }
         writer(slice_chars(choice, idx, idx + 1), true);
         last_idx = idx + 1;
     }
@@ -372,10 +434,12 @@ fn read_choices() -> Vec<String> {
         let mut s = String::new();
         match stdin.read_line(&mut s) {
             Ok(_) => {
-                if s.is_empty() { break; }
+                if s.is_empty() {
+                    break;
+                }
                 trim(&mut s);
                 lines.push(s);
-            },
+            }
             Err(e) => {
                 if first_error.is_some() {
                     suppressed += 1;
@@ -386,7 +450,11 @@ fn read_choices() -> Vec<String> {
         }
     }
     if first_error.is_some() {
-        eprintln!("Warning: Failed to parse one or more lines (\"{}\"); {} additional error(s) suppressed", first_error.unwrap(), suppressed);
+        eprintln!(
+            "Warning: Failed to parse one or more lines (\"{}\"); {} additional error(s) suppressed",
+            first_error.unwrap(),
+            suppressed
+        );
     }
 
     lines
@@ -424,23 +492,32 @@ fn slice_chars(s: &str, begin: usize, end: usize) -> &str {
     // This could be even more efficient by not decoding,
     // only finding the char boundaries
     for (idx, _) in s.char_indices() {
-        if count == begin { begin_byte = Some(idx); }
-        if count == end { end_byte = Some(idx); break; }
+        if count == begin {
+            begin_byte = Some(idx);
+        }
+        if count == end {
+            end_byte = Some(idx);
+            break;
+        }
         count += 1;
     }
-    if begin_byte.is_none() && count == begin { begin_byte = Some(s.len()) }
-    if end_byte.is_none() && count == end { end_byte = Some(s.len()) }
+    if begin_byte.is_none() && count == begin {
+        begin_byte = Some(s.len())
+    }
+    if end_byte.is_none() && count == end {
+        end_byte = Some(s.len())
+    }
 
     match (begin_byte, end_byte) {
         (None, _) => panic!("slice_chars: `begin` is beyond end of string"),
         (_, None) => panic!("slice_chars: `end` is beyond end of string"),
-        (Some(a), Some(b)) => unsafe { s.get_unchecked(a..b) }
+        (Some(a), Some(b)) => unsafe { s.get_unchecked(a..b) },
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{trim, delete_last_word};
+    use super::{delete_last_word, trim};
 
     #[test]
     fn trim_test() {

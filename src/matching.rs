@@ -2,9 +2,9 @@ use rayon::prelude::*;
 use std::cmp::*;
 
 macro_rules! chars {
-    ($str:expr) => (
+    ($str:expr) => {
         &$str.chars().collect::<Vec<char>>()
-    );
+    };
 }
 
 #[derive(PartialEq)]
@@ -25,11 +25,7 @@ impl PartialOrd for ScoredChoice {
     }
 }
 
-pub fn compute_matches<'a>(
-    choices: &[&'a str],
-    query: &str,
-    filter_only: bool,
-) -> Vec<&'a str> {
+pub fn compute_matches<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
     let par_choices = choices.par_iter().with_min_len(100);
 
     if filter_only {
@@ -125,7 +121,9 @@ fn get_longest_match(string: &[char], query: &[char]) -> Option<(usize, usize)> 
         if let Some(last_index) = find_end_of_match(string, rest, i) {
             let last_bounds = Some((i, last_index));
             let last_match_len = get_match_length(last_bounds).unwrap();
-            if current_bounds.is_none() || last_match_len < get_match_length(current_bounds).unwrap() {
+            if current_bounds.is_none()
+                || last_match_len < get_match_length(current_bounds).unwrap()
+            {
                 current_bounds = last_bounds;
                 if last_match_len == smallest_possible_match {
                     break;
@@ -158,7 +156,11 @@ fn find_end_of_match(string: &[char], rest_of_query: &[char], first_index: usize
     get_match_indices(string, rest_of_query, first_index).map(|indices| indices[indices.len() - 1])
 }
 
-fn get_match_indices(string: &[char], rest_of_query: &[char], first_index: usize) -> Option<Vec<usize>> {
+fn get_match_indices(
+    string: &[char],
+    rest_of_query: &[char],
+    first_index: usize,
+) -> Option<Vec<usize>> {
     let mut ret = Vec::new();
     let mut last_index = first_index + 1;
     ret.push(first_index);
@@ -200,9 +202,18 @@ mod tests {
 
     #[test]
     fn get_match_indices_test() {
-        assert_eq!(get_match_indices(chars!("asdf"), chars!("sdf"), 0).unwrap(), vec![0, 1, 2, 3]);
-        assert_eq!(get_match_indices(chars!("aoeuasdf"), chars!("sdf"), 4).unwrap(), vec![4, 5, 6, 7]);
-        assert_eq!(get_match_indices(chars!(" a s d f"), chars!("sdf"), 1).unwrap(), vec![1, 3, 5, 7]);
+        assert_eq!(
+            get_match_indices(chars!("asdf"), chars!("sdf"), 0).unwrap(),
+            vec![0, 1, 2, 3]
+        );
+        assert_eq!(
+            get_match_indices(chars!("aoeuasdf"), chars!("sdf"), 4).unwrap(),
+            vec![4, 5, 6, 7]
+        );
+        assert_eq!(
+            get_match_indices(chars!(" a s d f"), chars!("sdf"), 1).unwrap(),
+            vec![1, 3, 5, 7]
+        );
     }
 
     #[test]
@@ -211,14 +222,32 @@ mod tests {
         assert_eq!(find_end_of_match(chars!("ba"), chars!("a"), 1), None);
         assert_eq!(find_end_of_match(chars!("aaa"), chars!("aa"), 0), Some(2));
         assert_eq!(find_end_of_match(chars!("aaa"), chars!("b"), 0), None);
-        assert_eq!(find_end_of_match(chars!("this is a long match"), chars!("this is a match"), 0), None);
-        assert_eq!(find_end_of_match(chars!("this is a long match"), chars!("his is a match"), 0), Some(19));
-        assert_eq!(find_end_of_match(chars!("./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin"), chars!("ust"), 2), Some(5));
+        assert_eq!(
+            find_end_of_match(chars!("this is a long match"), chars!("this is a match"), 0),
+            None
+        );
+        assert_eq!(
+            find_end_of_match(chars!("this is a long match"), chars!("his is a match"), 0),
+            Some(19)
+        );
+        assert_eq!(
+            find_end_of_match(
+                chars!(
+                    "./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin"
+                ),
+                chars!("ust"),
+                2
+            ),
+            Some(5)
+        );
     }
 
     #[test]
     fn unicode_boundary_handling_test() {
-        score("./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin", "he");
+        score(
+            "./rust/x86_64-apple-darwin/test/run-pass/process-spawn-with-unicode-params-πЯ音æ∞/child.stage2-x86_64-apple-darwin",
+            "he",
+        );
     }
 
     #[test]
@@ -237,8 +266,14 @@ mod tests {
 
         assert_eq!(score("a", "a"), 1_f64 / "a".len() as f64);
         assert_eq!(score("ab", "ab"), 0.5);
-        assert_eq!(score("a long string", "a long string"), 1_f64 / "a long string".len() as f64);
-        assert_eq!(score("spec/search_spec.rb", "sear"), 1_f64 / "spec/search_spec.rb".len() as f64);
+        assert_eq!(
+            score("a long string", "a long string"),
+            1_f64 / "a long string".len() as f64
+        );
+        assert_eq!(
+            score("spec/search_spec.rb", "sear"),
+            1_f64 / "spec/search_spec.rb".len() as f64
+        );
     }
 
     #[test]
