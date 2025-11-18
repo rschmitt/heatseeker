@@ -112,6 +112,7 @@ impl UnixScreen {
 
     pub fn open_screen(desired_rows: u16) -> UnixScreen {
         let mut tty = Terminal::open_terminal();
+        tty.write(&ansi::reset());
         let (_, rows) = tty.winsize().unwrap();
         let visible_choices = min(desired_rows, rows - 1);
         let start_line = rows - visible_choices - 1;
