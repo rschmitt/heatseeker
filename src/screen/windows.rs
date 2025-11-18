@@ -127,10 +127,7 @@ impl Screen for WindowsScreen {
             &mut events_read
         ));
         for rec in input_record {
-            ret.push(WindowsScreen::translate_event(
-                rec,
-                &mut self.shifted,
-            ));
+            ret.push(WindowsScreen::translate_event(rec, &mut self.shifted));
         }
         ret
     }
