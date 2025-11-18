@@ -40,7 +40,8 @@ impl Screen for UnixScreen {
 
     fn move_cursor_to_prompt_line(&mut self, col: u16) {
         self.reset_cursor();
-        self.tty.write(&ansi::cursor_right(col));
+        let mut buf = [0u8; 16];
+        self.tty.write(ansi::cursor_right(col, &mut buf));
     }
 
     fn blank_screen(&mut self) {
@@ -53,12 +54,12 @@ impl Screen for UnixScreen {
     }
 
     fn show_cursor(&mut self) {
-        self.tty.write(&ansi::show_cursor());
+        self.tty.write(ansi::show_cursor());
         self.tty.flush();
     }
 
     fn hide_cursor(&mut self) {
-        self.tty.write(&ansi::hide_cursor());
+        self.tty.write(ansi::hide_cursor());
     }
 
     fn write(&mut self, s: &str) {
@@ -66,22 +67,22 @@ impl Screen for UnixScreen {
     }
 
     fn write_red_inverted(&mut self, s: &str) {
-        self.tty.write(&ansi::red());
-        self.tty.write(&ansi::inverse());
+        self.tty.write(ansi::red());
+        self.tty.write(ansi::inverse());
         self.tty.write(s.as_bytes());
-        self.tty.write(&ansi::reset());
+        self.tty.write(ansi::reset());
     }
 
     fn write_red(&mut self, s: &str) {
-        self.tty.write(&ansi::red());
+        self.tty.write(ansi::red());
         self.tty.write(s.as_bytes());
-        self.tty.write(&ansi::reset());
+        self.tty.write(ansi::reset());
     }
 
     fn write_inverted(&mut self, s: &str) {
-        self.tty.write(&ansi::inverse());
+        self.tty.write(ansi::inverse());
         self.tty.write(s.as_bytes());
-        self.tty.write(&ansi::reset());
+        self.tty.write(ansi::reset());
     }
 
     // Return all buffered keystrokes, or the next key if buffer is empty.
@@ -112,14 +113,14 @@ impl UnixScreen {
 
     pub fn open_screen(desired_rows: u16) -> UnixScreen {
         let mut tty = Terminal::open_terminal();
-        tty.write(&ansi::reset());
+        tty.write(ansi::reset());
         let (_, rows) = tty.winsize().unwrap();
         let visible_choices = min(desired_rows, rows - 1);
         let start_line = rows - visible_choices - 1;
         for _ in 0..visible_choices {
             tty.write(NEWLINE.as_bytes());
         }
-        tty.write(&ansi::save_cursor());
+        tty.write(ansi::save_cursor());
 
         UnixScreen {
             tty,
@@ -133,7 +134,7 @@ impl UnixScreen {
     }
 
     fn reset_cursor(&mut self) {
-        self.tty.write(&ansi::restore_cursor());
+        self.tty.write(ansi::restore_cursor());
 
         // Writing this carriage return works around a rendering bug in
         // Neovim's terminal emulation. Without it, the cursor flies
@@ -145,11 +146,12 @@ impl UnixScreen {
         self.tty.write(b"\r");
 
         let num_lines = self.visible_choices();
-        self.tty.write(&ansi::cursor_up(num_lines));
+        let mut buf = [0u8; 16];
+        self.tty.write(ansi::cursor_up(num_lines, &mut buf));
     }
 
     pub fn blank_entire_screen(&mut self) {
-        self.tty.write(&ansi::blank_screen());
+        self.tty.write(ansi::blank_screen());
     }
 }
 

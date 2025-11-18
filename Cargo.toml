@@ -21,6 +21,7 @@ indexmap = "2"
 unicode-width = "0.2"
 clap = { version = "4", features = ["derive"] }
 rayon = "1"
+itoa = "1"
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2"

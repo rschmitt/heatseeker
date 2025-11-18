@@ -1,51 +1,53 @@
-const ESC: u8 = 27;
-
-// Prepend a Control Sequence Introducer to the
-// given string and return it as a Vec<u8>
-fn csi(sequence: &str) -> Vec<u8> {
-    let mut ret = Vec::new();
-    ret.push(ESC);
-    ret.push(b'[');
-    ret.extend(sequence.as_bytes().iter().cloned());
-    ret
+pub fn cursor_up(lines: u16, buf: &mut [u8; 16]) -> &[u8] {
+    let mut itoa_buf = itoa::Buffer::new();
+    let s = itoa_buf.format(lines);
+    let len = 2 + s.len() + 1;
+    buf[0] = 27;
+    buf[1] = b'[';
+    buf[2..2 + s.len()].copy_from_slice(s.as_bytes());
+    buf[2 + s.len()] = b'A';
+    &buf[..len]
 }
 
-pub fn cursor_up(lines: u16) -> Vec<u8> {
-    csi(&format!("{}A", lines))
+pub fn cursor_right(lines: u16, buf: &mut [u8; 16]) -> &[u8] {
+    let mut itoa_buf = itoa::Buffer::new();
+    let s = itoa_buf.format(lines);
+    let len = 2 + s.len() + 1;
+    buf[0] = 27;
+    buf[1] = b'[';
+    buf[2..2 + s.len()].copy_from_slice(s.as_bytes());
+    buf[2 + s.len()] = b'C';
+    &buf[..len]
 }
 
-pub fn cursor_right(lines: u16) -> Vec<u8> {
-    csi(&format!("{}C", lines))
+pub const fn save_cursor() -> &'static [u8] {
+    b"\x1b7"
 }
 
-pub fn save_cursor() -> Vec<u8> {
-    vec![ESC, b'7']
+pub const fn restore_cursor() -> &'static [u8] {
+    b"\x1b8"
 }
 
-pub fn restore_cursor() -> Vec<u8> {
-    vec![ESC, b'8']
+pub const fn hide_cursor() -> &'static [u8] {
+    b"\x1b[?25l"
 }
 
-pub fn hide_cursor() -> Vec<u8> {
-    csi("?25l")
+pub const fn show_cursor() -> &'static [u8] {
+    b"\x1b[?25h"
 }
 
-pub fn show_cursor() -> Vec<u8> {
-    csi("?25h")
+pub const fn inverse() -> &'static [u8] {
+    b"\x1b[7m"
 }
 
-pub fn inverse() -> Vec<u8> {
-    csi("7m")
+pub const fn red() -> &'static [u8] {
+    b"\x1b[31m"
 }
 
-pub fn red() -> Vec<u8> {
-    csi("31m")
+pub const fn reset() -> &'static [u8] {
+    b"\x1b[0m"
 }
 
-pub fn reset() -> Vec<u8> {
-    csi("0m")
-}
-
-pub fn blank_screen() -> Vec<u8> {
-    csi("2J")
+pub const fn blank_screen() -> &'static [u8] {
+    b"\x1b[2J"
 }
