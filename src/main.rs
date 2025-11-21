@@ -1,4 +1,3 @@
-#[cfg(not(windows))]
 mod ansi;
 mod matching;
 mod screen;
