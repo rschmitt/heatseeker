@@ -357,12 +357,7 @@ fn print_matches(
         let max_width = screen.width();
         let mut annotated_choice = choice.to_string();
         if selections.contains(&annotated_choice) {
-            annotated_choice.push(' ');
-            if cfg!(windows) {
-                annotated_choice.push('√');
-            } else {
-                annotated_choice.push('✓');
-            }
+            annotated_choice.push_str(" ✓");
         }
         print_match(
             &annotated_choice,
