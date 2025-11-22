@@ -38,23 +38,12 @@ pub struct WindowsScreen {
 }
 
 impl Screen for WindowsScreen {
-    fn visible_choices(&self) -> u16 {
-        let (_, rows) = self.tty.winsize().unwrap();
-        let usable_rows = rows.saturating_sub(1);
-        min(self.desired_rows, usable_rows)
+    fn desired_rows(&self) -> u16 {
+        self.desired_rows
     }
 
-    fn width(&self) -> u16 {
-        let (cols, _) = self.tty.winsize().unwrap();
-        cols
-    }
-
-    fn reset_cursor(&mut self) {
-        self.tty.write(ansi::restore_cursor());
-        self.tty.write(b"\r");
-        let num_lines = self.visible_choices();
-        let mut buf = [0u8; 16];
-        self.tty.write(ansi::cursor_up(num_lines, &mut buf));
+    fn winsize(&self) -> Option<(u16, u16)> {
+        self.tty.winsize()
     }
 
     fn write_bytes(&mut self, bytes: &[u8]) {
@@ -103,10 +92,6 @@ impl WindowsScreen {
             desired_rows,
             pending_resize: false,
         }
-    }
-
-    fn blank_entire_screen(&mut self) {
-        self.tty.write(ansi::blank_screen());
     }
 }
 
