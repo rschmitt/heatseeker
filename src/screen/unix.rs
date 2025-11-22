@@ -39,7 +39,7 @@ impl Screen for UnixScreen {
 
     fn reset_cursor(&mut self) {
         self.tty.write(ansi::restore_cursor());
-
+        self.tty.write(b"\r");
         let num_lines = self.visible_choices();
         let mut buf = [0u8; 16];
         self.tty.write(ansi::cursor_up(num_lines, &mut buf));
