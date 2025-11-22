@@ -275,13 +275,17 @@ impl<'a> Search<'a> {
         }
     }
 
-    fn toggle_selection(&mut self) {
+    fn current_selection(&mut self) -> String {
         self.recompute_matches();
-        let selection = (*self
+        (*self
             .matches
             .get(self.scroll_offset + self.cursor_index)
             .unwrap_or(&""))
-        .to_string();
+        .to_string()
+    }
+
+    fn toggle_selection(&mut self) {
+        let selection = self.current_selection();
         if self.selections.contains(&selection) {
             self.selections.shift_remove(&selection);
         } else {
@@ -297,13 +301,7 @@ impl<'a> Search<'a> {
                 ret.push_str(NEWLINE);
             }
             if ret.is_empty() {
-                self.recompute_matches();
-                let selection = (*self
-                    .matches
-                    .get(self.scroll_offset + self.cursor_index)
-                    .unwrap_or(&""))
-                .to_string();
-                ret.push_str(&selection);
+                return self.current_selection();
             }
         }
         ret
