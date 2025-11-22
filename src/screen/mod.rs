@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::ansi;
 #[cfg(not(windows))]
 use unix::UnixScreen;
@@ -82,12 +80,7 @@ pub trait Screen {
 
 #[cfg(windows)]
 pub fn new(desired_rows: u16) -> Box<dyn Screen> {
-    if WindowsScreen::is_cygwin() {
-        //        UnixScreen::open_screen(desired_rows)
-        panic!("This executable does not support Cygwin.");
-    } else {
-        Box::from(WindowsScreen::open_screen(desired_rows))
-    }
+    Box::from(WindowsScreen::open_screen(desired_rows))
 }
 
 #[cfg(not(windows))]

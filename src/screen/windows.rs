@@ -4,21 +4,16 @@ use super::Screen;
 use crate::NEWLINE;
 use crate::ansi;
 use std::cmp::min;
-use std::ffi::OsString;
-use std::mem::size_of;
-use std::os::windows::ffi::OsStringExt;
-use std::slice::from_raw_parts;
 use std::str;
 
 use windows::Win32::Foundation::{HANDLE, INVALID_HANDLE_VALUE};
 use windows::Win32::Storage::FileSystem::{
-    CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_READ, FILE_GENERIC_WRITE, FILE_NAME_INFO,
-    FILE_SHARE_READ, FILE_SHARE_WRITE, FileNameInfo, GetFileInformationByHandleEx, OPEN_EXISTING,
+    CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_READ, FILE_GENERIC_WRITE,
+    FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
 };
 use windows::Win32::System::Console::{
     CONSOLE_MODE, CONSOLE_SCREEN_BUFFER_INFO, ENABLE_VIRTUAL_TERMINAL_PROCESSING, GetConsoleMode,
-    GetConsoleScreenBufferInfo, GetStdHandle, INPUT_RECORD, KEY_EVENT, ReadConsoleInputW,
-    STD_INPUT_HANDLE, SetConsoleMode, WINDOW_BUFFER_SIZE_EVENT, WriteConsoleW,
+    GetConsoleScreenBufferInfo, INPUT_RECORD, KEY_EVENT, ReadConsoleInputW, SetConsoleMode, WINDOW_BUFFER_SIZE_EVENT, WriteConsoleW,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     VK_BACK, VK_DOWN, VK_END, VK_ESCAPE, VK_HOME, VK_NEXT, VK_PRIOR, VK_RETURN, VK_SHIFT, VK_TAB,
@@ -92,35 +87,6 @@ impl Screen for WindowsScreen {
 }
 
 impl WindowsScreen {
-    pub fn is_cygwin() -> bool {
-        let size = size_of::<FILE_NAME_INFO>();
-        let mut name_info_bytes = vec![0u8; size + windows::Win32::Foundation::MAX_PATH as usize];
-        let stdin: HANDLE = unsafe { GetStdHandle(STD_INPUT_HANDLE).unwrap() };
-        let ok = unsafe {
-            GetFileInformationByHandleEx(
-                stdin,
-                FileNameInfo,
-                name_info_bytes.as_mut_ptr() as *mut _,
-                name_info_bytes.len() as u32,
-            )
-        };
-        if ok.is_err() {
-            false
-        } else {
-            let file_name_len_bytes =
-                unsafe { *(name_info_bytes.as_ptr() as *const FILE_NAME_INFO) }.FileNameLength
-                    as usize;
-            let name_bytes = &name_info_bytes[size..size + file_name_len_bytes];
-            let name_u16 =
-                unsafe { from_raw_parts(name_bytes.as_ptr() as *const u16, name_bytes.len() / 2) };
-            let name = OsString::from_wide(name_u16)
-                .as_os_str()
-                .to_string_lossy()
-                .into_owned();
-            name.contains("msys-") || name.contains("-pty") || name.contains("cygwin-")
-        }
-    }
-
     pub fn open_screen(desired_rows: u16) -> WindowsScreen {
         let mut tty = Terminal::open_terminal();
         tty.write(ansi::reset());

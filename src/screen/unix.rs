@@ -23,7 +23,6 @@ use ::libc::{SIGINT, SIGWINCH, c_int, c_ulong, c_ushort, dup};
 
 pub struct UnixScreen {
     tty: Terminal,
-    start_line: u16,
     desired_rows: u16,
 }
 
@@ -76,30 +75,17 @@ impl Screen for UnixScreen {
 }
 
 impl UnixScreen {
-    pub fn is_cygwin() -> bool {
-        false
-    }
-
     pub fn open_screen(desired_rows: u16) -> UnixScreen {
         let mut tty = Terminal::open_terminal();
         tty.write(ansi::reset());
         let (_, rows) = tty.winsize().unwrap();
         let visible_choices = min(desired_rows, rows - 1);
-        let start_line = rows - visible_choices - 1;
         for _ in 0..visible_choices {
             tty.write(NEWLINE.as_bytes());
         }
         tty.write(ansi::save_cursor());
 
-        UnixScreen {
-            tty,
-            start_line,
-            desired_rows,
-        }
-    }
-
-    fn restore_tty(&mut self) {
-        self.tty.restore_tty();
+        UnixScreen { tty, desired_rows }
     }
 
     pub fn blank_entire_screen(&mut self) {
@@ -279,11 +265,6 @@ impl Terminal {
 
     fn write(&mut self, s: &[u8]) {
         self.output_buf.extend_from_slice(s);
-    }
-
-    fn writeln(&mut self, s: &str) {
-        self.output_buf.extend_from_slice(s.as_bytes());
-        self.output_buf.push(b'\n');
     }
 
     fn flush(&mut self) {
