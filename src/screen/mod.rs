@@ -37,7 +37,7 @@ pub trait Screen {
     fn blank_screen(&mut self) {
         self.reset_cursor();
         let blank_line = " ".repeat(self.width() as usize);
-        for _ in 0..self.visible_choices() + 1 {
+        for _ in 0..=self.visible_choices() {
             self.write_bytes(blank_line.as_bytes());
         }
         self.reset_cursor();

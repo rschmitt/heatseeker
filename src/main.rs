@@ -87,7 +87,7 @@ fn main() {
     } else {
         let desired_rows = if args.full_screen { 999 } else { 20 };
         let selections = event_loop(desired_rows, &choices, &initial_search, args.filter_only);
-        print!("{}", selections);
+        print!("{selections}");
     }
 }
 
@@ -110,7 +110,7 @@ fn event_loop(
 
         let keys = screen.get_buffered_keys();
         for key in &keys {
-            handle_key(&mut search, key, screen.visible_choices());
+            handle_key(&mut search, *key, screen.visible_choices());
         }
     }
 
@@ -118,14 +118,14 @@ fn event_loop(
     search.get_selections()
 }
 
-fn handle_key(search: &mut Search, key: &Key, visible_choices: u16) {
-    match *key {
+fn handle_key(search: &mut Search, key: Key, visible_choices: u16) {
+    match key {
         Char(x) => search.append(x),
         Backspace | Control('h') => search.backspace(),
         Control('w') => search.delete_word(),
         Control('u') => search.clear_query(),
         Control('r') => std::panic!("This is a test backtrace"),
-        Control('c') | Control('g') => search.cancel(),
+        Control('c' | 'g') => search.cancel(),
         Control('t') => {
             search.toggle_selection();
             search.down(visible_choices);
@@ -277,11 +277,11 @@ impl<'a> Search<'a> {
 
     fn toggle_selection(&mut self) {
         self.recompute_matches();
-        let selection = self
+        let selection = (*self
             .matches
             .get(self.scroll_offset + self.cursor_index)
-            .unwrap_or(&"")
-            .to_string();
+            .unwrap_or(&""))
+        .to_string();
         if self.selections.contains(&selection) {
             self.selections.shift_remove(&selection);
         } else {
@@ -298,11 +298,11 @@ impl<'a> Search<'a> {
             }
             if ret.is_empty() {
                 self.recompute_matches();
-                let selection = self
+                let selection = (*self
                     .matches
                     .get(self.scroll_offset + self.cursor_index)
-                    .unwrap_or(&"")
-                    .to_string();
+                    .unwrap_or(&""))
+                .to_string();
                 ret.push_str(&selection);
             }
         }
@@ -310,11 +310,11 @@ impl<'a> Search<'a> {
     }
 
     fn cancel(&mut self) {
-        self.state = Canceled
+        self.state = Canceled;
     }
 
     fn done(&mut self) {
-        self.state = Done
+        self.state = Done;
     }
 }
 
@@ -352,10 +352,10 @@ fn print_matches(
     selections: &IndexSet<String>,
 ) {
     let mut i = 1;
-    for choice in matches[scroll_offset..].iter() {
+    for choice in &matches[scroll_offset..] {
         let indices = matching::visual_score(choice, query);
         let max_width = screen.width();
-        let mut annotated_choice = choice.to_string();
+        let mut annotated_choice = (*choice).to_string();
         if selections.contains(&annotated_choice) {
             annotated_choice.push_str(" ✓");
         }
@@ -496,10 +496,10 @@ fn slice_chars(s: &str, begin: usize, end: usize) -> &str {
         count += 1;
     }
     if begin_byte.is_none() && count == begin {
-        begin_byte = Some(s.len())
+        begin_byte = Some(s.len());
     }
     if end_byte.is_none() && count == end {
-        end_byte = Some(s.len())
+        end_byte = Some(s.len());
     }
 
     match (begin_byte, end_byte) {

@@ -145,7 +145,7 @@ fn get_match_length(bounds: Option<(usize, usize)>) -> Option<usize> {
 fn find_char_in_string(string: &[char], char: char) -> Vec<usize> {
     let mut indices = Vec::new();
     for (i, c) in string.iter().enumerate() {
-        if chars_equal(&char, c) {
+        if chars_equal(char, *c) {
             indices.push(i);
         }
     }
@@ -164,11 +164,11 @@ fn get_match_indices(
     let mut ret = Vec::new();
     let mut last_index = first_index + 1;
     ret.push(first_index);
-    for c in rest_of_query.iter() {
+    for c in rest_of_query {
         let current_substring = &string[last_index..];
         let mut index = None;
         for (i, x) in current_substring.iter().enumerate() {
-            if chars_equal(c, x) {
+            if chars_equal(*c, *x) {
                 index = Some(i);
                 break;
             }
@@ -183,8 +183,8 @@ fn get_match_indices(
     Some(ret)
 }
 
-fn chars_equal(q: &char, c: &char) -> bool {
-    q == c || *q == c.to_ascii_lowercase()
+fn chars_equal(q: char, c: char) -> bool {
+    q == c || q == c.to_ascii_lowercase()
 }
 
 #[cfg(test)]
@@ -193,11 +193,11 @@ mod tests {
 
     #[test]
     fn chars_equal_test() {
-        assert!(chars_equal(&'a', &'a'));
-        assert!(!chars_equal(&'a', &'b'));
-        assert!(chars_equal(&'A', &'A'));
-        assert!(!chars_equal(&'A', &'a'));
-        assert!(chars_equal(&'a', &'A'));
+        assert!(chars_equal('a', 'a'));
+        assert!(!chars_equal('a', 'b'));
+        assert!(chars_equal('A', 'A'));
+        assert!(!chars_equal('A', 'a'));
+        assert!(chars_equal('a', 'A'));
     }
 
     #[test]

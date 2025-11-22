@@ -8,12 +8,13 @@ use std::str;
 
 use windows::Win32::Foundation::{HANDLE, INVALID_HANDLE_VALUE};
 use windows::Win32::Storage::FileSystem::{
-    CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_READ, FILE_GENERIC_WRITE,
-    FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
+    CreateFileW, FILE_ATTRIBUTE_NORMAL, FILE_GENERIC_READ, FILE_GENERIC_WRITE, FILE_SHARE_READ,
+    FILE_SHARE_WRITE, OPEN_EXISTING,
 };
 use windows::Win32::System::Console::{
     CONSOLE_MODE, CONSOLE_SCREEN_BUFFER_INFO, ENABLE_VIRTUAL_TERMINAL_PROCESSING, GetConsoleMode,
-    GetConsoleScreenBufferInfo, INPUT_RECORD, KEY_EVENT, ReadConsoleInputW, SetConsoleMode, WINDOW_BUFFER_SIZE_EVENT, WriteConsoleW,
+    GetConsoleScreenBufferInfo, INPUT_RECORD, KEY_EVENT, ReadConsoleInputW, SetConsoleMode,
+    WINDOW_BUFFER_SIZE_EVENT, WriteConsoleW,
 };
 use windows::Win32::UI::Input::KeyboardAndMouse::{
     VK_BACK, VK_DOWN, VK_END, VK_ESCAPE, VK_HOME, VK_NEXT, VK_PRIOR, VK_RETURN, VK_SHIFT, VK_TAB,
@@ -150,14 +151,15 @@ impl Terminal {
             )
             .unwrap();
         }
-        if conin == INVALID_HANDLE_VALUE || conout == INVALID_HANDLE_VALUE {
-            panic!("Unable to open console");
-        }
+        assert!(
+            conin != INVALID_HANDLE_VALUE && conout != INVALID_HANDLE_VALUE,
+            "Unable to open console"
+        );
 
         let mut input_mode = CONSOLE_MODE::default();
         let mut output_mode = CONSOLE_MODE::default();
-        win32!(GetConsoleMode(conin, &mut input_mode));
-        win32!(GetConsoleMode(conout, &mut output_mode));
+        win32!(GetConsoleMode(conin, &raw mut input_mode));
+        win32!(GetConsoleMode(conout, &raw mut output_mode));
 
         let mut vt_output_mode = output_mode;
         vt_output_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
@@ -187,7 +189,7 @@ impl Terminal {
         win32!(WriteConsoleW(
             self.conout,
             &utf16,
-            Some(&mut chars_written),
+            Some(&raw mut chars_written),
             None
         ));
         self.output_buf.clear();
@@ -201,7 +203,11 @@ impl Terminal {
         let mut buffer = [INPUT_RECORD::default(); 32];
         loop {
             let mut events_read = 0;
-            win32!(ReadConsoleInputW(self.conin, &mut buffer, &mut events_read));
+            win32!(ReadConsoleInputW(
+                self.conin,
+                &mut buffer,
+                &raw mut events_read
+            ));
             let mut keys = Vec::new();
             let mut resize = false;
             for record in buffer.iter().take(events_read as usize) {
@@ -258,7 +264,7 @@ impl Terminal {
         } else if vk_code == VK_ESCAPE.0 {
             Control('g')
         } else {
-            let ch = unsafe { key_event.uChar.UnicodeChar } as u32;
+            let ch = u32::from(unsafe { key_event.uChar.UnicodeChar });
             if ch == 0 {
                 return None;
             }
@@ -286,7 +292,7 @@ impl Drop for Terminal {
 
 fn console_winsize(conout: HANDLE) -> Option<(u16, u16)> {
     let mut buffer_info = CONSOLE_SCREEN_BUFFER_INFO::default();
-    let result = unsafe { GetConsoleScreenBufferInfo(conout, &mut buffer_info) };
+    let result = unsafe { GetConsoleScreenBufferInfo(conout, &raw mut buffer_info) };
     if result.is_ok() {
         // This code specifically computes the size of the window,
         // *not* the size of the buffer (which is easily available
