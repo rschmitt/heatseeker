@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::ansi;
 #[cfg(not(windows))]
 use unix::UnixScreen;
 #[cfg(windows)]
@@ -25,14 +26,57 @@ pub enum Key {
 pub trait Screen {
     fn visible_choices(&self) -> u16;
     fn width(&self) -> u16;
-    fn move_cursor_to_prompt_line(&mut self, col: u16);
-    fn blank_screen(&mut self);
-    fn show_cursor(&mut self);
-    fn hide_cursor(&mut self);
-    fn write(&mut self, s: &str);
-    fn write_red_inverted(&mut self, s: &str);
-    fn write_red(&mut self, s: &str);
-    fn write_inverted(&mut self, s: &str);
+    fn reset_cursor(&mut self);
+    fn write_bytes(&mut self, bytes: &[u8]);
+    fn flush(&mut self);
+
+    fn move_cursor_to_prompt_line(&mut self, col: u16) {
+        self.reset_cursor();
+        let mut buf = [0u8; 16];
+        self.write_bytes(ansi::cursor_right(col, &mut buf));
+    }
+
+    fn blank_screen(&mut self) {
+        self.reset_cursor();
+        let blank_line = " ".repeat(self.width() as usize);
+        for _ in 0..self.visible_choices() + 1 {
+            self.write_bytes(blank_line.as_bytes());
+        }
+        self.reset_cursor();
+    }
+
+    fn show_cursor(&mut self) {
+        self.write_bytes(ansi::show_cursor());
+        self.flush();
+    }
+
+    fn hide_cursor(&mut self) {
+        self.write_bytes(ansi::hide_cursor());
+    }
+
+    fn write(&mut self, s: &str) {
+        self.write_bytes(s.as_bytes());
+    }
+
+    fn write_red_inverted(&mut self, s: &str) {
+        self.write_bytes(ansi::red());
+        self.write_bytes(ansi::inverse());
+        self.write(s);
+        self.write_bytes(ansi::reset());
+    }
+
+    fn write_red(&mut self, s: &str) {
+        self.write_bytes(ansi::red());
+        self.write(s);
+        self.write_bytes(ansi::reset());
+    }
+
+    fn write_inverted(&mut self, s: &str) {
+        self.write_bytes(ansi::inverse());
+        self.write(s);
+        self.write_bytes(ansi::reset());
+    }
+
     fn get_buffered_keys(&mut self) -> Vec<Key>;
 }
 

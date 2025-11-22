@@ -53,51 +53,20 @@ impl Screen for WindowsScreen {
         cols
     }
 
-    fn move_cursor_to_prompt_line(&mut self, col: u16) {
-        self.reset_cursor();
+    fn reset_cursor(&mut self) {
+        self.tty.write(ansi::restore_cursor());
+        self.tty.write(b"\r");
+        let num_lines = self.visible_choices();
         let mut buf = [0u8; 16];
-        self.tty.write(ansi::cursor_right(col, &mut buf));
+        self.tty.write(ansi::cursor_up(num_lines, &mut buf));
     }
 
-    fn blank_screen(&mut self) {
-        self.reset_cursor();
-        let blank_line = " ".repeat(self.width() as usize);
-        for _ in 0..self.visible_choices() + 1 {
-            self.tty.write(blank_line.as_bytes());
-        }
-        self.reset_cursor();
+    fn write_bytes(&mut self, bytes: &[u8]) {
+        self.tty.write(bytes);
     }
 
-    fn show_cursor(&mut self) {
-        self.tty.write(ansi::show_cursor());
+    fn flush(&mut self) {
         self.tty.flush();
-    }
-
-    fn hide_cursor(&mut self) {
-        self.tty.write(ansi::hide_cursor());
-    }
-
-    fn write(&mut self, s: &str) {
-        self.tty.write(s.as_bytes());
-    }
-
-    fn write_red_inverted(&mut self, s: &str) {
-        self.tty.write(ansi::red());
-        self.tty.write(ansi::inverse());
-        self.tty.write(s.as_bytes());
-        self.tty.write(ansi::reset());
-    }
-
-    fn write_red(&mut self, s: &str) {
-        self.tty.write(ansi::red());
-        self.tty.write(s.as_bytes());
-        self.tty.write(ansi::reset());
-    }
-
-    fn write_inverted(&mut self, s: &str) {
-        self.tty.write(ansi::inverse());
-        self.tty.write(s.as_bytes());
-        self.tty.write(ansi::reset());
     }
 
     fn get_buffered_keys(&mut self) -> Vec<Key> {
@@ -167,14 +136,6 @@ impl WindowsScreen {
             desired_rows,
             pending_resize: false,
         }
-    }
-
-    fn reset_cursor(&mut self) {
-        self.tty.write(ansi::restore_cursor());
-        self.tty.write(b"\r");
-        let num_lines = self.visible_choices();
-        let mut buf = [0u8; 16];
-        self.tty.write(ansi::cursor_up(num_lines, &mut buf));
     }
 
     fn blank_entire_screen(&mut self) {
