@@ -34,7 +34,6 @@ macro_rules! win32 {
 pub struct WindowsScreen {
     tty: Terminal,
     desired_rows: u16,
-    pending_resize: bool,
 }
 
 impl Screen for WindowsScreen {
@@ -55,24 +54,7 @@ impl Screen for WindowsScreen {
     }
 
     fn get_buffered_keys(&mut self) -> Vec<Key> {
-        if self.pending_resize {
-            self.pending_resize = false;
-            self.blank_entire_screen();
-            return vec![Nothing];
-        }
-
-        match self.tty.read_event() {
-            TerminalMessage::Keys(keys, resize) => {
-                if resize {
-                    self.pending_resize = true;
-                }
-                keys
-            }
-            TerminalMessage::Resize => {
-                self.blank_entire_screen();
-                vec![Nothing]
-            }
-        }
+        self.tty.read_events()
     }
 }
 
@@ -87,11 +69,7 @@ impl WindowsScreen {
         }
         tty.write(ansi::save_cursor());
 
-        WindowsScreen {
-            tty,
-            desired_rows,
-            pending_resize: false,
-        }
+        WindowsScreen { tty, desired_rows }
     }
 }
 
@@ -102,11 +80,6 @@ struct Terminal {
     original_input_mode: CONSOLE_MODE,
     original_output_mode: CONSOLE_MODE,
     shifted: bool,
-}
-
-enum TerminalMessage {
-    Keys(Vec<Key>, bool),
-    Resize,
 }
 
 impl Terminal {
@@ -184,7 +157,7 @@ impl Terminal {
         console_winsize(self.conout)
     }
 
-    fn read_event(&mut self) -> TerminalMessage {
+    fn read_events(&mut self) -> Vec<Key> {
         let mut buffer = [INPUT_RECORD::default(); 32];
         loop {
             let mut events_read = 0;
@@ -194,7 +167,6 @@ impl Terminal {
                 &raw mut events_read
             ));
             let mut keys = Vec::new();
-            let mut resize = false;
             for record in buffer.iter().take(events_read as usize) {
                 match u32::from(record.EventType) {
                     KEY_EVENT => {
@@ -202,15 +174,13 @@ impl Terminal {
                             keys.push(k);
                         }
                     }
-                    WINDOW_BUFFER_SIZE_EVENT => resize = true,
+                    WINDOW_BUFFER_SIZE_EVENT => keys.push(Resize),
                     _ => {}
                 }
             }
+
             if !keys.is_empty() {
-                return TerminalMessage::Keys(keys, resize);
-            }
-            if resize {
-                return TerminalMessage::Resize;
+                return keys;
             }
         }
     }
@@ -250,7 +220,7 @@ impl Terminal {
             Control('g')
         } else {
             let wchar: u16 = unsafe { key_event.uChar.UnicodeChar };
-            match char::from_u32(wchar as u32) {
+            match char::from_u32(u32::from(wchar)) {
                 Some(c) => ansi::translate_char(c),
                 None => Nothing,
             }
