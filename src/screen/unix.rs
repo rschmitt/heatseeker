@@ -4,6 +4,7 @@ use super::Key;
 use super::Key::*;
 use crate::NEWLINE;
 use crate::ansi;
+use crate::logging;
 use std::cmp::min;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
@@ -47,10 +48,12 @@ impl Screen for UnixScreen {
     fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut ret = Vec::new();
         while let Ok(bytes) = self.tty.input.try_recv() {
+            logging::log_bytes("tty_try_recv", &bytes);
             ret.extend(bytes);
         }
         while ret.is_empty() {
             let bytes = self.tty.input.recv().unwrap();
+            logging::log_bytes("tty_block_recv", &bytes);
             if bytes == vec![128 + SIGWINCH as u8] {
                 self.blank_entire_screen();
                 return vec![Nothing];
@@ -60,6 +63,7 @@ impl Screen for UnixScreen {
                 ret.extend(bytes);
             }
         }
+        logging::log_bytes("keys_raw", &ret);
         Terminal::translate_bytes(ret.clone())
     }
 }
@@ -91,6 +95,7 @@ fn start_sigwinch_handler(tx: Sender<Vec<u8>>) {
     let mut signals = signal_hook::iterator::Signals::new([SIGWINCH, SIGINT]).unwrap();
     thread::spawn(move || {
         for signal in signals.forever() {
+            logging::log_bytes("signal", &[signal as u8]);
             tx.send(vec![128 + signal as u8]).unwrap();
         }
     });
@@ -121,6 +126,7 @@ impl Terminal {
             loop {
                 let mut buf = [0; 255];
                 if let Ok(length) = input_file.read(&mut buf) {
+                    logging::log_bytes("tty_read", &buf[0..length]);
                     tx.send(buf[0..length].to_vec()).unwrap();
                 } else {
                     tx.send([0].to_vec()).unwrap();
@@ -228,6 +234,8 @@ impl Terminal {
             }
         }
 
+        #[cfg(debug_assertions)]
+        logging::log_line(&format!("[translate_bytes] {result:?}"));
         result
     }
 

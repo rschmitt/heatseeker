@@ -1,4 +1,5 @@
 mod ansi;
+mod logging;
 mod matching;
 mod screen;
 
@@ -56,6 +57,7 @@ fn main() {
     unsafe {
         env::set_var("RUST_BACKTRACE", "1");
     }
+    logging::init_logging();
     let args = Args::parse();
 
     if args.version {
