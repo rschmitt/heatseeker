@@ -223,30 +223,12 @@ impl Terminal {
             }
 
             if !matched {
-                result.push(Terminal::translate_char(bytes[i] as char));
+                result.push(ansi::translate_char(bytes[i] as char));
                 i += 1;
             }
         }
 
         result
-    }
-
-    fn translate_char(c: char) -> Key {
-        let numeric_char = c as u32;
-        if c == '\r' {
-            Enter
-        } else if numeric_char == 9 {
-            Tab
-        } else if numeric_char == 127 {
-            Backspace
-        } else if numeric_char == 27 {
-            Control('g')
-        } else if numeric_char & 96 == 0 && numeric_char <= 128u32 {
-            let c = c as u8;
-            Control((c + 96u8) as char)
-        } else {
-            Char(c)
-        }
     }
 
     fn write(&mut self, s: &[u8]) {

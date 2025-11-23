@@ -249,18 +249,10 @@ impl Terminal {
         } else if vk_code == VK_ESCAPE.0 {
             Control('g')
         } else {
-            let ch = u32::from(unsafe { key_event.uChar.UnicodeChar });
-            if ch == 0 {
-                return None;
-            }
-            if ch & 96 == 0 {
-                let c = ((ch as u16 + 96) as u8) as char;
-                Control(c)
-            } else {
-                match char::from_u32(ch) {
-                    Some(c) => Char(c),
-                    None => return None,
-                }
+            let wchar: u16 = unsafe { key_event.uChar.UnicodeChar };
+            match char::from_u32(wchar as u32) {
+                Some(c) => ansi::translate_char(c),
+                None => Nothing,
             }
         };
         Some(key)
