@@ -112,7 +112,7 @@ fn event_loop(
 
         let keys = screen.get_buffered_keys();
         for key in &keys {
-            handle_key(&mut search, *key, screen.visible_choices());
+            handle_key(&mut search, *key, &mut screen);
         }
     }
 
@@ -120,7 +120,8 @@ fn event_loop(
     search.get_selections()
 }
 
-fn handle_key(search: &mut Search, key: Key, visible_choices: u16) {
+fn handle_key(search: &mut Search, key: Key, screen: &mut Box<dyn Screen>) {
+    let visible_choices = screen.visible_choices();
     match key {
         Char(x) => search.append(x),
         Backspace | Control('h') => search.backspace(),
@@ -139,6 +140,7 @@ fn handle_key(search: &mut Search, key: Key, visible_choices: u16) {
         Enter => search.done(),
         Control('b') | PgUp => search.pgup(visible_choices),
         Control('f') | PgDown => search.pgdown(visible_choices),
+        Resize => screen.blank_entire_screen(),
         _ => {}
     }
 }

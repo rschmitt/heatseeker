@@ -54,16 +54,8 @@ impl Screen for UnixScreen {
         while ret.is_empty() {
             let bytes = self.tty.input.recv().unwrap();
             logging::log_bytes("tty_block_recv", &bytes);
-            if bytes == vec![128 + SIGWINCH as u8] {
-                self.blank_entire_screen();
-                return vec![Nothing];
-            } else if bytes == vec![128 + SIGINT as u8] {
-                return vec![Control('g')];
-            } else {
-                ret.extend(bytes);
-            }
+            ret.extend_from_slice(&bytes);
         }
-        logging::log_bytes("keys_raw", &ret);
         Terminal::translate_bytes(ret.clone())
     }
 }
@@ -208,6 +200,8 @@ impl Terminal {
             // Paste markers
             (b"\x1B[200~", None),
             (b"\x1B[201~", None),
+            // SIGWINCH
+            (&[0x9Cu8], Some(Resize)),
         ];
 
         let mut result = Vec::new();

@@ -13,6 +13,7 @@ pub enum Key {
     Backspace,
     Tab,
     ShiftTab,
+    #[allow(dead_code)]
     Nothing,
     Down,
     Up,
@@ -20,6 +21,8 @@ pub enum Key {
     End,
     PgDown,
     PgUp,
+    #[allow(dead_code)]
+    Resize,
 }
 
 pub trait Screen {
