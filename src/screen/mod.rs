@@ -13,15 +13,12 @@ pub enum Key {
     Backspace,
     Tab,
     ShiftTab,
-    #[allow(dead_code)]
-    Nothing,
     Down,
     Up,
     Home,
     End,
     PgDown,
     PgUp,
-    #[allow(dead_code)]
     Resize,
 }
 
