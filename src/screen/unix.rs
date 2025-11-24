@@ -56,7 +56,6 @@ impl Screen for UnixScreen {
         }
         while ret.is_empty() {
             let bytes = self.tty.input.recv().unwrap();
-            logging::log_bytes("tty_block_recv", &bytes);
             #[cfg(debug_assertions)]
             logging::log_line(&format!(
                 "[get_buffered_keys] blocking read got {} bytes",
@@ -126,7 +125,6 @@ impl Terminal {
             loop {
                 let mut buf = [0; 255];
                 if let Ok(length) = input_file.read(&mut buf) {
-                    logging::log_bytes("tty_read", &buf[0..length]);
                     tx.send(buf[0..length].to_vec()).unwrap();
                 } else {
                     tx.send([0].to_vec()).unwrap();
