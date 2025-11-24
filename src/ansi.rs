@@ -59,8 +59,6 @@ pub const fn blank_screen() -> &'static [u8] {
 }
 
 pub(crate) fn translate_bytes(bytes: &[u8]) -> Vec<Key> {
-    logging::log_bytes("translate_bytes", bytes);
-
     const SEQUENCES: &[(&[u8], Option<Key>)] = &[
         (b"\x1B[5~", Some(PgUp)),
         (b"\x1B[6~", Some(PgDown)),
@@ -82,6 +80,8 @@ pub(crate) fn translate_bytes(bytes: &[u8]) -> Vec<Key> {
         // SIGWINCH
         (&[0x9Cu8], Some(Resize)),
     ];
+
+    logging::log_bytes("translate_bytes", bytes);
 
     let mut result = Vec::new();
     let mut i = 0;

@@ -187,8 +187,7 @@ impl Terminal {
                     }
                     other => {
                         logging::log_line(&format!(
-                            "[read_events] Ignoring event with type {}",
-                            other
+                            "[read_events] Ignoring event with type {other}"
                         ));
                     }
                 }

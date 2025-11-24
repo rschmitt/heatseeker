@@ -152,7 +152,7 @@ impl Terminal {
             .spawn()
         {
             Ok(p) => p,
-            Err(e) => panic!("Spawn failed: {}", e),
+            Err(e) => panic!("Spawn failed: {e}"),
         };
 
         let exit = process.wait();
@@ -206,10 +206,10 @@ impl Terminal {
             target_os = "netbsd",
             target_os = "openbsd"
         ))]
-        const TIOCGWINSZ: c_ulong = 0x40087468;
+        const TIOCGWINSZ: c_ulong = 0x4008_7468;
 
         #[cfg(any(target_os = "linux", target_os = "android"))]
-        const TIOCGWINSZ: c_ulong = 0x00005413;
+        const TIOCGWINSZ: c_ulong = 0x0000_5413;
 
         #[repr(C)]
         struct TermSize {

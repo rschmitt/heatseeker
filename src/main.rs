@@ -141,7 +141,7 @@ fn handle_key(search: &mut Search, key: Key, screen: &mut Box<dyn Screen>) {
         Control('b') | PgUp => search.pgup(visible_choices),
         Control('f') | PgDown => search.pgdown(visible_choices),
         Resize => screen.blank_entire_screen(),
-        _ => {}
+        Control(_) => {}
     }
 }
 

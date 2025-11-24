@@ -52,7 +52,7 @@ pub fn log_bytes(tag: &str, bytes: &[u8]) {
     {
         let mut guard = log_file().lock().unwrap();
         if let Some(ref mut f) = *guard {
-            let hex: Vec<String> = bytes.iter().map(|b| format!("{:02X}", b)).collect();
+            let hex: Vec<String> = bytes.iter().map(|b| format!("{b:02X}")).collect();
             let printable: String = bytes
                 .iter()
                 .map(|b| {
@@ -72,7 +72,7 @@ pub fn log_line(msg: &str) {
     {
         let mut guard = log_file().lock().unwrap();
         if let Some(ref mut f) = *guard {
-            let _ = writeln!(f, "{}", msg);
+            let _ = writeln!(f, "{msg}");
             let _ = f.flush();
         }
     }
