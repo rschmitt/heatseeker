@@ -32,6 +32,7 @@ fn log_file() -> &'static Mutex<Option<std::fs::File>> {
 
 pub fn init_logging() {
     #[cfg(debug_assertions)]
+    #[cfg(not(test))]
     {
         let mut guard = log_file().lock().unwrap();
         if let Some(ref mut f) = *guard {
@@ -47,6 +48,7 @@ pub fn init_logging() {
 
 pub fn log_bytes(tag: &str, bytes: &[u8]) {
     #[cfg(debug_assertions)]
+    #[cfg(not(test))]
     {
         let mut guard = log_file().lock().unwrap();
         if let Some(ref mut f) = *guard {
@@ -66,6 +68,7 @@ pub fn log_bytes(tag: &str, bytes: &[u8]) {
 
 pub fn log_line(msg: &str) {
     #[cfg(debug_assertions)]
+    #[cfg(not(test))]
     {
         let mut guard = log_file().lock().unwrap();
         if let Some(ref mut f) = *guard {

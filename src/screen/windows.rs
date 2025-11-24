@@ -1,8 +1,8 @@
 use super::Key;
 use super::Key::*;
 use super::Screen;
-use crate::NEWLINE;
 use crate::ansi;
+use crate::{NEWLINE, logging};
 use std::cmp::min;
 use std::str;
 
@@ -12,13 +12,9 @@ use windows::Win32::Storage::FileSystem::{
     FILE_SHARE_WRITE, OPEN_EXISTING,
 };
 use windows::Win32::System::Console::{
-    CONSOLE_MODE, CONSOLE_SCREEN_BUFFER_INFO, ENABLE_VIRTUAL_TERMINAL_PROCESSING, GetConsoleMode,
-    GetConsoleScreenBufferInfo, INPUT_RECORD, KEY_EVENT, ReadConsoleInputW, SetConsoleMode,
-    WINDOW_BUFFER_SIZE_EVENT, WriteConsoleW,
-};
-use windows::Win32::UI::Input::KeyboardAndMouse::{
-    VK_BACK, VK_DOWN, VK_END, VK_ESCAPE, VK_HOME, VK_NEXT, VK_PRIOR, VK_RETURN, VK_SHIFT, VK_TAB,
-    VK_UP,
+    CONSOLE_MODE, CONSOLE_SCREEN_BUFFER_INFO, ENABLE_VIRTUAL_TERMINAL_INPUT,
+    ENABLE_VIRTUAL_TERMINAL_PROCESSING, GetConsoleMode, GetConsoleScreenBufferInfo, INPUT_RECORD,
+    KEY_EVENT, ReadConsoleInputW, SetConsoleMode, WINDOW_BUFFER_SIZE_EVENT, WriteConsoleW,
 };
 use windows::core::w;
 
@@ -79,7 +75,6 @@ struct Terminal {
     output_buf: Vec<u8>,
     original_input_mode: CONSOLE_MODE,
     original_output_mode: CONSOLE_MODE,
-    shifted: bool,
 }
 
 impl Terminal {
@@ -123,13 +118,15 @@ impl Terminal {
         vt_output_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
         win32!(SetConsoleMode(conout, vt_output_mode));
 
+        let vt_input_mode = input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT;
+        win32!(SetConsoleMode(conin, vt_input_mode));
+
         Terminal {
             conin,
             conout,
             output_buf: Vec::new(),
             original_input_mode: input_mode,
             original_output_mode: output_mode,
-            shifted: false,
         }
     }
 
@@ -166,66 +163,43 @@ impl Terminal {
                 &mut buffer,
                 &raw mut events_read
             ));
+            #[cfg(debug_assertions)]
+            logging::log_line(&format!("[events_read] Got {events_read} events"));
+
+            let mut wchars: Vec<u16> = Vec::new();
             let mut keys = Vec::new();
             for record in buffer.iter().take(events_read as usize) {
                 match u32::from(record.EventType) {
                     KEY_EVENT => {
-                        if let Some(k) = self.translate_event(record) {
-                            keys.push(k);
+                        let key_event = unsafe { record.Event.KeyEvent };
+                        if key_event.bKeyDown.as_bool() {
+                            let wchar: u16 = unsafe { key_event.uChar.UnicodeChar };
+                            wchars.push(wchar);
+                        } else {
+                            logging::log_line(
+                                "[read_events] Ignoring event with bKeyDown == false",
+                            );
                         }
                     }
-                    WINDOW_BUFFER_SIZE_EVENT => keys.push(Resize),
-                    _ => {}
+                    WINDOW_BUFFER_SIZE_EVENT => {
+                        logging::log_line("[read_events] WINDOW_BUFFER_SIZE_EVENT");
+                        keys.push(Resize);
+                    }
+                    other => {
+                        logging::log_line(&format!(
+                            "[read_events] Ignoring event with type {}",
+                            other
+                        ));
+                    }
                 }
             }
 
+            let decoded_input = String::from_utf16(&wchars).unwrap();
+            keys.extend(ansi::translate_bytes(decoded_input.as_bytes()));
             if !keys.is_empty() {
                 return keys;
             }
         }
-    }
-
-    fn translate_event(&mut self, event: &INPUT_RECORD) -> Option<Key> {
-        let key_event = unsafe { event.Event.KeyEvent };
-        let vk_code = key_event.wVirtualKeyCode;
-
-        if vk_code == VK_SHIFT.0 {
-            self.shifted = key_event.bKeyDown.as_bool();
-            return None;
-        }
-
-        if !key_event.bKeyDown.as_bool() {
-            return None;
-        }
-
-        let key = if vk_code == VK_UP.0 {
-            Up
-        } else if vk_code == VK_DOWN.0 {
-            Down
-        } else if vk_code == VK_PRIOR.0 {
-            PgUp
-        } else if vk_code == VK_NEXT.0 {
-            PgDown
-        } else if vk_code == VK_HOME.0 {
-            Home
-        } else if vk_code == VK_END.0 {
-            End
-        } else if vk_code == VK_TAB.0 {
-            if self.shifted { ShiftTab } else { Tab }
-        } else if vk_code == VK_BACK.0 {
-            Backspace
-        } else if vk_code == VK_RETURN.0 {
-            Enter
-        } else if vk_code == VK_ESCAPE.0 {
-            Control('g')
-        } else {
-            let wchar: u16 = unsafe { key_event.uChar.UnicodeChar };
-            match char::from_u32(u32::from(wchar)) {
-                Some(c) => ansi::translate_char(c),
-                None => Nothing,
-            }
-        };
-        Some(key)
     }
 }
 

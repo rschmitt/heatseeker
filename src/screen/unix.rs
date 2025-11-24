@@ -1,7 +1,6 @@
 #![cfg(not(windows))]
 
 use super::Key;
-use super::Key::*;
 use crate::NEWLINE;
 use crate::ansi;
 use crate::logging;
@@ -48,15 +47,24 @@ impl Screen for UnixScreen {
     fn get_buffered_keys(&mut self) -> Vec<Key> {
         let mut ret = Vec::new();
         while let Ok(bytes) = self.tty.input.try_recv() {
-            logging::log_bytes("tty_try_recv", &bytes);
+            #[cfg(debug_assertions)]
+            logging::log_line(&format!(
+                "[get_buffered_keys] non-blocking read got {} bytes",
+                bytes.len()
+            ));
             ret.extend(bytes);
         }
         while ret.is_empty() {
             let bytes = self.tty.input.recv().unwrap();
             logging::log_bytes("tty_block_recv", &bytes);
+            #[cfg(debug_assertions)]
+            logging::log_line(&format!(
+                "[get_buffered_keys] blocking read got {} bytes",
+                bytes.len()
+            ));
             ret.extend_from_slice(&bytes);
         }
-        Terminal::translate_bytes(ret.clone())
+        ansi::translate_bytes(&ret)
     }
 }
 
@@ -181,58 +189,6 @@ impl Terminal {
         }
     }
 
-    fn translate_bytes(bytes: Vec<u8>) -> Vec<Key> {
-        const SEQUENCES: &[(&[u8], Option<Key>)] = &[
-            (b"\x1B[5~", Some(PgUp)),
-            (b"\x1B[6~", Some(PgDown)),
-            (b"\x1B[H", Some(Home)),
-            (b"\x1B[F", Some(End)),
-            (b"\x1B[Z", Some(ShiftTab)),
-            // Arrow keys
-            (b"\x1B[A", Some(Up)),
-            (b"\x1BOA", Some(Up)),
-            (b"\x1B[B", Some(Down)),
-            (b"\x1BOB", Some(Down)),
-            (b"\x1B[C", None),
-            (b"\x1BOC", None),
-            (b"\x1B[D", None),
-            (b"\x1BOD", None),
-            // Paste markers
-            (b"\x1B[200~", None),
-            (b"\x1B[201~", None),
-            // SIGWINCH
-            (&[0x9Cu8], Some(Resize)),
-        ];
-
-        let mut result = Vec::new();
-        let mut i = 0;
-
-        while i < bytes.len() {
-            let current = &bytes[i..];
-            let mut matched = false;
-
-            for &(seq, key) in SEQUENCES {
-                if current.starts_with(seq) {
-                    if let Some(k) = key {
-                        result.push(k);
-                    }
-                    i += seq.len();
-                    matched = true;
-                    break;
-                }
-            }
-
-            if !matched {
-                result.push(ansi::translate_char(bytes[i] as char));
-                i += 1;
-            }
-        }
-
-        #[cfg(debug_assertions)]
-        logging::log_line(&format!("[translate_bytes] {result:?}"));
-        result
-    }
-
     fn write(&mut self, s: &[u8]) {
         self.output_buf.extend_from_slice(s);
     }
@@ -307,80 +263,5 @@ mod tests {
         assert!(rows > 10);
         assert!(cols < 1000);
         assert!(rows < 1000);
-    }
-
-    #[test]
-    fn translate_bytes_escape() {
-        assert_eq!(Terminal::translate_bytes(vec![27u8]), vec![Control('g')]);
-    }
-
-    #[test]
-    fn translate_bytes_down_arrow() {
-        assert_eq!(Terminal::translate_bytes(b"\x1B[A".to_vec()), vec![Up]);
-    }
-
-    #[test]
-    fn translate_bytes_down_arrows() {
-        assert_eq!(
-            Terminal::translate_bytes(b"\x1B[A\x1B[A".to_vec()),
-            vec![Up, Up]
-        );
-    }
-
-    #[test]
-    fn translate_bytes_mixed() {
-        assert_eq!(
-            Terminal::translate_bytes(b"\x1BOAa\x1BOA".to_vec()),
-            vec![Up, Char('a'), Up]
-        );
-        assert_eq!(
-            Terminal::translate_bytes(b"\x1B[Aa\x1B[A".to_vec()),
-            vec![Up, Char('a'), Up]
-        );
-        assert_eq!(
-            Terminal::translate_bytes(b"\x1BOAa\x1B[A".to_vec()),
-            vec![Up, Char('a'), Up]
-        );
-        assert_eq!(
-            Terminal::translate_bytes(b"\x1B[Aa\x1BOA".to_vec()),
-            vec![Up, Char('a'), Up]
-        );
-        assert_eq!(
-            Terminal::translate_bytes(b"a\x1BOAb".to_vec()),
-            vec![Char('a'), Up, Char('b')]
-        );
-        assert_eq!(
-            Terminal::translate_bytes(b"ab\x1BOA".to_vec()),
-            vec![Char('a'), Char('b'), Up]
-        );
-    }
-
-    #[test]
-    fn translate_bytes_chars() {
-        assert_eq!(
-            Terminal::translate_bytes(b"Ab".to_vec()),
-            vec![Char('A'), Char('b')]
-        );
-    }
-
-    #[test]
-    fn translate_bytes_paste() {
-        const BEGIN_PASTE: &[u8] = b"\x1B[200~";
-        const END_PASTE: &[u8] = b"\x1B[201~";
-
-        let input = [BEGIN_PASTE, b"a", END_PASTE].concat();
-        assert_eq!(Terminal::translate_bytes(input), vec![Char('a')]);
-
-        let input = [b"a", BEGIN_PASTE, b"b", END_PASTE, b"c"].concat();
-        assert_eq!(
-            Terminal::translate_bytes(input),
-            vec![Char('a'), Char('b'), Char('c')]
-        );
-
-        assert_eq!(Terminal::translate_bytes(BEGIN_PASTE.to_vec()), vec![]);
-        assert_eq!(Terminal::translate_bytes(END_PASTE.to_vec()), vec![]);
-
-        let input = [b"a", BEGIN_PASTE, b"b"].concat();
-        assert_eq!(Terminal::translate_bytes(input), vec![Char('a'), Char('b')]);
     }
 }
