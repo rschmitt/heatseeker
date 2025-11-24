@@ -242,7 +242,6 @@ impl Drop for Terminal {
 
 #[cfg(test)]
 mod tests {
-    use super::Key::*;
     use super::Terminal;
     use libc::{STDIN_FILENO, STDOUT_FILENO, isatty};
 
