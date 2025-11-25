@@ -1,143 +1,124 @@
 [![Linux Build Status](https://app.travis-ci.com/rschmitt/heatseeker.svg?branch=master)](https://app.travis-ci.com/rschmitt/heatseeker)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/rschmitt/heatseeker?svg=true)](https://ci.appveyor.com/project/rschmitt/heatseeker)
 
-Heatseeker is a rewrite of Gary Bernhardt's
-[selecta](https://github.com/garybernhardt/selecta), a general-purpose fuzzy selector. It looks like this:
-
 ![ps-readline-demo](https://cloud.githubusercontent.com/assets/3725049/8273451/0ac04144-1824-11e5-8338-99e4b861c898.gif)
 
-The purpose of the rewrite is to combine the simplicity and generality of Selecta with the speed and portability of native code.
+Heatseeker is a fast, portable fuzzy finder that emphasizes speed and simplicity.
 
 ## Installation
 
 The recommended way to install is through Cargo:
 
-```zsh
+```sh
 cargo install heatseeker
 ```
 
 To install on Windows using [Chocolatey](https://chocolatey.org/), run:
 
-```posh
+```powershell
 choco install heatseeker
 ```
 
 To install on OS X using [Homebrew](http://brew.sh/), run:
 
-```zsh
+```sh
 brew tap rschmitt/heatseeker
 brew install heatseeker
 ```
 
 ## Use
 
-Heatseeker supports basically the same keys as Selecta, along with a few others to support multi-select:
+Heatseeker's usage is mostly intuitive, but there are a few commands worth knowing:
 
-* ^T to select or deselect the currently highlighted match
-* Enter to select the currently highlighted match, *or* any matches previously highlighted with ^T
-* ^G, ^C, or Escape to quit without selecting a match
+* `^T` (that is, Control-T) to select or deselect the currently highlighted choice
+* Enter to select the currently highlighted choice, *or* any matches previously highlighted with `^T`
+* `^G`, `^C`, or Escape to quit without selecting a match
 * Backspace to delete the last query character typed
-* ^U to delete the entire query
-* ^N, down arrow, or tab to highlight the next match
-* ^P or up arrow to highlight the previous match
+* `^W` to delete the last word in the query
+* `^U` to delete the entire query
+* `^N`, down arrow, or Tab to highlight the next match
+* `^P`, up arrow, or Shift-Tab to highlight the previous match
+* `^B` or Page Up to move up by one page
+* `^F` or Page Down to move down by one page
+* Home/End to move to the first or last choice
 
-### PowerShell
+### Shell integration
 
-With [PSReadLine](https://github.com/lzybkr/PSReadLine), Heatseeker can be integrated directly into the Windows command line. Add this code to your `$profile`. The file selector can be summoned with Ctrl-S.
+The shell integration adds the following commands:
 
-```posh
-$ps = $null
-try {
-    # On Windows 10, PSReadLine ships with PowerShell
-    $ps = [Microsoft.PowerShell.PSConsoleReadline]
-} catch [Exception] {
-    # Otherwise, it can be installed from the PowerShell Gallery:
-    # https://github.com/lzybkr/PSReadLine#installation
-    Import-Module PSReadLine
-    $ps = [PSConsoleUtilities.PSConsoleReadLine]
-}
+* `^S` selects files to add to the current command.
+* `^R` performs a history search.
 
-Set-PSReadlineKeyHandler `
-     -Chord 'Ctrl+s' `
-     -BriefDescription "InsertHeatseekerPathInCommandLine" `
-     -LongDescription "Run Heatseeker in the PWD, appending any selected paths to the current command" `
-     -ScriptBlock {
-         $choices = $(Get-ChildItem -Name -Attributes !D -Recurse | hs)
-         $ps::Insert($choices -join " ")
-    }
+#### Zsh
+
+Add this to your `~/.zshrc`:
+
+```sh
+eval "$(hs shell zsh)"
 ```
 
-### Vim
+Note that the default integration sets the `noflowcontrol` option in order to free up the `^S` binding.
 
-With a bit of Vimscript, you can use Heatseeker to open files in Vim, without any need for a special plugin.
+#### PowerShell
+
+Add this to your `$profile`:
+
+```powershell
+(&hs shell pwsh) | Out-String | Invoke-Expression
+```
+
+Be sure to add it after any other readline configuration, such as `Set-PSReadlineOption -EditMode Emacs`, which will overwrite Heatseeker's bindings.
+
+### Vim integration
+
+The built-in plugin supports both Vim and Neovim:
+
+```vim
+Plug 'rschmitt/heatseeker'
+```
 
 ![vim-demo](https://cloud.githubusercontent.com/assets/3725049/8273517/2a2f9afa-1826-11e5-9e1e-a15e84751bd0.gif)
 
-The Vimscript [samples](https://github.com/garybernhardt/selecta) from the Selecta README basically work, but it is preferable to modify them for use with Heatseeker in order to add support for Windows and multi-select.
+This plugin adds the following key bindings:
 
-```vim
-function! HeatseekerCommand(choice_command, hs_args, first_command, rest_command)
-    try
-        let selections = system(a:choice_command . " | hs " . a:hs_args)
-    catch /Vim:Interrupt/
-        redraw!
-        return
-    endtry
-    redraw!
-    let first = 1
-    for selection in split(selections, "\n")
-        if first
-            exec a:first_command . " " . selection
-            let first = 0
-        else
-            exec a:rest_command . " " . selection
-        endif
-    endfor
-endfunction
+* `<leader>f` to open one or more files. Multiple files will be opened in tabs.
+  * The `<leader>` key defaults to `\`, but people frequently change it to `,`:
+    ```
+    let g:mapleader = ","
+    ```
+* `<leader>b` to select a buffer to open.
+* `^G` to take the identifier currently under the cursor and select files to open containing that string.
 
-if has('win32')
-    nnoremap <leader>f :call HeatseekerCommand("dir /a-d /s /b", "", ':e', ':tabe')<CR>
-else
-    nnoremap <leader>f :call HeatseekerCommand("find . ! -path '*/.git/*' -type f -follow", "", ':e', ':tabe')<cr>
-endif
-```
+## Project Information
 
-The same goes for buffer selection. This is a bit trickier on Windows, because the most straightforward way to send the list of buffers to Heatseeker is to write a temp file.
+Heatseeker has been actively used and maintained for over ten years. It is considered feature-complete. Development focuses on general maintenance, integration support, bugfixes, and portability improvements.
 
-```posh
-function! HeatseekerBuffer()
-    let bufnrs = filter(range(1, bufnr("$")), 'buflisted(v:val)')
-    let buffers = map(bufnrs, 'bufname(v:val)')
-    let named_buffers = filter(buffers, '!empty(v:val)')
-    if has('win32')
-        let filename = tempname()
-        call writefile(named_buffers, filename)
-        call HeatseekerCommand("type " . filename, "", ":b", ":b")
-        silent let _ = system("del " . filename)
-    else
-        call HeatseekerCommand('echo "' . join(named_buffers, "\n") . '"', "", ":b", ":b")
-    endif
-endfunction
-
-" Fuzzy select a buffer. Open the selected buffer with :b.
-nnoremap <leader>b :call HeatseekerBuffer()<cr>
-```
-
-## Project Status
-
-* Heatseeker is fully implemented. It works smoothly on all supported platforms, including Windows; it has even been successfully smoke tested (both building and running) on Windows 10 Technical Preview.
-* Heatseeker requires no unstable language features and can be compiled with the stable Rust toolchain.
+Heatseeker originated as a Rust rewrite of Gary Bernhardt's [selecta](https://github.com/garybernhardt/selecta) with the goal of improving speed and portability.
 
 ## Building
 
-Perform the build by invoking:
+Heatseeker uses a typical Cargo build. Perform the build by invoking:
 
 ```
 $ cargo build --release
 ```
 
-The resulting binary will be located in the `target/release` directory. (Note that omitting the `--release` flag will cause compiler optimizations to be skipped; this speeds up compilation but results in a remarkably sluggish program.) The unit tests can be invoked by running:
+The resulting binary will be located in the `target/release` directory. Alternatively, you can install from the repository by running:
+
+```
+cargo install --path . --locked
+```
+
+The unit tests can be invoked by running:
 
 ```
 $ cargo test
 ```
+
+Finally, a debug build can be produced by running:
+
+```
+$ cargo build
+```
+
+Debug builds of Heatseeker write a special log file, `heatseeker-debug.log`, to the current working directory. This can be used to debug issues with things like input decoding and signal handling.
