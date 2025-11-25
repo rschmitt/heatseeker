@@ -23,7 +23,8 @@ mod built_info {
     include!(concat!(env!("OUT_DIR"), "/built.rs"));
 }
 
-const INTEGRATION_ZSH: &str = include_str!("shell/hs.zsh");
+const ZSH_CONFIG: &str = include_str!("shell/hs.zsh");
+const PWSH_CONFIG: &str = include_str!("shell/hs.ps1");
 
 #[derive(Debug, Parser)]
 #[command(
@@ -95,7 +96,8 @@ fn main() {
 
     if let Some(Command::Shell { shell }) = &args.command {
         match shell.as_str() {
-            "zsh" => print!("{}", INTEGRATION_ZSH),
+            "zsh" => print!("{}", ZSH_CONFIG),
+            "pwsh" => print!("{}", PWSH_CONFIG),
             _ => eprintln!("Error: Unsupported shell '{}'", shell),
         }
         return;
