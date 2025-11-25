@@ -23,6 +23,8 @@ mod built_info {
     include!(concat!(env!("OUT_DIR"), "/built.rs"));
 }
 
+const INTEGRATION_ZSH: &str = include_str!("shell/hs.zsh");
+
 #[derive(Debug, Parser)]
 #[command(
     name = "heatseeker",
@@ -30,6 +32,8 @@ mod built_info {
     disable_version_flag = true
 )]
 pub struct Args {
+    #[command(subcommand)]
+    pub command: Option<Command>,
     #[arg(short = 's', long = "search", value_name = "SEARCH")]
     pub initial_search: Option<String>,
     #[arg(
@@ -51,6 +55,15 @@ pub struct Args {
         help = "Just filter choices without ranking them"
     )]
     pub filter_only: bool,
+}
+
+#[derive(Debug, clap::Subcommand)]
+pub enum Command {
+    #[command(about = "Print shell integration code")]
+    Shell {
+        #[arg(value_name = "SHELL", help = "Shell type (zsh)")]
+        shell: String,
+    },
 }
 
 fn main() {
@@ -76,6 +89,14 @@ fn main() {
                 built_info::BUILT_TIME_UTC,
                 built_info::TARGET
             );
+        }
+        return;
+    }
+
+    if let Some(Command::Shell { shell }) = &args.command {
+        match shell.as_str() {
+            "zsh" => print!("{}", INTEGRATION_ZSH),
+            _ => eprintln!("Error: Unsupported shell '{}'", shell),
         }
         return;
     }
