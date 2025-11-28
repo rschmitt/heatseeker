@@ -59,6 +59,16 @@ eval "$(hs shell zsh)"
 
 Note that the default integration sets the `noflowcontrol` option in order to free up the `^S` binding.
 
+#### Bash
+
+Add this to your `~/.bashrc`:
+
+```bash
+eval "$(hs shell bash)"
+```
+
+This requires a modern version of bash; the ancient `/bin/bash` that ships with macOS is unsupported. Additionally, note that the default integration disables flow control in order to free up the `^S` binding.
+
 #### PowerShell
 
 Add this to your `$profile`:
