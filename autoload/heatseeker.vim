@@ -86,8 +86,7 @@ function! heatseeker#command(choice_command, hs_args, first_command, rest_comman
         let l:tmp = tempname()
         let l:cmd = l:pipeline . ' > ' . shellescape(l:tmp)
         let l:return_win = win_getid()
-        topleft 25split
-        enew
+        tabnew
         let l:term_win = win_getid()
         let l:bufnr = bufnr('%')
         let l:cb = {'tempfile': l:tmp, 'first': a:first_command, 'rest': a:rest_command, 'term_win': l:term_win, 'bufnr': l:bufnr, 'return_win': l:return_win, 'empty_tab': l:empty_tab}
