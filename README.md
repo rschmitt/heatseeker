@@ -78,6 +78,14 @@ mkdir ($nu.data-dir | path join "vendor/autoload")
 hs shell nu | save -f ($nu.data-dir | path join "vendor/autoload/hs.nu")
 ```
 
+#### Fish
+
+Add this to your `~/.config/fish/config.fish`:
+
+```fish
+hs shell fish | source
+```
+
 ### Vim integration
 
 The built-in plugin supports both Vim and Neovim:

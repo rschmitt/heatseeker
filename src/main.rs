@@ -26,6 +26,7 @@ mod built_info {
 const ZSH_CONFIG: &str = include_str!("shell/hs.zsh");
 const PWSH_CONFIG: &str = include_str!("shell/hs.ps1");
 const NU_CONFIG: &str = include_str!("shell/hs.nu");
+const FISH_CONFIG: &str = include_str!("shell/hs.fish");
 
 #[derive(Debug, Parser)]
 #[command(
@@ -63,7 +64,7 @@ pub struct Args {
 pub enum Command {
     #[command(about = "Print shell integration code")]
     Shell {
-        #[arg(value_name = "SHELL", help = "Shell type: zsh, pwsh, nu")]
+        #[arg(value_name = "SHELL", help = "Shell type: zsh, pwsh, nu, fish")]
         shell: String,
     },
 }
@@ -100,6 +101,7 @@ fn main() {
             "zsh" => print!("{}", ZSH_CONFIG),
             "pwsh" => print!("{}", PWSH_CONFIG),
             "nu" | "nushell" => print!("{}", NU_CONFIG),
+            "fish" => print!("{}", FISH_CONFIG),
             _ => eprintln!("Error: Unsupported shell '{}'", shell),
         }
         return;
