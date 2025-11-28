@@ -10,7 +10,8 @@
     <summary>A fast, robust, and portable fuzzy finder.</summary>
     <description>A fast, robust, and portable fuzzy finder with native PowerShell integration.</description>
     <projectUrl>https://github.com/rschmitt/heatseeker</projectUrl>
-    <packageSourceUrl>https://github.com/rschmitt/heatseeker</packageSourceUrl>
+    <projectSourceUrl>https://github.com/rschmitt/heatseeker</projectSourceUrl>
+    <bugTrackerUrl>https://github.com/rschmitt/heatseeker/issues</bugTrackerUrl>
     <licenseUrl>https://github.com/rschmitt/heatseeker/blob/master/LICENSE</licenseUrl>
     <tags>heatseeker selecta utilities tools vim editor search fuzzy finder</tags>
     <copyright></copyright>
