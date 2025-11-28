@@ -62,7 +62,7 @@ pub struct Args {
 pub enum Command {
     #[command(about = "Print shell integration code")]
     Shell {
-        #[arg(value_name = "SHELL", help = "Shell type (zsh)")]
+        #[arg(value_name = "SHELL", help = "Shell type: zsh, pwsh")
         shell: String,
     },
 }
