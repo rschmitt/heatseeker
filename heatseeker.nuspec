@@ -3,18 +3,32 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>heatseeker</id>
-    <version>1.8.0</version>
+    <version>1.9.0</version>
     <title>Heatseeker</title>
     <authors>Ryan Schmitt</authors>
     <owners>Ryan Schmitt</owners>
-    <summary>A high-performance general purpose fuzzy finder, based on selecta</summary>
-    <description>A high-performance general purpose fuzzy finder, based on selecta</description>
+    <summary>A fast, robust, and portable fuzzy finder.</summary>
+    <description>A fast, robust, and portable fuzzy finder with native PowerShell integration.</description>
     <projectUrl>https://github.com/rschmitt/heatseeker</projectUrl>
     <packageSourceUrl>https://github.com/rschmitt/heatseeker</packageSourceUrl>
     <licenseUrl>https://github.com/rschmitt/heatseeker/blob/master/LICENSE</licenseUrl>
     <tags>heatseeker selecta utilities tools vim editor search fuzzy finder</tags>
     <copyright></copyright>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <releaseNotes></releaseNotes>
+    <releaseNotes>
+Changes in this release:
+
+- Shell integration has been added, with initial support for zsh and
+  PowerShell.
+- A plugin for Vim and Neovim has been added (`rschmitt/heatseeker`).
+- The Windows implementation has been updated to use virtual terminal
+  mode. This should reduce flickering while redrawing the screen and
+  improve support for environments like MSYS2.
+- On macOS and Linux, hs now clears formatting when the terminal is
+  initially opened, fixing a cosmetic issue that occurred in certain
+  contexts.
+- Numerous small fixes, optimizations, and modernizations have been made
+  to the implementation.
+    </releaseNotes>
   </metadata>
 </package>
