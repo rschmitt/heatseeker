@@ -69,6 +69,15 @@ Add this to your `$profile`:
 
 Be sure to add it after any other readline configuration, such as `Set-PSReadlineOption -EditMode Emacs`, which will overwrite Heatseeker's bindings.
 
+#### Nushell
+
+Add this to the end of your `config.nu`, which can be found by running `$nu.config-path` in Nushell:
+
+```nu
+mkdir ($nu.data-dir | path join "vendor/autoload")
+hs shell nu | save -f ($nu.data-dir | path join "vendor/autoload/hs.nu")
+```
+
 ### Vim integration
 
 The built-in plugin supports both Vim and Neovim:
