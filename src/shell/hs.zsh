@@ -5,7 +5,18 @@ setopt noflowcontrol
 # Replace the shell's built-in ^R handling
 _hs_fuzzy_history() {
     echo
-    BUFFER=$(fc -l 1 | tac | awk '{ $1=""; cmd=substr($0,2); if (!seen[cmd]++) print cmd }' | hs --filter-only | sed 's/\\n/\n/g')
+    BUFFER=$(fc -l 1 | awk '
+    {
+        $1 = "";
+        cmd = substr($0,2);
+        lines[NR] = cmd
+    }
+    END {
+        for (i = NR; i >= 1; i--)
+            if (!seen[lines[i]]++)
+                print lines[i]
+    }
+    ' | hs --filter-only | sed 's/\\n/\n/g')
     echo -n "\033[1A"
     zle reset-prompt
     zle end-of-buffer-or-history

@@ -37,8 +37,16 @@ __hs_setup_heatseeker() {
         printf '\n'
         selection=$(
             HISTTIMEFORMAT= history | awk '
-                { $1=""; cmd=substr($0,2); lines[NR]=cmd }
-                END { for (i=NR;i>=1;i--) if (!seen[lines[i]]++) print lines[i] }
+                {
+                    $1 = "";
+                    cmd = substr($0,2);
+                    lines[NR] = cmd
+                }
+                END {
+                    for (i = NR; i >= 1; i--)
+                        if (!seen[lines[i]]++)
+                            print lines[i]
+                }
             ' | hs --filter-only
         )
         printf '\033[1A'
