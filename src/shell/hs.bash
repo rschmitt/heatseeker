@@ -18,15 +18,13 @@ __hs_setup_heatseeker() {
             selected_paths=$(fd --type f --color=never | hs | paste -sd' ' -) || { printf '\033[1A'; return; }
         elif command -v rg >/dev/null 2>&1; then
             selected_paths=$(rg --files | hs | paste -sd' ' -) || { printf '\033[1A'; return; }
-        elif [[ "$OS" == "Windows_NT" ]]; then
-            selected_paths=$(cmd /c 'dir /a-d /s /b | findstr /V "\\.git\\\\"' | hs | paste -sd' ' -) || { printf '\033[1A'; return; }
         else
             selected_paths=$(find . -type f -not -path '*/.git/*' | hs | paste -sd' ' -) || { printf '\033[1A'; return; }
         fi
 
         printf '\033[1A'
         if [[ -n $selected_paths ]]; then
-            READLINE_LINE+="${selected_paths} "
+            READLINE_LINE+="${selected_paths//$'\r'/} "
             READLINE_POINT=${#READLINE_LINE}
         fi
     }
