@@ -3,7 +3,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>heatseeker</id>
-    <version>1.9.0</version>
+    <version>1.10.0</version>
     <title>Heatseeker</title>
     <authors>Ryan Schmitt</authors>
     <owners>Ryan Schmitt</owners>
@@ -19,17 +19,8 @@
     <releaseNotes>
 Changes in this release:
 
-- Shell integration has been added, with initial support for zsh and
-  PowerShell.
-- A plugin for Vim and Neovim has been added (`rschmitt/heatseeker`).
-- The Windows implementation has been updated to use virtual terminal
-  mode. This should reduce flickering while redrawing the screen and
-  improve support for environments like MSYS2.
-- On macOS and Linux, hs now clears formatting when the terminal is
-  initially opened, fixing a cosmetic issue that occurred in certain
-  contexts.
-- Numerous small fixes, optimizations, and modernizations have been made
-  to the implementation.
+- Shell integration has been added for bash, fish, and nushell.
+- The zsh integration's portability has been improved.
     </releaseNotes>
   </metadata>
 </package>
