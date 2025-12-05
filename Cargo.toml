@@ -46,3 +46,6 @@ features = [
 [build-dependencies]
 chrono = "0.4"
 built = { version = "0.8", features = ["git2", "chrono"] }
+
+[profile.release]
+lto = true
