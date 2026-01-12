@@ -74,6 +74,10 @@ pub(crate) fn translate_bytes(bytes: &[u8]) -> Vec<Key> {
         (b"\x1BOC", None),
         (b"\x1B[D", None),
         (b"\x1BOD", None),
+        // Focus lost
+        (b"\x1B[O", None),
+        // Focus gained
+        (b"\x1B[I", None),
         // Paste markers
         (b"\x1B[200~", None),
         (b"\x1B[201~", None),
