@@ -66,6 +66,14 @@ pub const fn clear_to_end_of_line() -> &'static [u8] {
     b"\x1b[K"
 }
 
+pub const fn begin_synchronized_update() -> &'static [u8] {
+    b"\x1b[?2026h"
+}
+
+pub const fn end_synchronized_update() -> &'static [u8] {
+    b"\x1b[?2026l"
+}
+
 pub(crate) fn translate_bytes(bytes: &[u8]) -> Vec<Key> {
     const SEQUENCES: &[(&[u8], Option<Key>)] = &[
         (b"\x1B[5~", Some(PgUp)),
