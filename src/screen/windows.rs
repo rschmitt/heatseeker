@@ -124,7 +124,7 @@ impl Terminal {
         Terminal {
             conin,
             conout,
-            output_buf: Vec::new(),
+            output_buf: Vec::with_capacity(8192),
             original_input_mode: input_mode,
             original_output_mode: output_mode,
         }
