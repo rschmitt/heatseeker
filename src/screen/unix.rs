@@ -114,7 +114,7 @@ impl Terminal {
             input: rx,
             input_fd,
             output: output_file,
-            output_buf: Vec::new(),
+            output_buf: Vec::with_capacity(8192),
             original_stty_state: Vec::new(),
         };
         let current_stty_state = ret.stty(&["-g"]);
@@ -192,6 +192,9 @@ impl Terminal {
     }
 
     fn flush(&mut self) {
+        if self.output_buf.is_empty() {
+            return;
+        }
         self.output.write_all(&self.output_buf).unwrap();
         self.output_buf.clear();
     }
