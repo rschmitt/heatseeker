@@ -42,27 +42,27 @@ pub trait Screen {
         min(self.desired_rows(), self.rows().saturating_sub(1))
     }
 
-    fn move_cursor_to_prompt_line(&mut self, col: u16) {
-        self.reset_cursor();
+    fn move_cursor_to_prompt_line_with_rows(&mut self, col: u16, num_lines: u16) {
+        self.reset_cursor_with_rows(num_lines);
         let mut buf = [0u8; 16];
         self.write_bytes(ansi::cursor_right(col, &mut buf));
     }
 
-    fn reset_cursor(&mut self) {
+    fn reset_cursor_with_rows(&mut self, num_lines: u16) {
         self.write_bytes(ansi::restore_cursor());
         self.write_bytes(b"\r");
-        let num_lines = self.visible_choices();
         let mut buf = [0u8; 16];
         self.write_bytes(ansi::cursor_up(num_lines, &mut buf));
     }
 
     fn blank_screen(&mut self) {
-        self.reset_cursor();
+        let visible_choices = self.visible_choices();
         let blank_line = " ".repeat(self.width() as usize);
-        for _ in 0..=self.visible_choices() {
+        self.reset_cursor_with_rows(visible_choices);
+        for _ in 0..=visible_choices {
             self.write_bytes(blank_line.as_bytes());
         }
-        self.reset_cursor();
+        self.reset_cursor_with_rows(visible_choices);
     }
 
     fn show_cursor(&mut self) {

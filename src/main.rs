@@ -350,8 +350,11 @@ impl<'a> Search<'a> {
 }
 
 fn draw_screen(screen: &mut dyn Screen, search: &Search) {
+    let (width, rows) = screen.winsize().unwrap();
+    let visible_choices = min(screen.desired_rows(), rows.saturating_sub(1));
+
     screen.hide_cursor();
-    screen.reset_cursor();
+    screen.reset_cursor_with_rows(visible_choices);
     screen.write(&format!(
         "> {} ({}/{} choices)",
         search.query,
@@ -367,11 +370,16 @@ fn draw_screen(screen: &mut dyn Screen, search: &Search) {
         &search.query,
         search.scroll_offset,
         search.cursor_index,
+        width,
+        visible_choices,
         &search.selections,
     );
 
     let query_str: &str = &search.query;
-    screen.move_cursor_to_prompt_line(2 + UnicodeWidthStr::width(query_str) as u16);
+    screen.move_cursor_to_prompt_line_with_rows(
+        2 + UnicodeWidthStr::width(query_str) as u16,
+        visible_choices,
+    );
     screen.show_cursor();
 }
 
@@ -381,10 +389,11 @@ fn print_matches(
     query: &str,
     scroll_offset: usize,
     cursor_index: usize,
+    max_width: u16,
+    visible_choices: u16,
     selections: &IndexSet<String>,
 ) {
-    let visible_choices = screen.visible_choices() as usize;
-    let max_width = screen.width();
+    let visible_choices = visible_choices as usize;
     for row in 0..visible_choices {
         if let Some(choice) = matches.get(scroll_offset + row) {
             let indices = matching::visual_score(choice, query);
