@@ -351,14 +351,15 @@ impl<'a> Search<'a> {
 
 fn draw_screen(screen: &mut dyn Screen, search: &Search) {
     screen.hide_cursor();
-    screen.blank_screen();
+    screen.reset_cursor();
     screen.write(&format!(
-        "> {} ({}/{} choices){}",
+        "> {} ({}/{} choices)",
         search.query,
         search.matches.len(),
-        search.choices.len(),
-        NEWLINE
+        search.choices.len()
     ));
+    screen.write_bytes(ansi::clear_to_end_of_line());
+    screen.write(NEWLINE);
 
     print_matches(
         screen,
@@ -382,37 +383,38 @@ fn print_matches(
     cursor_index: usize,
     selections: &IndexSet<String>,
 ) {
-    let mut i = 1;
-    for choice in &matches[scroll_offset..] {
-        let indices = matching::visual_score(choice, query);
-        let max_width = screen.width();
-        let mut annotated_choice = (*choice).to_string();
-        if selections.contains(&annotated_choice) {
-            annotated_choice.push_str(" ✓");
-        }
-        print_match(
-            &annotated_choice,
-            &indices,
-            max_width,
-            &mut |s, highlight| {
-                if i == cursor_index + 1 {
-                    if highlight {
-                        screen.write_red_inverted(s);
+    let visible_choices = screen.visible_choices() as usize;
+    let max_width = screen.width();
+    for row in 0..visible_choices {
+        if let Some(choice) = matches.get(scroll_offset + row) {
+            let indices = matching::visual_score(choice, query);
+            let mut annotated_choice = (*choice).to_string();
+            if selections.contains(&annotated_choice) {
+                annotated_choice.push_str(" ✓");
+            }
+            print_match(
+                &annotated_choice,
+                &indices,
+                max_width,
+                &mut |s, highlight| {
+                    if row == cursor_index {
+                        if highlight {
+                            screen.write_red_inverted(s);
+                        } else {
+                            screen.write_inverted(s);
+                        }
+                    } else if highlight {
+                        screen.write_red(s);
                     } else {
-                        screen.write_inverted(s);
+                        screen.write(s);
                     }
-                } else if highlight {
-                    screen.write_red(s);
-                } else {
-                    screen.write(s);
-                }
-            },
-        );
-        if i >= screen.visible_choices() as usize {
-            return;
+                },
+            );
         }
-        screen.write(NEWLINE);
-        i += 1;
+        screen.write_bytes(ansi::clear_to_end_of_line());
+        if row + 1 < visible_choices {
+            screen.write(NEWLINE);
+        }
     }
 }
 
