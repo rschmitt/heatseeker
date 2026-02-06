@@ -354,6 +354,7 @@ fn draw_screen(screen: &mut dyn Screen, search: &Search) {
     let visible_choices = min(screen.desired_rows(), rows.saturating_sub(1));
 
     screen.hide_cursor();
+    screen.write_bytes(ansi::begin_synchronized_update());
     screen.reset_cursor_with_rows(visible_choices);
     screen.write(&format!(
         "> {} ({}/{} choices)",
@@ -380,6 +381,7 @@ fn draw_screen(screen: &mut dyn Screen, search: &Search) {
         2 + UnicodeWidthStr::width(query_str) as u16,
         visible_choices,
     );
+    screen.write_bytes(ansi::end_synchronized_update());
     screen.show_cursor();
 }
 
