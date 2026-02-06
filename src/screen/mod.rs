@@ -83,8 +83,7 @@ pub trait Screen {
     }
 
     fn write_red_inverted(&mut self, s: &str) {
-        self.write_bytes(ansi::red());
-        self.write_bytes(ansi::inverse());
+        self.write_bytes(ansi::red_inverse());
         self.write(s);
         self.write_bytes(ansi::reset());
     }

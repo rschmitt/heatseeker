@@ -50,6 +50,10 @@ pub const fn red() -> &'static [u8] {
     b"\x1b[31m"
 }
 
+pub const fn red_inverse() -> &'static [u8] {
+    b"\x1b[31;7m"
+}
+
 pub const fn reset() -> &'static [u8] {
     b"\x1b[0m"
 }

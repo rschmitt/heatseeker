@@ -444,19 +444,44 @@ fn print_match(
         chars_to_draw -= 1;
     }
     let mut last_idx = 0;
-    for &idx in indices {
-        let idx = min(idx, chars_to_draw);
+    let mut i = 0;
+    while i < indices.len() {
+        let run_start = min(indices[i], chars_to_draw);
         if last_idx >= chars_to_draw {
             return;
         }
-        writer(slice_chars(choice, last_idx, idx), false);
-        if idx == chars_to_draw {
+        if last_idx < run_start {
+            writer(slice_chars(choice, last_idx, run_start), false);
+        }
+        if run_start == chars_to_draw {
             return;
         }
-        writer(slice_chars(choice, idx, idx + 1), true);
-        last_idx = idx + 1;
+
+        let mut run_end = run_start + 1;
+        while i + 1 < indices.len() {
+            let next_idx = min(indices[i + 1], chars_to_draw);
+            if next_idx != run_end {
+                break;
+            }
+            run_end += 1;
+            i += 1;
+            if run_end == chars_to_draw {
+                break;
+            }
+        }
+
+        if run_start < run_end {
+            writer(slice_chars(choice, run_start, run_end), true);
+        }
+        if run_end == chars_to_draw {
+            return;
+        }
+        last_idx = run_end;
+        i += 1;
     }
-    writer(slice_chars(choice, last_idx, chars_to_draw), false);
+    if last_idx < chars_to_draw {
+        writer(slice_chars(choice, last_idx, chars_to_draw), false);
+    }
 }
 
 fn read_choices() -> Vec<String> {
