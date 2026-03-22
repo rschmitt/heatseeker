@@ -487,10 +487,10 @@ fn read_choices() -> Vec<String> {
             }
         }
     }
-    if first_error.is_some() {
+    if let Some(err) = first_error {
         eprintln!(
             "Warning: Failed to parse one or more lines (\"{}\"); {} additional error(s) suppressed",
-            first_error.unwrap(),
+            err,
             suppressed
         );
     }
