@@ -25,18 +25,24 @@ impl PartialOrd for ScoredChoice {
     }
 }
 
-pub fn compute_matches<'a>(choices: &[&'a str], query: &str, filter_only: bool) -> Vec<&'a str> {
+pub fn compute_matches<'a>(
+    choices: &[&'a str],
+    query: &str,
+    filter_only: bool,
+    fixed_strings: bool,
+) -> Vec<&'a str> {
     let par_choices = choices.par_iter().with_min_len(100);
 
-    if filter_only {
+    if filter_only || fixed_strings {
         return par_choices
             .filter_map(|choice| {
                 let choice = *choice;
-                if filter(choice, query) > 0.0 {
-                    Some(choice)
+                let is_match = if fixed_strings {
+                    fixed_match_indices(choice, query).is_some()
                 } else {
-                    None
-                }
+                    filter(choice, query) > 0.0
+                };
+                if is_match { Some(choice) } else { None }
             })
             .collect();
     }
@@ -95,15 +101,36 @@ fn filter(choice: &str, query: &str) -> f64 {
 // This function is for picking out the matching characters for a given (choice, query) pair for
 // rendering purposes. It assumes that the given choice is in fact a match for the given query, and
 // will panic if this is not the case.
-pub fn visual_score(choice: &str, query: &str) -> Vec<usize> {
+pub fn visual_score(choice: &str, query: &str, fixed_strings: bool) -> Vec<usize> {
     if query.is_empty() || choice.is_empty() {
         return Vec::new();
+    }
+    if fixed_strings {
+        return fixed_match_indices(choice, query).unwrap();
     }
     let query = chars!(query);
     let choice = chars!(choice);
 
     let (first_idx, _) = get_longest_match(choice, query).unwrap();
     get_match_indices(choice, &query[1..], first_idx).unwrap()
+}
+
+fn fixed_match_indices(choice: &str, query: &str) -> Option<Vec<usize>> {
+    if query.is_empty() {
+        return Some(Vec::new());
+    }
+
+    let query = chars!(query);
+    let choice = chars!(choice);
+    choice
+        .windows(query.len())
+        .position(|window| {
+            query
+                .iter()
+                .zip(window)
+                .all(|(&query_char, &choice_char)| chars_equal(query_char, choice_char))
+        })
+        .map(|start| (start..start + query.len()).collect())
 }
 
 fn compute_match_length(string: &[char], query: &[char]) -> Option<usize> {
@@ -173,12 +200,9 @@ fn get_match_indices(
                 break;
             }
         }
-        if let Some(idx) = index {
-            last_index += idx + 1;
-            ret.push(last_index - 1);
-        } else {
-            return None;
-        }
+        let idx = index?;
+        last_index += idx + 1;
+        ret.push(last_index - 1);
     }
     Some(ret)
 }
@@ -189,7 +213,10 @@ fn chars_equal(q: char, c: char) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::{chars_equal, compute_matches, find_end_of_match, get_match_indices, score};
+    use super::{
+        chars_equal, compute_matches, find_end_of_match, fixed_match_indices, get_match_indices,
+        score, visual_score,
+    };
 
     #[test]
     fn chars_equal_test() {
@@ -306,17 +333,35 @@ mod tests {
 
     #[test]
     fn compute_matches_filter_only_preserves_order() {
-        let choices = vec!["barbarbar", "bar", "baz"];
-        let references = choices.iter().map(|s| *s).collect::<Vec<_>>();
-        let result = compute_matches(&references, "bar", true);
+        let choices = ["barbarbar", "bar", "baz"];
+        let references = choices.to_vec();
+        let result = compute_matches(&references, "bar", true, false);
         assert_eq!(result, vec!["barbarbar", "bar"]);
     }
 
     #[test]
     fn compute_matches_ranks_by_score() {
-        let choices = vec!["barbarbar", "bar", "baz"];
-        let references = choices.iter().map(|s| *s).collect::<Vec<_>>();
-        let result = compute_matches(&references, "bar", false);
+        let choices = ["barbarbar", "bar", "baz"];
+        let references = choices.to_vec();
+        let result = compute_matches(&references, "bar", false, false);
         assert_eq!(result, vec!["bar", "barbarbar"]);
+    }
+
+    #[test]
+    fn fixed_string_matching_requires_a_contiguous_match() {
+        let choices = vec!["foo bar", "f_o_o", "FOO"];
+        let result = compute_matches(&choices, "foo", false, true);
+        assert_eq!(result, vec!["foo bar", "FOO"]);
+    }
+
+    #[test]
+    fn fixed_string_matching_preserves_smart_case_behavior() {
+        assert_eq!(fixed_match_indices("FOO", "foo"), Some(vec![0, 1, 2]));
+        assert_eq!(fixed_match_indices("foo", "FOO"), None);
+    }
+
+    #[test]
+    fn fixed_string_visual_score_highlights_the_substring() {
+        assert_eq!(visual_score("a πrefix here", "πre", true), vec![2, 3, 4]);
     }
 }

@@ -55,6 +55,12 @@ pub struct Args {
     )]
     pub full_screen: bool,
     #[arg(
+        short = 'S',
+        long = "substring",
+        help = "Use non-fuzzy substring matching"
+    )]
+    pub fixed_strings: bool,
+    #[arg(
         long = "filter-only",
         help = "Just filter choices without ranking them"
     )]
@@ -113,11 +119,22 @@ fn main() {
     let initial_search = args.initial_search.clone().unwrap_or_default();
     let choices = choices.iter().map(|x| &x[..]).collect::<Vec<&str>>();
     if args.use_first {
-        let matches = matching::compute_matches(&choices, &initial_search, args.filter_only);
+        let matches = matching::compute_matches(
+            &choices,
+            &initial_search,
+            args.filter_only,
+            args.fixed_strings,
+        );
         println!("{}", matches.first().unwrap_or(&""));
     } else {
         let desired_rows = if args.full_screen { 999 } else { 20 };
-        let selections = event_loop(desired_rows, &choices, &initial_search, args.filter_only);
+        let selections = event_loop(
+            desired_rows,
+            &choices,
+            &initial_search,
+            args.filter_only,
+            args.fixed_strings,
+        );
         print!("{selections}");
     }
 }
@@ -127,8 +144,14 @@ fn event_loop(
     choices: &[&str],
     initial_search: &str,
     filter_only: bool,
+    fixed_strings: bool,
 ) -> String {
-    let mut search = Search::new(choices, initial_search.to_string(), filter_only);
+    let mut search = Search::new(
+        choices,
+        initial_search.to_string(),
+        filter_only,
+        fixed_strings,
+    );
     let mut screen = screen::new(desired_rows);
 
     loop {
@@ -156,6 +179,7 @@ fn handle_key(search: &mut Search, key: Key, screen: &mut Box<dyn Screen>) {
         Backspace | Control('h') => search.backspace(),
         Control('w') => search.delete_word(),
         Control('u') => search.clear_query(),
+        Control('s') => search.toggle_fixed_strings(),
         Control('r') => std::panic!("This is a test backtrace"),
         Control('c' | 'g') => search.cancel(),
         Control('t') => {
@@ -184,6 +208,7 @@ struct Search<'a> {
     state: SearchState,
     selections: IndexSet<String>,
     filter_only: bool,
+    fixed_strings: bool,
 }
 
 #[derive(PartialEq, Eq)]
@@ -194,7 +219,12 @@ enum SearchState {
 }
 
 impl<'a> Search<'a> {
-    fn new(choices: &'a [&'a str], initial_search: String, filter_only: bool) -> Search<'a> {
+    fn new(
+        choices: &'a [&'a str],
+        initial_search: String,
+        filter_only: bool,
+        fixed_strings: bool,
+    ) -> Search<'a> {
         let matches = choices.to_vec();
         Search {
             choices,
@@ -206,6 +236,7 @@ impl<'a> Search<'a> {
             state: InProgress,
             selections: IndexSet::new(),
             filter_only,
+            fixed_strings,
         }
     }
 
@@ -301,9 +332,22 @@ impl<'a> Search<'a> {
         self.matches = self.choices.to_vec();
     }
 
+    fn toggle_fixed_strings(&mut self) {
+        self.fixed_strings = !self.fixed_strings;
+        self.stale = true;
+        self.cursor_index = 0;
+        self.scroll_offset = 0;
+        self.matches = self.choices.to_vec();
+    }
+
     fn recompute_matches(&mut self) {
         if self.stale {
-            self.matches = matching::compute_matches(&self.matches, &self.query, self.filter_only);
+            self.matches = matching::compute_matches(
+                &self.matches,
+                &self.query,
+                self.filter_only,
+                self.fixed_strings,
+            );
             self.stale = false;
         }
     }
@@ -356,25 +400,18 @@ fn draw_screen(screen: &mut dyn Screen, search: &Search) {
     screen.hide_cursor();
     screen.write_bytes(ansi::begin_synchronized_update());
     screen.reset_cursor_with_rows(visible_choices);
+    let mode = if search.fixed_strings { ", fixed" } else { "" };
     screen.write(&format!(
-        "> {} ({}/{} choices)",
+        "> {} ({}/{} choices{})",
         search.query,
         search.matches.len(),
-        search.choices.len()
+        search.choices.len(),
+        mode
     ));
     screen.write_bytes(ansi::clear_to_end_of_line());
     screen.write(NEWLINE);
 
-    print_matches(
-        screen,
-        &search.matches,
-        &search.query,
-        search.scroll_offset,
-        search.cursor_index,
-        width,
-        visible_choices,
-        &search.selections,
-    );
+    print_matches(screen, search, width, visible_choices);
 
     let query_str: &str = &search.query;
     screen.move_cursor_to_prompt_line_with_rows(
@@ -385,22 +422,13 @@ fn draw_screen(screen: &mut dyn Screen, search: &Search) {
     screen.show_cursor();
 }
 
-fn print_matches(
-    screen: &mut dyn Screen,
-    matches: &[&str],
-    query: &str,
-    scroll_offset: usize,
-    cursor_index: usize,
-    max_width: u16,
-    visible_choices: u16,
-    selections: &IndexSet<String>,
-) {
+fn print_matches(screen: &mut dyn Screen, search: &Search, max_width: u16, visible_choices: u16) {
     let visible_choices = visible_choices as usize;
     for row in 0..visible_choices {
-        if let Some(choice) = matches.get(scroll_offset + row) {
-            let indices = matching::visual_score(choice, query);
+        if let Some(choice) = search.matches.get(search.scroll_offset + row) {
+            let indices = matching::visual_score(choice, &search.query, search.fixed_strings);
             let mut annotated_choice = (*choice).to_string();
-            if selections.contains(&annotated_choice) {
+            if search.selections.contains(&annotated_choice) {
                 annotated_choice.push_str(" ✓");
             }
             print_match(
@@ -408,7 +436,7 @@ fn print_matches(
                 &indices,
                 max_width,
                 &mut |s, highlight| {
-                    if row == cursor_index {
+                    if row == search.cursor_index {
                         if highlight {
                             screen.write_red_inverted(s);
                         } else {
@@ -490,8 +518,7 @@ fn read_choices() -> Vec<String> {
     if let Some(err) = first_error {
         eprintln!(
             "Warning: Failed to parse one or more lines (\"{}\"); {} additional error(s) suppressed",
-            err,
-            suppressed
+            err, suppressed
         );
     }
 
@@ -555,7 +582,36 @@ fn slice_chars(s: &str, begin: usize, end: usize) -> &str {
 
 #[cfg(test)]
 mod tests {
-    use super::{delete_last_word, trim};
+    use super::{Args, Search, delete_last_word, trim};
+    use clap::Parser;
+
+    #[test]
+    fn substring_short_flag_is_distinct_from_full_screen() {
+        let substring = Args::try_parse_from(["hs", "-S"]).unwrap();
+        assert!(substring.fixed_strings);
+        assert!(!substring.full_screen);
+
+        let full_screen = Args::try_parse_from(["hs", "-F"]).unwrap();
+        assert!(!full_screen.fixed_strings);
+        assert!(full_screen.full_screen);
+    }
+
+    #[test]
+    fn fixed_string_mode_can_be_toggled() {
+        let choices = ["foo", "f_o_o"];
+        let mut search = Search::new(&choices, "foo".to_string(), false, false);
+
+        search.recompute_matches();
+        assert_eq!(search.matches.len(), 2);
+
+        search.toggle_fixed_strings();
+        search.recompute_matches();
+        assert_eq!(search.matches, vec!["foo"]);
+
+        search.toggle_fixed_strings();
+        search.recompute_matches();
+        assert_eq!(search.matches.len(), 2);
+    }
 
     #[test]
     fn trim_test() {
