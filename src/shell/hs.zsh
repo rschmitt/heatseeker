@@ -19,7 +19,7 @@ _hs_fuzzy_history() {
     ' | hs --filter-only | sed 's/\\n/\n/g')
     echo -n "\033[1A"
     zle reset-prompt
-    zle end-of-buffer-or-history
+    CURSOR=${#BUFFER}
 }
 
 # Run Heatseeker in the current working directory, appending the selected path, if
