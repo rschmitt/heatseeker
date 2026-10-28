@@ -36,7 +36,7 @@ Heatseeker's usage is mostly intuitive, but there are a few commands worth knowi
 * Backspace to delete the last query character typed
 * `^W` to delete the last word in the query
 * `^U` to delete the entire query
-* `^S` to toggle fixed-string (non-fuzzy substring) matching; use `-S` or `--substring` to start in this mode
+* `^S` or `^R` to toggle fixed-string (non-fuzzy substring) matching; use `-S` or `--substring` to start in this mode
 * `^N`, down arrow, or Tab to highlight the next match
 * `^P`, up arrow, or Shift-Tab to highlight the previous match
 * `^B` or Page Up to move up by one page

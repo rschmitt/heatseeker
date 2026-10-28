@@ -179,8 +179,7 @@ fn handle_key(search: &mut Search, key: Key, screen: &mut Box<dyn Screen>) {
         Backspace | Control('h') => search.backspace(),
         Control('w') => search.delete_word(),
         Control('u') => search.clear_query(),
-        Control('s') => search.toggle_fixed_strings(),
-        Control('r') => std::panic!("This is a test backtrace"),
+        Control('s' | 'r') => search.toggle_fixed_strings(),
         Control('c' | 'g') => search.cancel(),
         Control('t') => {
             search.toggle_selection();
