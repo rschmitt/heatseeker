@@ -12,9 +12,10 @@ use windows::Win32::Storage::FileSystem::{
     FILE_SHARE_WRITE, OPEN_EXISTING,
 };
 use windows::Win32::System::Console::{
-    CONSOLE_MODE, CONSOLE_SCREEN_BUFFER_INFO, ENABLE_VIRTUAL_TERMINAL_INPUT,
-    ENABLE_VIRTUAL_TERMINAL_PROCESSING, GetConsoleMode, GetConsoleScreenBufferInfo, INPUT_RECORD,
-    KEY_EVENT, ReadConsoleInputW, SetConsoleMode, WINDOW_BUFFER_SIZE_EVENT, WriteConsoleW,
+    CONSOLE_MODE, CONSOLE_SCREEN_BUFFER_INFO, ENABLE_ECHO_INPUT, ENABLE_LINE_INPUT,
+    ENABLE_VIRTUAL_TERMINAL_INPUT, ENABLE_VIRTUAL_TERMINAL_PROCESSING, GetConsoleMode,
+    GetConsoleScreenBufferInfo, INPUT_RECORD, KEY_EVENT, ReadConsoleInputW, SetConsoleMode,
+    WINDOW_BUFFER_SIZE_EVENT, WriteConsoleW,
 };
 use windows::core::w;
 
@@ -118,7 +119,8 @@ impl Terminal {
         vt_output_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
         win32!(SetConsoleMode(conout, vt_output_mode));
 
-        let vt_input_mode = input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT;
+        let vt_input_mode =
+            (input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT) & !(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
         win32!(SetConsoleMode(conin, vt_input_mode));
 
         Terminal {

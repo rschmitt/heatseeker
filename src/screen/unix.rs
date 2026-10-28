@@ -135,7 +135,7 @@ impl Terminal {
     }
 
     fn initialize(&mut self) {
-        self.stty(&["raw", "-echo", "cbreak", "opost", "onlcr"]);
+        self.stty(&["raw", "-echo", "cbreak", "opost", "onlcr", "-ixon"]);
     }
 
     fn restore_tty(&mut self) {
